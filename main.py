@@ -162,7 +162,7 @@ class BookRecord(object):
         Returns:
             str: A generated header string
         """
-        return f"<{"고유번호 / " if contain_id else ""}{"ISBN / " if contain_isbn else ""}제목 / 저자 / 출판사 / 출판년도{" / 등록날짜" if contain_register_date else ""}{" / 대출기간" if contain_borrow_info else ""}>"
+        return f"<{'고유번호 / ' if contain_id else ''}{'ISBN / ' if contain_isbn else ''}제목 / 저자 / 출판사 / 출판년도{' / 등록날짜' if contain_register_date else ''}{' / 대출기간' if contain_borrow_info else ''}>"
 
 
 class BookData(object):
