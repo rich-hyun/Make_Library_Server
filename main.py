@@ -276,6 +276,8 @@ class BookData(object):
     def delete_record(self) -> tuple[bool, str]:
         return (True, None)
     
+    
+    
     # 책 대출
     def borrow_book(self) -> tuple[bool, str]:
         return (True, None)
@@ -283,6 +285,40 @@ class BookData(object):
     # 책 반납
     def return_book(self) -> tuple[bool, str]:
         return (True, None)
+    
+    # 책 검색
+    def search_book(self):
+
+        if not self.book_data:
+            print("등록된 책이 존재하지 않습니다.")
+            return False
+
+        search_book = input("검색할 책의 제목이나 저자를 입력하세요: ")
+        
+        if "/" in search_book or "\\" in search_book:
+            print('ERROR: 책의 제목 또는 저자에는 특수문자 "/" 또는 "\\"을 입력할 수 없습니다.')
+        
+        bookData.search_content_book(search_book)
+
+    def search_content_book(self, search_book):
+        search_results = [
+            book for book in self.book_data 
+            if search_book.lower() in book.title.lower() or search_book.lower() in book.writer.lower()
+        ]
+
+        if not search_results:
+            answer = input("해당 책이 존재하지 않습니다. 다시 검색하시겠습니까?(Y/N) :")
+            
+            if answer == "Y":
+                self.search_book()
+        
+
+        print(BookRecord.get_header())
+        print("\n")
+        for book in search_results:
+            print(book.to_str(today=self.today, contain_borrow=True))
+        print("\n")
+        return True
 
     # 데이터 무결성 검사
     def check_data_integrity(self) -> tuple[bool, str]:
@@ -338,7 +374,7 @@ def main_prompt(bookData) -> None:
             pass
         
         if slc == 4:
-            bookData.delete_record()
+            bookData.search_book()
             
         if slc == 5:
             bookData.borrow_book()
