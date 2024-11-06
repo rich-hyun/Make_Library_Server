@@ -512,7 +512,22 @@ class BookData(object):
 
     # 데이터 저장
     def save_data_to_file(self) -> tuple[bool, str]:
-        return (True, None)
+        """
+        데이터를 파일에 쓰기
+        """
+        try:
+            file_text = f"{self.static_id}\n"
+            file_text += "\n".join(list(map(lambda x : x.to_record_str(), self.book_data)))
+        except:
+            return (False, "데이터 파일 변환 과정에서 오류 발생")
+        
+        try:        
+            with open(self.file_path + "_temp", "w", encoding="utf-8") as f:
+                f.write(file_text)
+        except:
+            return (False, "데이터 파일 저장 과정에서 오류 발생")
+        
+        return (True, "파일 저장 성공")
     
     # 디버깅용 책 데이터 출력
     def print_book_debug(self) -> None:
