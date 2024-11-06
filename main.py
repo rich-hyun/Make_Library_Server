@@ -588,11 +588,11 @@ class BookData(object):
     def delete_book(self):
         del_book_id = self.input_book_id("삭제할 책의 고유번호를 입력해주세요: ", 1)
 
-        del_book_id = int(del_book_id)
         if not del_book_id:
             return False
-        
-        elif self.check_overdue_delete(del_book_id):
+        del_book_id = int(del_book_id)
+
+        if self.check_overdue_delete(del_book_id):
             print("ERROR: 해당 책은 대출중이므로 삭제할 수 없습니다.")
             return False
         else:
@@ -760,7 +760,7 @@ class BookData(object):
         if not book_id:
             return False
         
-        del_book_id = int(del_book_id)
+        book_id = int(book_id)
 
         book = self.search_id(book_id)
         print("책이 특정되었습니다.")
