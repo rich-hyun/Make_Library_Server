@@ -153,7 +153,7 @@ class BookRecord(object):
 / {str(self.borrow_date)} ~ {str(self.return_date)}" if self.is_borrowing and contain_borrow else "") \
 + (" *" if self.return_date < today else "")
 
-
+####
     @classmethod
     def get_header(contain_id: bool=True,
                    contain_isbn: bool=True,
