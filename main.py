@@ -572,13 +572,13 @@ def main_prompt(bookData) -> None:
             bookData.insert_record()
             
         if slc == 2:
-            bookData.update_record()
+            bookData.delete_record()     
             
         if slc == 3:
-            bookData.search_book()
+            bookData.update_record()
         
         if slc == 4:
-            bookData.delete_record()
+            bookData.search_book()
             
         if slc == 5:
             bookData.borrow_book()
