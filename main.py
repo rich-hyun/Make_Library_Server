@@ -605,6 +605,10 @@ class BookData(object):
     # 책 반납
     def return_book(self) -> tuple[bool, str]:
         return (True, None)
+    
+    # 책 검색
+    def search_book(self) -> tuple[bool, str]:
+        return (True, None)
 
     # 데이터 무결성 검사
     def check_data_integrity(self) -> tuple[bool, str]:
@@ -668,14 +672,13 @@ def main_prompt(bookData) -> None:
             bookData.insert_record()
             
         if slc == 2:
-            bookData.update_record()
+            bookData.delete_record()     
             
         if slc == 3:
-            # 검색 및 조회
-            pass
+            bookData.update_record()
         
         if slc == 4:
-            bookData.delete_record()
+            bookData.search_book()
             
         if slc == 5:
             bookData.borrow_book()
