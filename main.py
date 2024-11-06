@@ -175,6 +175,14 @@ class BookRecord(object):
 / {str(self.borrow_date)} ~ {str(self.return_date)}" if self.is_borrowing and contain_borrow else "") \
 + (" *" if self.return_date < today else "")
 
+    def to_record_str(self) -> str:
+        return f"{self.book_id}/{self.isbn}\
+/{self.title}/{self.writer}\
+/{self.publisher}/{self.published_year}\
+/{str(self.register_date)}" \
++ (f"/{self.borrower_name}/{self.borrower_phone_number}\
+/{str(self.borrow_date)}/{str(self.return_date)}" if self.is_borrowing else "////") 
+
     @classmethod
     def get_header(contain_id: bool=True, 
                    contain_isbn: bool=True, 
@@ -210,14 +218,82 @@ class BookData(object):
         """
         데이터 파일 읽음
         """
+        
+        # 1. 경로에 데이터 파일 존재 여부 확인        
+        if not os.path.isfile(self.file_path):
+            # 1-1 파일이 존재하지 않는 경우 빈 파일 생성
+            with open(self.file_path, "w", encoding="utf-8") as f:
+                # 1-2. 파일에 0 기입,
+                f.write("0")
+            
+            # 1-2. 최대 고유번호 0 설정
+            self.book_data = []
+            self.static_id = 0
+            
+            print("1. 파일이 존재하지 않아 생성")
+            
+            # 1-3. 종료
+            return
+        
+        # 2. 파일이 비어있는지 검사
+        if os.stat(self.file_path).st_size == 0:
+            # 2-1. 빈 파일 생성
+            with open(self.file_path, "w", encoding="utf-8") as f:
+                # 2-2 파일에 0 기입,
+                f.write("0")
+                
+            # 1-2. 최대 고유번호 0 설정
+            self.book_data = []
+            self.static_id = 0
+            
+            print("2. 파일이 비어있어 생성")
+            
+            # 2-3. 종료
+            return
+        
+        # 3. 무결성 검사 실행
+        checked = self.check_data_file()
+        
+        # 3-1. 무결성 확인되면 계속 진행
+        if checked:
+            pass
+        
+        # 3-2. 무결성 깨지면 기존 파일을 삭제
+        else:
+            # 3-2. 기존 파일 삭제
+            os.remove(self.file_path)
+
+            # 추후 백업 기능
+            # 새로운 파일 이름 생성
+            # current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            # new_file_name = f"{self.file_path[:-4]}_{current_time}.txt"
+            
+            # 파일명 변경
+            # os.rename(self.file_path, new_file_name)
+            
+            # 3-3. 새 파일 생성, 0 기입
+            with open(self.file_path, "w", encoding="utf-8") as f:
+                f.write("0")
+            
+            self.book_data = []
+            self.static_id = 0
+            
+            print("3. 무결성이 깨져서 기존 파일 삭제")
+            
+            return   
+        
+        print("4. 무결성 검사 완료, 파일 읽기 시작")
+        
+        # 파일 읽기 시작 (무결성 검증 이후)
         book_records = []
         
         with open(self.file_path, "r", encoding="utf-8") as f:
             lines = f.readlines()
             
-            # static id
+            # 4. static id 읽어서 저장
             self.static_id = int(lines[0].strip())
             
+            # 5. 
             for line in lines[1:]:
                 data = line.strip().split("/")
                 
@@ -248,7 +324,153 @@ class BookData(object):
         """
         파일 무결성 검사
         """
-        pass
+        
+        with open(self.file_path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+            
+        # 1. 첫 줄 검사 (파일이 비어있지 않으므로 첫 줄은 반드시 존재)
+        first_line = lines[0].strip()
+        
+        try:
+            # 정수 변환 가능한지
+            static_id = int(first_line)
+            
+            # 범위 검사
+            assert 0 <= static_id <= self.MAX_STATIC_ID
+            
+        except ValueError:
+            # 정수 변환 불가
+            print("1 첫 줄 정수 변환 불가")
+            return False
+        except AssertionError:
+            # 범위 벗어남
+            print("1 첫 줄 범위 벗어남")
+            return False
+        
+        # 2 구분자가 10개인지 검사
+        sep_list = list(map(lambda x : x.split("/"), lines[1:]))
+        if not all(len(rec) == 11 for rec in sep_list): 
+            print("2 구분자가 10개가 아님")
+            return False
+        
+        # 3, 4 모든 레코드의 앞 7개 항목 비어있지 않는지 모두 가지는지 검사
+        if not all(all(len(item.strip()) > 0 for item in rec[:7]) for rec in sep_list):
+            print("3, 4. 모든 레코드의 앞 7개 항목 중 빈 값 존재")
+            return False
+        
+        # 7. 고유번호 검사
+        first_elements = [rec[0] for rec in sep_list]
+        
+        # 모두 정수인지 검사
+        if not all(x.isdigit() for x in first_elements):
+            print("7 고유번호가 정수가 아님")
+            return False
+        
+        # 모두 정수로 변환 가능
+        first_elements = list(map(int, first_elements))
+        
+        # 범위 검사
+        if not all(0 <= x <= static_id for x in first_elements):
+            print("7 고유번호 범위 벗어남")
+            return False
+        
+        # 8. 고유번호 중복 검사
+        if len(first_elements) > len(set(first_elements)):
+            print("8 고유번호 중복")
+            return False
+        
+        # 9. ISBN 검사
+        second_elements = [rec[1] for rec in sep_list]
+        
+        # 길이 2이며, 정수로 변환 가능
+        if not all(len(x) == 2 and x.isdigit() for x in second_elements):
+            print("9 ISBN 길이")
+            return False
+        
+        # 10. 3-5번째 제목, 저자, 출판사 (빈 문자열은 아님)
+        for rec in sep_list:
+            if any(map(lambda x: "/" in x or "\\" in x, rec[2:5])) or any(map(lambda x: x.strip() == "X", rec[2:5])):
+                print("3 ~ 5 잘못된 문자열")
+                return False
+            
+        # 11. 출판년도
+        sixth_elements = [rec[5] for rec in sep_list]
+        
+        if not all(len(x) == 4 and x.isdigit() for x in sixth_elements):
+            print("11 잘못된 출판년도")
+            return False
+        
+        sixth_elements = list(map(int, sixth_elements))
+        if not all(1583 <= x <= self.today.year for x in sixth_elements):
+            print("11 년도 범위 잘못됨")
+            return False
+        
+        # 12. 등록 날짜 검사
+        for rec in sep_list:
+            if MyDate.from_str(rec[6]) is None:
+                print("12 등록 날짜 잘못됨")
+                return False
+            
+        # 13. 대출 데이터 검사
+        for rec in sep_list:
+            # 4개 값이 모두 빈 값이거나, 4개 값이 모두 빈 값이 아니어야 함
+            if not (all(len(rec[i].strip()) == 0 for i in range(7, 11)) or all(len(rec[i].strip()) > 0 for i in range(7, 11))):
+                print("13 대출 데이터 모두 빈 값이거나, 모두 값이 있지 않음")
+                return False
+           
+        for rec in sep_list:
+            # 대출 데이터가 없다면 패스 
+            if len(rec[7]) > 0:
+                # 14. 대출자 이름 (전화번호도 함께 검사)
+                if any(map(lambda x: "/" in x or "\\" in x, rec[7:9])) or any(map(lambda x: x.strip() == "X", rec[7:9])):
+                    print("14 대출자 이름, 전화번호 잘못됨")
+                    return False
+                
+                # 15 전화번호
+                phone_number_pattern = re.compile(r'^010-\d{4}-\d{4}$')
+                if not phone_number_pattern.match(rec[8]):
+                    print("15 전화번호 잘못됨")
+                    return False
+                
+                # 16, 17 대출날짜, 반납예정날짜 검사
+                borrow_date = MyDate.from_str(rec[9])
+                return_date = MyDate.from_str(rec[10])
+                reg_date = MyDate.from_str(rec[6])
+                
+                if borrow_date is None or return_date is None:
+                    print("16, 17 대출 반납 날짜 잘못됨")
+                    return False
+                
+                # 17. 반납 예정일은 7일 후여야 함
+                if borrow_date + 7 != return_date:
+                    print("반납 예정일이 7일 후가 아님")
+                    return False
+            
+                # 18. 등록 날짜와 대출 날짜 비교
+                if reg_date > borrow_date:
+                    print("18 등록 날짜가 대출 날짜보다 미래임")
+                    return False
+            
+            # 20. 등록 날짜와 출판 년도 검사
+            reg_year = MyDate.from_str(rec[6]).year
+            pub_year = int(rec[5])
+            
+            if reg_year < pub_year:
+                return False
+            
+        # 24. ISBN이 같은데 다른 데이터 검사
+        for i in range(len(sep_list)):
+            book_isbn = int(sep_list[i][1])
+            
+            for j in range(i + 1, len(sep_list)):
+                if (book_isbn == int(sep_list[j][1])):
+                    # ISBN이 같으면 제목(2) 저자(3) 출판사(4) 출판년도(5)가 같아야 함
+                    for k in range(2, 6):
+                        if sep_list[i][k].strip() != sep_list[j][k].strip():
+                            print(f"24 ISBN 같은데 데이터 다름 {i} and {j} - {k}")
+                            return False
+        
+        return True
 
     def get_data(self):
         return self.book_data
@@ -290,7 +512,22 @@ class BookData(object):
 
     # 데이터 저장
     def save_data_to_file(self) -> tuple[bool, str]:
-        return (True, None)
+        """
+        데이터를 파일에 쓰기
+        """
+        try:
+            file_text = f"{self.static_id}\n"
+            file_text += "\n".join(list(map(lambda x : x.to_record_str(), self.book_data)))
+        except:
+            return (False, "데이터 파일 변환 과정에서 오류 발생")
+        
+        try:        
+            with open(self.file_path + "_temp", "w", encoding="utf-8") as f:
+                f.write(file_text)
+        except:
+            return (False, "데이터 파일 저장 과정에서 오류 발생")
+        
+        return (True, "파일 저장 성공")
     
     # 디버깅용 책 데이터 출력
     def print_book_debug(self) -> None:
