@@ -392,27 +392,32 @@ class BookData(object):
     def check_string_validate(self, field_name, value):
         # 1. 문자열의 길이가 1 이상인지 확인
         if len(value) < 1:
-            return False, f"{field_name}는 1자 이상이어야 합니다."
+            return False, f"책의 {field_name}은 1글자 이상이어야 합니다."
         # 2. 문자열이 공백인지 확인
         if value.strip() == "":
-            return False, f"{field_name}는 공백만 포함할 수 없습니다."
+            return False, f"책의 {field_name}은 공백일 수 없습니다."
         # 3. 허용되지 않는 특수 기호가 포함되어 있는지 확인
         if '/' in value or '\\' in value:
-            return False, f"{field_name}에 '/' 또는 '\\' 특수 문자는 허용되지 않습니다."
-        # 4. 문자열이 "X"와 일치하는지 확인
-        if value == "X":
-            return False, f"{field_name}에 'X'는 허용되지 않습니다."
-        return True, ""
+            return False, f"책의 {field_name}에 특수문자 \"/\" 또는 \"\\\"는 허용되지 않습니다."
 
     def check_year_validate(self, year):
         # 1. 입력값이 숫자인지 확인
         if not year.isdigit():
-            return False, "출판 연도는 숫자여야 합니다."
+            return False, "ERROR: 책의 출판년도는 오로지 숫자로만 구성되어야 합니다."
+    
+        # 2. 출판년도는 4자리 숫자여야 함을 확인
+        if len(year) != 4:
+            return False, "ERROR: 책의 출판년도는 4자리 양의 정수여야 합니다."
+        
         year_int = int(year)
-        # 2. 범위 확인
-        current_year = datetime.now().year
-        if year_int < 1583 or year_int > current_year:
-            return False, f"출판 연도는 1583년부터 {current_year}년 사이여야 합니다."
+        current_year = today.year  # 현재 연도를 확인하는 변수
+
+        # 3. 출판년도 범위 확인
+        if year_int < 1583:
+            return False, "ERROR: 책의 출판년도는 1583년 이후인 4자리 양의 정수여야 합니다."
+        elif year_int > current_year:
+            return False, f"ERROR: 책의 출판년도는 현재연도({current_year}년)보다 미래일 수 없습니다."
+        
         return True, ""
 
     def check_date_validate(self, date_str):
@@ -427,9 +432,16 @@ class BookData(object):
             return False, "날짜 형식이 올바르지 않습니다. (예: YYYY-MM-DD)"
 
     def check_isbn_validate(self, isbn):
+        # ISBN이 1글자 이상인지 확인
+        if len(isbn) < 1:
+            return False, "1글자 이상 입력해주세요."
+
+        # ISBN이 공백인지 확인
+        if not isbn.strip():  # 공백을 제거한 후 빈 문자열인지 확인
+            return False, "책의 ISBN은 공백일 수 없습니다."
         # ISBN이 두 자리 숫자(00~99)로 구성되어 있는지 확인
         if len(isbn) != 2 or not isbn.isdigit():
-            return False, "ISBN은 두 자리 숫자 (00 ~ 99)여야 합니다."
+            return False, "ISBN은 두 자리 숫자여야 합니다."
         return True, ""
 
     def check_phone_number_validate(self, phone_number):
@@ -500,18 +512,28 @@ class BookData(object):
        
 
     def check_book_id_validate(self, book_id, book_data):
-        # 책 ID가 숫자로 구성되었는지 확인
+        # 1. 입력값이 있는지 확인
+        if len(book_id) == 0:
+            return False, "1글자 이상 입력해주세요."
+        
+        # 2. 입력값이 공백으로만 구성되지 않았는지 확인
+        if book_id.isspace():
+            return False, "책의 고유번호는 공백일 수 없습니다."
+        
+        # 3. 고유번호에 허용되지 않는 특수문자가 포함되어 있는지 확인
+        if "/" in book_id or "\\" in book_id:
+            return False, "책의 고유번호에는 특수문자 \"/\" 또는 \"\\\"을 입력할 수 없습니다."
+        
+        # 4. 고유번호가 숫자로만 구성되어 있는지 확인
         if not book_id.isdigit():
-            return False, "책 ID는 숫자만 포함해야 합니다."
+            return False, "고유번호는 숫자여야 합니다."
         
-        # 책 ID가 음수가 아니고, 99 이하인지 확인
+        # 5. 고유번호가 0에서 99 사이인지 확인
         book_id_int = int(book_id)
-        if book_id_int < 0 or book_id_int > 99:
-            return False, "책 ID는 0에서 99 사이여야 합니다."
+        if book_id_int < 0 or book_id_int > self.MAX_STATIC_ID:
+            return False, "고유번호는 0에서 99 사이여야 합니다."
         
-        "중복된 책 ID가 존재합니다."
-        
-        return True, ""
+        return True, ""    
     # 데이터 무결성 검사
     def check_data_integrity(self) -> tuple[bool, str]:
         # 데이터 무결성 검사를 수행하고 결과를 반환
@@ -520,6 +542,96 @@ class BookData(object):
             if not is_valid:
                 return (False, f"도서 '{book.title}'의 무결성 오류: {message}")
         return (True, None)
+    
+    def input_isbn(self) -> str:
+        isbn = input("책의 ISBN을 입력해주세요: ").strip()
+        is_valid, error_message = self.check_isbn_validate(isbn)
+        if is_valid:
+            return isbn
+        else:
+            print(f"ERROR: {error_message}")
+            return None
+
+    def input_bookName(self) -> str:
+        title = input("책의 제목을 입력해주세요: ").strip()
+        is_valid, error_message = self.check_string_validate("제목", title)
+        if is_valid:
+            return title
+        else:
+            print(f"ERROR: {error_message}")
+            return None
+
+    def input_author(self) -> str:
+        author = input("책의 저자를 입력해주세요: ").strip()
+        is_valid, error_message = self.check_string_validate("저자", author)
+        if is_valid:
+            return author
+        else:
+            print(f"ERROR: {error_message}")
+            return None
+
+    def input_publisher(self) -> str:
+        publisher = input("출판사를 입력해주세요: ").strip()
+        is_valid, error_message = self.check_string_validate("출판사", publisher)
+        if is_valid:
+            return publisher
+        else:
+            print(f"ERROR: {error_message}")
+            return None
+
+    def input_year(self) -> int:
+        year = input("출판년도를 입력해주세요: ").strip()
+        is_valid, error_message = self.check_year_validate(year, self.today.year)
+        if is_valid:
+            return int(year)
+        else:
+            print(f"ERROR: {error_message}")
+            return None
+    
+
+
+    def input_book_id() -> str:
+        book_id = input("책의 고유번호를 입력해주세요").strip()
+
+        # 공백 확인
+        if not book_id:
+            print("ERROR: 책의 고유번호는 공백일 수 없습니다.")
+            return None
+
+        # 길이 확인
+        if len(book_id) < 1:
+            print("ERROR: 1글자 이상 입력해주세요.")
+            return None
+
+        # 숫자 여부 확인
+        if not book_id.isdigit():
+            print("ERROR: 고유번호는 숫자여야 합니다.")
+            return None
+
+        # 특수문자 검사
+        if "/" in book_id or "\\" in book_id:
+            print('ERROR: 책의 고유번호에는 특수문자 "/" 또는 "\\"을 입력할 수 없습니다.')
+            return None
+
+        return book_id
+    
+    def input_borrower_name(self) -> str:
+        borrower_name = input("대출자 이름을 입력해주세요: ").strip()
+        is_valid, error_message = self.check_string_validate("대출자 이름", borrower_name)
+        if is_valid:
+            return borrower_name
+        else:
+            print(f"ERROR: {error_message}")
+    def input_phone_number(self) -> str:
+        phone_number = input("대출자 전화번호를 입력해주세요: ").strip()
+        is_valid, error_message = self.check_phone_number_validate(phone_number)
+        if is_valid:
+            return phone_number
+        else:
+            print(f"ERROR: {error_message}")
+
+    
+
 
 
 
@@ -550,54 +662,6 @@ class BookData(object):
             print(book.to_str(today=self.today, contain_borrow=True))
         print("="*30)
 
-def main_prompt(bookData) -> None:
-    slc = 0
-
-    main_prompt_text = """1. 추가
-2. 삭제
-3. 수정
-4. 검색
-5. 대출
-6. 반납
-7. 종료\n"""
-
-    while slc != 7:
-        print(main_prompt_text + "-"*20 + "\nLibsystem_Main > ", end="")
-
-        try:
-            slc = int(input())
-            assert 0 < slc <= 7, "원하는 동작에 해당하는 번호(숫자)만 입력해주세요."
-        except ValueError as e:
-            print("원하는 동작에 해당하는 번호(숫자)만 입력해주세요.")
-            continue
-        except AssertionError as e:
-            print(e)
-            continue
-        except Exception as e:
-            print("예상하지 못한 오류 발생.", e)
-            break
-
-        if slc == 1:
-            bookData.insert_record()
-
-        if slc == 2:
-            pass
-
-        if slc == 3:
-            bookData.update_record()
-
-        if slc == 4:
-            bookData.delete_record()
-
-        if slc == 5:
-            bookData.borrow_book()
-
-        if slc == 6:
-            bookData.return_book()
-
-    print("프로그램을 종료합니다.")
-
-
 def get_today_temp() -> MyDate:
     print("현재 함수는 임시 구현이므로 예외 처리 없음.")
     try:
@@ -607,8 +671,14 @@ def get_today_temp() -> MyDate:
     except Exception as e:
         print(e)
         return None
-
     return MyDate(year, month, day)
+
+
+
+
+        
+
+        
 
 
 if __name__ == "__main__":
@@ -626,4 +696,4 @@ if __name__ == "__main__":
 
     bookData.print_book_debug()
 
-    main_prompt(bookData=bookData)
+    bookData.borrow_book()
