@@ -399,6 +399,7 @@ class BookData(object):
         # 3. 허용되지 않는 특수 기호가 포함되어 있는지 확인
         if '/' in value or '\\' in value:
             return False, f"책의 {field_name}에 특수문자 \"/\" 또는 \"\\\"는 허용되지 않습니다."
+        return True, ""
 
     def check_year_validate(self, year):
         # 1. 입력값이 숫자인지 확인
@@ -581,7 +582,7 @@ class BookData(object):
 
     def input_year(self) -> int:
         year = input("출판년도를 입력해주세요: ").strip()
-        is_valid, error_message = self.check_year_validate(year, self.today.year)
+        is_valid, error_message = self.check_year_validate(year)
         if is_valid:
             return int(year)
         else:
