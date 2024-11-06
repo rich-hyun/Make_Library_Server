@@ -505,6 +505,10 @@ class BookData(object):
     # 책 반납
     def return_book(self) -> tuple[bool, str]:
         return (True, None)
+    
+    # 책 검색
+    def search_book(self) -> tuple[bool, str]:
+        return (True, None)
 
     # 데이터 무결성 검사
     def check_data_integrity(self) -> tuple[bool, str]:
