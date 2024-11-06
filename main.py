@@ -603,8 +603,61 @@ class BookData(object):
         return sum(1 for book in self.book_data if book.borrower_name == name and book.borrower_phone_number == phone)
     
     # 책 반납
-    def return_book(self) -> tuple[bool, str]:
-        return (True, None)
+    def return_book(self) -> bool:
+        print("반납하고자 하는 책의 고유번호를 입력해주세요: ", end="")
+
+        try:
+            rtn_book_id = input_book_id()
+            if not rtn_book_id:
+                return False  # 입력 실패 시 반환
+
+            if rtn_book_id=='X':
+                print("반납이 취소되었습니다. 메인 프롬프트로 돌아갑니다.")
+                return False
+
+            rtn_book_id = int(rtn_book_id)
+
+            # 고유번호에 해당하는 책 존재 여부 확인
+            book_to_return = None
+            for book in self.book_data:
+                if book.book_id == rtn_book_id:
+                    book_to_return = book
+                    break
+
+            if not book_to_return:
+                print("ERROR: 해당 고유번호를 가진 책이 존재하지 않습니다.")
+                return False
+
+            # 대출 여부 확인
+            if not book_to_return.is_borrowing:
+                print("ERROR: 현재 대출 중인 책이 아닙니다.")
+                return False
+
+            # 책 정보 및 대출자 정보 출력
+            print(f"{book_to_return.book_id} / {book_to_return.isbn} / {book_to_return.title} / {book_to_return.writer} / {book_to_return.publisher} / {book_to_return.published_year} / {book_to_return.register_date}")
+            print(f"대출자: {book_to_return.borrower_name} {book_to_return.borrower_phone_number} / 대출일: {book_to_return.borrow_date}")
+
+            # 반납 여부 확인
+            print("\n위 책을 반납할까요? (Y/N): ", end="")
+            confirm = input().strip().upper()
+            if confirm != "Y":
+                print("반납을 취소했습니다. 메인 프롬프트로 돌아갑니다.")
+                return False
+
+            # 반납 처리
+            book_to_return.is_borrowing = False
+            book_to_return.borrower_name = None
+            book_to_return.borrower_phone_number = None
+            book_to_return.borrow_date = None
+
+            print("반납이 완료되었습니다.")
+            self.save_data_to_file()  # 데이터 파일에 변경사항 저장
+            return True
+
+        except Exception as e:
+            print(f"ERROR: 예상하지 못한 오류가 발생했습니다. {str(e)}")
+            return False
+
 
     # 데이터 무결성 검사
     def check_data_integrity(self) -> tuple[bool, str]:
@@ -685,6 +738,76 @@ def main_prompt(bookData) -> None:
         
     print("프로그램을 종료합니다.")
 
+def input_book_id() -> str:
+    book_id = input().strip()
+
+    # 공백 확인
+    if not book_id:
+        print("ERROR: 책의 고유번호는 공백일 수 없습니다.")
+        return None
+
+    # 길이 확인
+    if len(book_id) < 1:
+        print("ERROR: 1글자 이상 입력해주세요.")
+        return None
+
+    # 숫자 여부 확인
+    if not book_id.isdigit():
+        print("ERROR: 고유번호는 숫자여야 합니다.")
+        return None
+
+    # 특수문자 검사
+    if "/" in book_id or "\\" in book_id:
+        print('ERROR: 책의 고유번호에는 특수문자 "/" 또는 "\\"을 입력할 수 없습니다.')
+        return None
+
+    return book_id
+
+
+# 현재 날짜 입력
+def input_date(self):
+    pattern = r"^\d{4}-\d{2}-\d{2}$"
+    while True:
+        today = input("현재 날짜를 'YYYY-MM-DD' 형식으로 입력해주세요: ")
+        if re.match(pattern, today) :
+            chk_year=today.split('-')
+            if int(chk_year[0])<1582:
+                print("연도는 1583년 부터 가능합니다.\n")
+
+            else:
+                try:
+                    valid_date=datetime.strptime(today, "%Y-%m-%d")
+                    last_date_str = self.last_bookdate()
+                    if last_date_str: # 현재 저장된 책의 마지막 날짜가 존재한다면
+                        last_date = datetime.strptime(last_date_str, "%Y-%m-%d")
+                        if valid_date >= last_date:  # 현재 저장된 책과 비교, 가능한 날짜임
+                            return today
+                        else :  # 현재 저장된 책과 비교했을 때, 과거인 경우 -> 불가능한 날짜
+                            print("가장 최근에 저장된 책의 등록날짜보다 과거의 날짜입니다.\n")
+                    else :  # 현재 저장된 책 없음
+                        return today
+                except ValueError:
+                    print("올바르지 않은 날짜입니다. 다시 입력해주세요.\n")
+
+        else:
+            print("잘못된 형식입니다. 아래 형식을 참고하여 다시 입력해주세요.")
+            print("[네 자리 숫자][-][두 자리 숫자][-][두 자리 숫자]\n")
+
+def last_bookdate(self):
+    if not self.book_data:
+        return None
+
+    latest_book = max(
+        self.book_data,
+        key=lambda book: max(
+            datetime.strptime(book.reg_date, "%Y-%m-%d"),
+            datetime.strptime(book.borrow_date, "%Y-%m-%d") if book.borrow_date else datetime.min
+        )
+    )
+    return max(
+        latest_book.reg_date,
+        latest_book.borrow_date if latest_book.borrow_date else latest_book.reg_date
+    )
 
 def get_today_temp() -> MyDate:
     print("현재 함수는 임시 구현이므로 예외 처리 없음.")
