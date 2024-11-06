@@ -494,13 +494,113 @@ class BookData(object):
     def update_record(self) -> tuple[bool, str]:
         return (True, None)
 
-    # 데이터 삭제
-    def delete_record(self) -> tuple[bool, str]:
-        return (True, None)
+    def delete_book(self):
+        print("삭제할", end=" ")
+        del_book_id = self.input_book_id()
+
+        del_book_id = int(del_book_id)
+        del_book_data = next((b for b in self.book_data if b.book_id == del_book_id), None)
+        if del_book_data is None:
+            print("ERROR: 해당 고유번호를 가진 책이 존재하지 않습니다.")
+            return False
+        elif self.check_overdue_delete(del_book_id):
+            print("ERROR: 해당 책은 대출중이므로 삭제할 수 없습니다.")
+            return False
+        else:
+            print("책이 특정되었습니다.")
+            print(BookRecord.get_header(contain_borrow_info=False))
+            print(del_book_data.to_str(self.today, contain_borrow=False)) 
+
+            if self.confirm_delete(del_book_data):
+                self.save_data_to_file()
+                return True
+            else:
+                return False
+
+    def check_overdue_delete(self, book_id):
+        for book in self.book_data:
+            if book.book_id == book_id and book.return_date:
+                return True
+        return False
+
+    def confirm_delete(self, del_book_data):
+        if input_response("삭제하면 되돌릴 수 없습니다. 정말로 삭제하시겠습니까?(Y/N): "):
+            self.book_data.remove(del_book_data)
+            print("삭제가 완료되었습니다. 메인프롬프트로 돌아갑니다.")
+            return True
+        else:
+            print("삭제를 취소하였습니다. 메인프롬프트로 돌아갑니다.")
+            return False
     
     # 책 대출
-    def borrow_book(self) -> tuple[bool, str]:
-        return (True, None)
+    def borrow_book(self):
+
+        name = self.input_borrower_name()
+        
+        phone = self.input_phone_number()
+
+        overdue_books = self.check_overdue_books(name, phone)
+        if overdue_books:
+            print("연체중인 책을 보유하고 있어 대출이 불가능합니다.")
+            print("아래 목록은 대출자가 현재 연체중인 책입니다.")
+            print(BookRecord.get_header(contain_borrow_info=True))
+            for book in overdue_books:
+                print(book.to_str(self.today, contain_borrow=True))
+            return False
+
+        borrowed_count = self.count_borrowed_books(name, phone)
+        max_limit = 3
+        if borrowed_count >= max_limit:
+            print(f"대출 중인 책이 {borrowed_count}권 있으며 더 이상 대출이 불가능합니다.")
+            print(BookRecord.get_header(contain_borrow_info=True)) 
+            for book in self.book_data:
+                if book.borrower_name == name and book.borrower_phone_number == phone:
+                    print(book.to_str(self.today, contain_borrow=True))
+            return False 
+        else:
+            print(f"대출중인 책이 {borrowed_count}권 있으며, {max_limit - borrowed_count}권 대출이 가능합니다.")
+
+        print("대출할", end=" ")
+        book_id = self.input_book_id()
+        
+        book = next((b for b in self.book_data if str(b.book_id) == book_id), None)
+        
+        if book is None:
+            print("ERROR: 해당 고유번호를 가진 책이 존재하지 않습니다.")
+            return False
+
+        print("책이 특정되었습니다.")
+        print(BookRecord.get_header(contain_borrow_info=False))
+        print(book.to_str(self.today, contain_borrow=False)) 
+        
+        if book.borrower_name:
+            print("이미 다른 사용자에 의해 대출 중이므로 대출이 불가능합니다.")
+            return False
+
+        if input_response("위 책을 대출할까요? (Y/N): "):
+            borrow_date = self.today
+            due_date = self.today+7
+            book.borrower_name = name
+            book.borrower_phone_number = phone
+            book.borrow_date = borrow_date
+            book.return_date = due_date
+            print(f"대출이 완료되었습니다. 반납 예정일은 {due_date} 입니다.")
+            self.save_data_to_file()
+            return True
+        else:
+            print("대출이 취소되었습니다.")
+            return False
+
+    def check_overdue_books(self, name, phone):
+        overdue_books = []
+        for book in self.book_data:
+            if book.borrower_name == name and book.borrower_phone_number == phone:
+                if book.return_date and book.return_date < self.today:
+                    overdue_books.append(book)
+        return overdue_books
+
+    def count_borrowed_books(self, name, phone):
+        return sum(1 for book in self.book_data if book.borrower_name == name and book.borrower_phone_number == phone)
     
     # 책 반납
     def return_book(self) -> tuple[bool, str]:
