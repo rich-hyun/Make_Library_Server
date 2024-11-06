@@ -87,9 +87,29 @@ class MyDate(object):
             return False
         return (self.year, self.month, self.day) >= (other.year, other.month, other.day)
     
-    def add_days(self, days):
-        new_date = datetime(self.year, self.month, self.day) + timedelta(days=days)
-        return MyDate(new_date.year, new_date.month, new_date.day)
+    def __add__(self, days):
+        if not isinstance(days, int):
+            raise TypeError("날짜에 더할 일수는 정수여야 합니다.")
+        
+        day = self.day
+        month = self.month
+        year = self.year
+        
+        while days > 0:
+            days_in_current_month = 29 if (month == 2 and self.is_leap_year(year)) else [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1]
+            
+            if day + days <= days_in_current_month:
+                day += days
+                days = 0
+            else:
+                days -= (days_in_current_month - day + 1)
+                day = 1
+                month += 1
+                if month > 12:
+                    month = 1
+                    year += 1
+        
+        return MyDate(year, month, day)
 
 
 class BookRecord(object):
@@ -305,7 +325,7 @@ class BookData(object):
         confirm = input("위 책을 대출할까요? (Y/N): ")
         if confirm == "Y":
             borrow_date = self.today
-            due_date = self.today.add_days(7)
+            due_date = self.today+7
             book.borrower_name = name
             book.borrower_phone_number = phone
             book.borrow_date = borrow_date
