@@ -218,6 +218,73 @@ class BookData(object):
         """
         데이터 파일 읽음
         """
+        
+        # 1. 경로에 데이터 파일 존재 여부 확인        
+        if not os.path.isfile(self.file_path):
+            # 1-1 파일이 존재하지 않는 경우 빈 파일 생성
+            with open(self.file_path, "w", encoding="utf-8") as f:
+                # 1-2. 파일에 0 기입,
+                f.write("0")
+            
+            # 1-2. 최대 고유번호 0 설정
+            self.book_data = []
+            self.static_id = 0
+            
+            print("1. 파일이 존재하지 않아 생성")
+            
+            # 1-3. 종료
+            return
+        
+        # 2. 파일이 비어있는지 검사
+        if os.stat(self.file_path).st_size == 0:
+            # 2-1. 빈 파일 생성
+            with open(self.file_path, "w", encoding="utf-8") as f:
+                # 2-2 파일에 0 기입,
+                f.write("0")
+                
+            # 1-2. 최대 고유번호 0 설정
+            self.book_data = []
+            self.static_id = 0
+            
+            print("2. 파일이 비어있어 생성")
+            
+            # 2-3. 종료
+            return
+        
+        # 3. 무결성 검사 실행
+        checked = self.check_data_file()
+        
+        # 3-1. 무결성 확인되면 계속 진행
+        if checked:
+            pass
+        
+        # 3-2. 무결성 깨지면 기존 파일을 삭제
+        else:
+            # 3-2. 기존 파일 삭제
+            os.remove(self.file_path)
+
+            # 추후 백업 기능
+            # 새로운 파일 이름 생성
+            # current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            # new_file_name = f"{self.file_path[:-4]}_{current_time}.txt"
+            
+            # 파일명 변경
+            # os.rename(self.file_path, new_file_name)
+            
+            # 3-3. 새 파일 생성, 0 기입
+            with open(self.file_path, "w", encoding="utf-8") as f:
+                f.write("0")
+            
+            self.book_data = []
+            self.static_id = 0
+            
+            print("3. 무결성이 깨져서 기존 파일 삭제")
+            
+            return   
+        
+        print("4. 무결성 검사 완료, 파일 읽기 시작")
+        
+        # 파일 읽기 시작 (무결성 검증 이후)
         book_records = []
         
         with open(self.file_path, "r", encoding="utf-8") as f:
