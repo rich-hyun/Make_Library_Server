@@ -1,3 +1,6 @@
+from datetime import datetime, timedelta
+import re
+
 class MyDate(object):
     def __init__(self, year, month, day):
         assert type(year) is int
@@ -83,6 +86,10 @@ class MyDate(object):
         if not isinstance(other, MyDate):
             return False
         return (self.year, self.month, self.day) >= (other.year, other.month, other.day)
+    
+    def add_days(self, days):
+        new_date = datetime(self.year, self.month, self.day) + timedelta(days=days)
+        return MyDate(new_date.year, new_date.month, new_date.day)
 
 
 class BookRecord(object):
@@ -113,6 +120,7 @@ class BookRecord(object):
         return f"{self.book_id} / {self.isbn} / {self.title} \
 / {self.writer} / {self.publisher} \
 / {self.published_year} / {str(self.register_date)}"
+
 
     def borrow_book(self, borrower_name: str, borrower_phone_number: str, current_date: MyDate) -> None:
         assert not self.is_borrowing, "이미 대출중인 도서입니다."
@@ -164,6 +172,7 @@ class BookRecord(object):
         """
         return f"<{'고유번호 / ' if contain_id else ''}{'ISBN / ' if contain_isbn else ''}제목 / 저자 / 출판사 / 출판년도{' / 등록날짜' if contain_register_date else ''}{' / 대출기간' if contain_borrow_info else ''}>"
 
+
 class BookData(object):
     def __init__(self, file_path, today: MyDate):
         self.file_path = file_path
@@ -175,7 +184,7 @@ class BookData(object):
 
         # constant
         self.MAX_STATIC_ID = 99
-        
+
     def read_data_file(self):
         """
         데이터 파일 읽음
@@ -225,12 +234,6 @@ class BookData(object):
 
     def get_static_id(self):
         return self.static_id
-    
-    def isFull(self) -> bool:
-        if self.static_id > self.MAX_STATIC_ID:
-            return True
-        else:
-            return False
 
     def increase_static_id(self) -> bool:
         if self.static_id <= self.MAX_STATIC_ID:
@@ -240,94 +243,277 @@ class BookData(object):
         else:
             return False
 
-    # 데이터 삽입 인터페이스
-    def insert_record(self, BookRecord):
-        self.book_data.append(BookRecord)
-        self.increase_static_id(self)
-        print("성공적으로 책을 추가하였습니다.")
 
-    # 데이터 수정 (업데이트)
-    def update_record(self) -> bool:
-        print("수정하고자 하는 책의 ISBN을 입력해주세요: ", end="")
-        try:
-            isbn = input_isbn()
-            if not isbn:
-                return False  # 입력 실패 시 반환
-
-            isbn = int(isbn)
-
-            # 책 존재 여부 확인
-            book_to_update = None
-            for book in self.book_data:
-                if book.isbn == isbn:
-                    book_to_update = book
-                    break
-
-            if not book_to_update:
-                print("ERROR: 해당 ISBN을 가진 책이 존재하지 않습니다.")
-                return False
-
-            # 기존 책 정보 출력
-            print("\n책이 특정되었습니다.")
-            print(book_to_update.to_str(today=self.today))
-
-            # 새로운 정보 입력
-            new_title = input_bookName()
-            if not new_title:
-                return False
-
-            new_author = input_author()
-            if not new_author:
-                return False
-
-            new_publisher = input_publisher()
-            if not new_publisher:
-                return False
-
-            new_year = input_year(self.today.year)
-            if not new_year:
-                return False
-
-            # 수정 여부 확인
-            print("\n수정한 데이터는 복구할 수 없습니다. 정말로 수정하시겠습니까?(Y/N): ", end="")
-            confirm = input().strip().upper()
-            if confirm != "Y":
-                print("수정을 취소하였습니다. 메인 프롬프트로 돌아갑니다.")
-                return False
-
-            # 수정 반영
-            book_to_update.title = new_title
-            book_to_update.writer = new_author
-            book_to_update.publisher = new_publisher
-            book_to_update.published_year = new_year
-
-            print("수정이 완료되었습니다.")
-            self.save_data_to_file()
-            return True
-
-        except Exception as e:
-            print(f"ERROR: 예상하지 못한 오류가 발생했습니다. {str(e)}")
+    def borrow_book(self):
+        name = input("대출자의 이름을 입력해주세요: ")
+        validation_info, message = self.check_string_validate("대출자 이름",name)
+        if not validation_info:
+            print(message)
+            return False
+        
+        phone = input("대출자의 전화번호를 입력해주세요: ")
+        validation_info, message = self.check_phone_number_validate(phone)
+        if not validation_info:
+            print(message)
             return False
 
+        overdue_books = self.check_overdue_books(name, phone)
+        if overdue_books:
+            print("연체중인 책을 보유하고 있어 대출이 불가능합니다.")
+            print("아래 목록은 대출자가 현재 연체중인 책입니다.")
+            print(BookRecord.get_header(contain_borrow_info=True))
+            for book in overdue_books:
+                print(book.to_str(self.today, contain_borrow=True))
+            return False
+
+        borrowed_count = self.count_borrowed_books(name, phone)
+        max_limit = 3
+        if borrowed_count >= max_limit:
+            print(f"대출 중인 책이 {borrowed_count}권 있으며 더 이상 대출이 불가능합니다.")
+            print(BookRecord.get_header(contain_borrow_info=True)) 
+            for book in self.book_data:
+                if book.borrower_name == name and book.borrower_phone_number == phone:
+                    print(book.to_str(self.today, contain_borrow=True))
+            return False 
+        else:
+            print(f"대출중인 책이 {borrowed_count}권 있으며, {max_limit - borrowed_count}권 대출이 가능합니다.")
 
 
-    # 데이터 삭제
-    def delete_record(self) -> tuple[bool, str]:
-        return (True, None)
+        book_id = input("대출할 책의 고유번호를 입력해주세요: ")
+        if book_id == 'X':
+            print("대출이 취소되었습니다. 메인프롬프트로 돌아갑니다.")
+            return False 
+        validation_info, message = self.check_book_id_validate(book_id, self.book_data)
+        if not validation_info:
+            print(message)
+            return False
+        
+        book = next((b for b in self.book_data if str(b.book_id) == book_id), None)
+        
+        if book is None:
+            print("ERROR: 해당 고유번호를 가진 책이 존재하지 않습니다.")
+            return False
 
-    # 책 대출
-    def borrow_book(self) -> tuple[bool, str]:
-        return (True, None)
+        print("책이 특정되었습니다.")
+        print(BookRecord.get_header(contain_borrow_info=False))
+        print(book.to_str(self.today, contain_borrow=False)) 
+        
+        if book.borrower_name:
+            print("이미 다른 사용자에 의해 대출 중이므로 대출이 불가능합니다.")
+            return False
 
-    # 책 반납
-    def return_book(self) -> tuple[bool, str]:
-        return (True, None)
+        confirm = input("위 책을 대출할까요? (Y/N): ")
+        if confirm == "Y":
+            borrow_date = self.today
+            due_date = self.today.add_days(7)
+            book.borrower_name = name
+            book.borrower_phone_number = phone
+            book.borrow_date = borrow_date
+            book.return_date = due_date
+            print(f"대출이 완료되었습니다. 반납 예정일은 {due_date} 입니다.")
+            self.save_data_to_file()
+            return True
+        else:
+            print("대출이 취소되었습니다.")
+            return False
 
+    def check_overdue_books(self, name, phone):
+        overdue_books = []
+        for book in self.book_data:
+            if book.borrower_name == name and book.borrower_phone_number == phone:
+                if book.return_date and book.return_date < self.today:
+                    overdue_books.append(book)
+        return overdue_books
+
+    def count_borrowed_books(self, name, phone):
+        return sum(1 for book in self.book_data if book.borrower_name == name and book.borrower_phone_number == phone)
+    
+
+###############################################################################################################################
+
+    def delete_book(self):
+        del_book_id = input("삭제하고자 하는 책의 고유번호를 입력해주세요: ")
+        if del_book_id == 'X':
+            print("삭제를 취소하였습니다. 메인프롬프트로 돌아갑니다.")
+            return False
+        
+        if len(del_book_id) < 1:
+            print("ERROR: 1글자 이상 입력해주세요.")
+            return False
+        
+        if del_book_id.strip() == "":
+            print("ERROR: 책의 고유번호는 공백일 수 없습니다.")
+            return False
+
+        validation_info, message = self.check_book_id_validate(del_book_id,self.book_data)
+        if not validation_info:
+            print(message)
+            return False
+
+        del_book_id = int(del_book_id)
+        del_book_data = next((b for b in self.book_data if b.book_id == del_book_id), None)
+        if del_book_data is None:
+            print("ERROR: 해당 고유번호를 가진 책이 존재하지 않습니다.")
+            return False
+        elif self.check_overdue_delete(del_book_id):
+            print("ERROR: 해당 책은 대출중이므로 삭제할 수 없습니다.")
+            return False
+        else:
+            print("책이 특정되었습니다.")
+            print(BookRecord.get_header(contain_borrow_info=False))
+            print(del_book_data.to_str(self.today, contain_borrow=False)) 
+
+            if self.confirm_delete(del_book_data):
+                self.save_data_to_file()
+                return True
+            else:
+                return False
+
+    def check_overdue_delete(self, book_id):
+        for book in self.book_data:
+            if book.book_id == book_id and book.return_date:
+                return True
+        return False
+
+    def confirm_delete(self, del_book_data):
+        confirm = input("삭제하면 되돌릴 수 없습니다. 정말로 삭제하시겠습니까?(Y/N): ")
+        if confirm == "Y":
+            self.book_data.remove(del_book_data)
+            print("삭제가 완료되었습니다. 메인프롬프트로 돌아갑니다.")
+            return True
+        else:
+            print("삭제를 취소하였습니다. 메인프롬프트로 돌아갑니다.")
+            return False
+
+################################################################################################################
+
+
+
+    def check_string_validate(self, field_name, value):
+        # 1. 문자열의 길이가 1 이상인지 확인
+        if len(value) < 1:
+            return False, f"{field_name}는 1자 이상이어야 합니다."
+        # 2. 문자열이 공백인지 확인
+        if value.strip() == "":
+            return False, f"{field_name}는 공백만 포함할 수 없습니다."
+        # 3. 허용되지 않는 특수 기호가 포함되어 있는지 확인
+        if '/' in value or '\\' in value:
+            return False, f"{field_name}에 '/' 또는 '\\' 특수 문자는 허용되지 않습니다."
+        # 4. 문자열이 "X"와 일치하는지 확인
+        if value == "X":
+            return False, f"{field_name}에 'X'는 허용되지 않습니다."
+        return True, ""
+
+    def check_year_validate(self, year):
+        # 1. 입력값이 숫자인지 확인
+        if not year.isdigit():
+            return False, "출판 연도는 숫자여야 합니다."
+        year_int = int(year)
+        # 2. 범위 확인
+        current_year = datetime.now().year
+        if year_int < 1583 or year_int > current_year:
+            return False, f"출판 연도는 1583년부터 {current_year}년 사이여야 합니다."
+        return True, ""
+
+    def check_date_validate(self, date_str):
+        try:
+            # 날짜 형식이 유효한지 확인 (YYYY-MM-DD 형식으로 가정)
+            date = datetime.strptime(date_str, "%Y-%m-%d")
+            # 연도가 1583 이상 9999 이하인지 확인
+            if not (1583 <= date.year <= 9999):
+                return False, "날짜는 1583년부터 9999년 사이여야 합니다."
+            return True, ""
+        except ValueError:
+            return False, "날짜 형식이 올바르지 않습니다. (예: YYYY-MM-DD)"
+
+    def check_isbn_validate(self, isbn):
+        # ISBN이 두 자리 숫자(00~99)로 구성되어 있는지 확인
+        if len(isbn) != 2 or not isbn.isdigit():
+            return False, "ISBN은 두 자리 숫자 (00 ~ 99)여야 합니다."
+        return True, ""
+
+    def check_phone_number_validate(self, phone_number):
+        # 정규표현식으로 010-XXXX-XXXX 형식 확인
+        pattern = r'^010-\d{4}-\d{4}$'
+        if re.fullmatch(pattern, phone_number):
+            return True, ""
+        return False, "전화번호는 010-XXXX-XXXX 형식이어야 합니다."
+
+    def check_record_validate(book):
+        # ISBN, 책 제목, 저자, 출판사, 출판년도, 등록 날짜 유효성 검사
+        is_valid, error_message = self.check_isbn_validate(book["ISBN"])
+        if not is_valid:
+            return False, f"ISBN 에러: {error_message}"
+        
+        is_valid, error_message = check_string_validate("제목", book["title"])
+        if not is_valid:
+            return False, f"제목 에러: {error_message}"
+        
+        is_valid, error_message = check_string_validate("저자", book["author"])
+        if not is_valid:
+            return False, f"저자 에러: {error_message}"
+        
+        is_valid, error_message = check_string_validate("출판사", book["publisher"])
+        if not is_valid:
+            return False, f"출판사 에러: {error_message}"
+        
+        is_valid, error_message = check_year_validate(book["year"])
+        if not is_valid:
+            return False, f"출판년도 에러: {error_message}"
+        
+        is_valid, error_message = check_date_validate(book["등록날짜"])
+        if not is_valid:
+            return False, f"등록 날짜 에러: {error_message}"
+
+        # 대출 중인 경우 추가 유효성 검사
+        if book.get("대출자") and book.get("대출자 전화번호"):
+            # 대출자, 전화번호, 대출 날짜, 반납 예정일 검사
+            is_valid, error_message = check_string_validate("대출자", book["대출자"])
+            if not is_valid:
+                return False, f"대출자 에러: {error_message}"
+            
+            is_valid, error_message = check_phone_number_validate(book["대출자 전화번호"])
+            if not is_valid:
+                return False, f"전화번호 에러: {error_message}"
+            
+            is_valid, error_message = check_date_validate(book["대출날짜"])
+            if not is_valid:
+                return False, f"대출 날짜 에러: {error_message}"
+            
+            is_valid, error_message = check_date_validate(book["반납 예정일"])
+            if not is_valid:
+                return False, f"반납 예정일 에러: {error_message}"
+        else:
+            # 대출자 정보가 없는 경우 대출 관련 필드가 비어있는지 확인
+            if book.get("대출날짜") or book.get("반납 예정일") or book.get("대출자") or book.get("대출자 전화번호"):
+                return False, "대출 관련 정보가 일부 누락되었습니다."
+
+        return True, ""
+
+    def check_book_id_validate(self, book_id, book_data):
+        # 책 ID가 숫자로 구성되었는지 확인
+        if not book_id.isdigit():
+            return False, "책 ID는 숫자만 포함해야 합니다."
+        
+        # 책 ID가 음수가 아니고, 99 이하인지 확인
+        book_id_int = int(book_id)
+        if book_id_int < 0 or book_id_int > 99:
+            return False, "책 ID는 0에서 99 사이여야 합니다."
+        
+        "중복된 책 ID가 존재합니다."
+        
+        return True, ""
     # 데이터 무결성 검사
     def check_data_integrity(self) -> tuple[bool, str]:
+        # 데이터 무결성 검사를 수행하고 결과를 반환
+        for book in self.book_data:
+            is_valid, message = self.check_record_validate(book)
+            if not is_valid:
+                return (False, f"도서 '{book.title}'의 무결성 오류: {message}")
         return (True, None)
 
-    # 데이터 저장
+
+
     def save_data_to_file(self) -> None:
         """파일에 현재 book_data 리스트를 저장합니다."""
         try:
@@ -355,161 +541,6 @@ class BookData(object):
             print(book.to_str(today=self.today, contain_borrow=True))
         print("="*30)
 
-    def search_isbn(self, isbn: int) -> list:
-        matching_books = [book for book in self.book_data if book.isbn == isbn]
-        return matching_books
-
-
-def input_isbn(input_message: str) -> str:
-    isbn = input(input_message).strip()
-    if not isbn.isdigit() or len(isbn) != 2:
-        print("ERROR: 책의 ISBN은 2자리 숫자여야 합니다.")
-        return None
-    # if "/" in isbn or "\\" in isbn:
-    #     print('ERROR: 책의 ISBN에는 특수문자 "/" 또는 "\\"을 입력할 수 없습니다.')
-    #     return None
-    if not isbn:
-        print("ERROR: 책의 ISBN는 공백일 수 없습니다.")
-        return None
-    return isbn
-
-def input_bookName(input_message: str) -> str:
-    title = input(input_message).strip()
-    if not title or "/" in title or "\\" in title:
-        print('ERROR: 책의 제목에는 특수문자 "/" 또는 "\\"을 입력할 수 없으며, 공백일 수 없습니다.')
-        return None
-    return title
-
-def input_author(input_message: str) -> str:
-    author = input(input_message).strip()
-    if not author or "/" in author or "\\" in author:
-        print('ERROR: 저자 이름에는 특수문자 "/" 또는 "\\"을 입력할 수 없으며, 공백일 수 없습니다.')
-        return None
-    return author
-
-def input_publisher(input_message: str) -> str:
-    publisher = input(input_message).strip()
-    if not publisher or "/" in publisher or "\\" in publisher:
-        print('ERROR: 출판사 이름에는 특수문자 "/" 또는 "\\"을 입력할 수 없으며, 공백일 수 없습니다.')
-        return None
-    return publisher
-
-def input_year(input_message: str) -> int:
-    year = input(input_message).strip()
-    today_year = str(today).split("-")
-    today_year = int(today_year[0])
-    if not year.isdigit() or int(year) < 1583 or int(year) > today_year:
-        print("ERROR: 출판년도는 1583년 이상, 현재년도 이하의 값이어야 합니다.")
-        return None
-    return int(year)
-
-def input_response(input_message: str) -> bool:
-    response = input(input_message).strip()
-    if response == 'Y':
-        return True
-    return False
-
-def add_book() -> bool:
-    if bookData.isFull():
-        print("더 이상 추가할 수 없습니다.")
-        return False
-    
-    isbn = input_isbn("추가할 책의 ISBN을 입력하세요: ")
-    if not isbn:
-        return False
-    isbn = int(isbn)
-    
-    book_info = []
-    books = bookData.search_isbn(isbn)
-    if not books:
-        messages_and_functions = [
-            ("추가할 책의 제목을 입력하세요: ", input_bookName),
-            ("추가할 책의 저자를 입력하세요: ", input_author),
-            ("추가할 책의 출판사를 입력하세요: ", input_publisher),
-            ("추가할 책의 출판년도를 입력하세요: ", input_year),
-            ]
-            
-        for message, func in messages_and_functions:
-            info = func(message)
-            if not info:
-                return False
-            
-            book_info.append(info)
-    else:
-        book_info = str(books[0]).split(" / ")
-        book_info = book_info[2:6]
-
-    print(BookRecord.get_header())
-    print()
-    if isbn:
-        for book in books:
-            print(book)
-        print()
-        print("여기에")
-        print()
-
-    book_record = BookRecord(
-        bookData.get_static_id(), isbn, book_info[0], book_info[1], book_info[2], book_info[3], today
-    )
-
-    print(book_record)
-    print()
-    if input_response("해당 책을 추가하시겠습니까?(Y/N): "):
-        bookData.insert_record(book_record)
-        return True
-    else:
-        print("추가를 중단하며 메인 프롬프트로 돌아갑니다.")
-        return False
-
-
-def main_prompt(bookData) -> None:
-    slc = 0
-
-    main_prompt_text = """1. 추가
-2. 삭제
-3. 수정
-4. 검색
-5. 대출
-6. 반납
-7. 종료\n"""
-
-    while slc != 7:
-        print(main_prompt_text + "-"*20 + "\nLibsystem_Main > ", end="")
-
-        try:
-            slc = int(input())
-            assert 0 < slc <= 7, "원하는 동작에 해당하는 번호(숫자)만 입력해주세요."
-        except ValueError as e:
-            print("원하는 동작에 해당하는 번호(숫자)만 입력해주세요.")
-            continue
-        except AssertionError as e:
-            print(e)
-            continue
-        except Exception as e:
-            print("예상하지 못한 오류 발생.", e)
-            break
-
-        if slc == 1:
-            # bookData.insert_record()
-            add_book()
-
-        if slc == 2:
-            pass
-
-        if slc == 3:
-            bookData.update_record()
-
-        if slc == 4:
-            bookData.delete_record()
-
-        if slc == 5:
-            bookData.borrow_book()
-
-        if slc == 6:
-            bookData.return_book()
-
-    print("프로그램을 종료합니다.")
-
 
 def get_today_temp() -> MyDate:
     print("현재 함수는 임시 구현이므로 예외 처리 없음.")
@@ -520,8 +551,14 @@ def get_today_temp() -> MyDate:
     except Exception as e:
         print(e)
         return None
-
     return MyDate(year, month, day)
+
+
+
+
+        
+
+        
 
 
 if __name__ == "__main__":
@@ -539,4 +576,4 @@ if __name__ == "__main__":
 
     bookData.print_book_debug()
 
-    main_prompt(bookData=bookData)
+    bookData.borrow_book()
