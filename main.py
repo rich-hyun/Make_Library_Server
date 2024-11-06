@@ -575,8 +575,7 @@ def main_prompt(bookData) -> None:
             bookData.update_record()
             
         if slc == 3:
-            # 검색 및 조회
-            pass
+            bookData.search_book()
         
         if slc == 4:
             bookData.delete_record()
