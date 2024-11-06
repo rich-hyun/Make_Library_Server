@@ -551,6 +551,7 @@ class BookData(object):
                 
                 book_info.append(info)
         else:
+            print(f"ISBN이 {isbn}인 책 데이터가 {len(books)}권 있습니다.")
             book_info = str(books[0]).split(" / ")
             book_info = book_info[2:6]
 
@@ -618,7 +619,7 @@ class BookData(object):
             return False
 
     # 3. 수정 (업데이트)
-    def update_record(self) -> bool:
+    def update_book(self) -> bool:
         try:
             isbn = self.input_isbn("수정할 책의 ISBN을 입력해주세요: ")
             if not isbn:
@@ -626,19 +627,20 @@ class BookData(object):
             isbn = int(isbn)
 
             # 책 존재 여부 확인
-            book_to_update = None
-            for book in self.book_data:
-                if book.isbn == isbn:
-                    book_to_update = book
-                    break
+            books = self.search_isbn(isbn)
 
-            if not book_to_update:
+            if not books:
                 print("ERROR: 해당 ISBN을 가진 책이 존재하지 않습니다.")
                 return False
+            else:
+                print(f"ISBN이 {isbn}인 책 데이터가 {len(books)}권 있습니다.")
+                print()
 
             # 기존 책 정보 출력
-            print("\n책이 특정되었습니다.")
-            print(book_to_update.to_str(today=self.today))
+            print(BookRecord.get_header(contain_borrow_info=False))
+            print()
+            for book in books:
+                print(book.to_str(today=self.today))
 
             # 새로운 정보 입력
             new_title = self.input_bookName("책의 수정될 제목을 입력해주세요: ")
@@ -660,15 +662,16 @@ class BookData(object):
             new_year = int(new_year)
 
             # 수정 여부 확인
-            if input("수정한 데이터는 복구할 수 없습니다. 정말로 수정하시겠습니까?(Y/N): "):
+            if not self.input_response("수정한 데이터는 복구할 수 없습니다. 정말로 수정하시겠습니까?(Y/N): "):
                 print("수정을 취소하였습니다. 메인 프롬프트로 돌아갑니다.")
                 return False
 
             # 수정 반영
-            book_to_update.title = new_title
-            book_to_update.author = new_author
-            book_to_update.publisher = new_publisher
-            book_to_update.published_year = new_year
+            for book in books:
+                book.title = new_title
+                book.author = new_author
+                book.publisher = new_publisher
+                book.published_year = new_year
 
             print("수정이 완료되었습니다.")
             self.save_data_to_file()
@@ -1115,9 +1118,7 @@ def main_prompt(bookData) -> None:
             bookData.delete_book()
             
         if slc == 3:
-            # 수정
             bookData.update_book()
-            pass
         
         if slc == 4:
             bookData.search_book()
