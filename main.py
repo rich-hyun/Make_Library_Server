@@ -175,6 +175,14 @@ class BookRecord(object):
 / {str(self.borrow_date)} ~ {str(self.return_date)}" if self.is_borrowing and contain_borrow else "") \
 + (" *" if self.return_date < today else "")
 
+    def to_record_str(self) -> str:
+        return f"{self.book_id}/{self.isbn}\
+/{self.title}/{self.writer}\
+/{self.publisher}/{self.published_year}\
+/{str(self.register_date)}" \
++ (f"/{self.borrower_name}/{self.borrower_phone_number}\
+/{str(self.borrow_date)}/{str(self.return_date)}" if self.is_borrowing else "////") 
+
     @classmethod
     def get_header(contain_id: bool=True, 
                    contain_isbn: bool=True, 
@@ -215,9 +223,10 @@ class BookData(object):
         with open(self.file_path, "r", encoding="utf-8") as f:
             lines = f.readlines()
             
-            # static id
+            # 4. static id 읽어서 저장
             self.static_id = int(lines[0].strip())
             
+            # 5. 
             for line in lines[1:]:
                 data = line.strip().split("/")
                 
