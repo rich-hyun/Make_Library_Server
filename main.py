@@ -532,6 +532,11 @@ class BookData(object):
         isbn = self.input_isbn("추가할 책의 ISBN을 입력하세요: ")
         if not isbn:
             return False
+
+        if isbn == CANCEL:
+            print("추가를 중단하며 메인 프롬프트로 돌아갑니다.")
+            return False
+
         isbn = int(isbn)
         
         book_info = []
@@ -548,7 +553,11 @@ class BookData(object):
                 info = func(message)
                 if not info:
                     return False
-                
+
+                if info == CANCEL:
+                    print("추가를 중단하며 메인 프롬프트로 돌아갑니다.")
+                    return False
+                    
                 book_info.append(info)
         else:
             print(f"ISBN이 {isbn}인 책 데이터가 {len(books)}권 있습니다.")
@@ -588,11 +597,16 @@ class BookData(object):
     def delete_book(self):
         del_book_id = self.input_book_id("삭제할 책의 고유번호를 입력해주세요: ", 1)
 
-        del_book_id = int(del_book_id)
         if not del_book_id:
             return False
         
-        elif self.check_overdue_delete(del_book_id):
+        if del_book_id == CANCEL:
+            print("삭제를 중단하며 메인 프롬프트로 돌아갑니다.")
+            return False
+
+        del_book_id = int(del_book_id)
+
+        if self.check_overdue_delete(del_book_id):
             print("ERROR: 해당 책은 대출중이므로 삭제할 수 없습니다.")
             return False
         else:
@@ -624,6 +638,11 @@ class BookData(object):
             isbn = self.input_isbn("수정할 책의 ISBN을 입력해주세요: ")
             if not isbn:
                 return False  # 입력 실패 시 반환
+
+            if isbn == CANCEL:
+                print("수정을 중단하며 메인 프롬프트로 돌아갑니다.")
+                return False
+
             isbn = int(isbn)
 
             # 책 존재 여부 확인
@@ -647,18 +666,34 @@ class BookData(object):
             if not new_title:
                 return False
 
+            if new_title == CANCEL:
+                print("수정을 중단하며 메인 프롬프트로 돌아갑니다.")
+                return False
+
             new_author = self.input_author("책의 수정될 저자를 입력해주세요: ")
             if not new_author:
+                return False
+
+            if new_author == CANCEL:
+                print("수정을 중단하며 메인 프롬프트로 돌아갑니다.")
                 return False
 
             new_publisher = self.input_publisher("책의 수정될 출판사를 입력해주세요: ")
             if not new_publisher:
                 return False
 
+            if new_publisher == CANCEL:
+                print("수정을 중단하며 메인 프롬프트로 돌아갑니다.")
+                return False
+                
             new_year = self.input_year("책의 수정될 출판년도를 입력해주세요: ")
             if not new_year:
                 return False
-            
+
+            if new_year == CANCEL:
+                print("수정을 중단하며 메인 프롬프트로 돌아갑니다.")
+                return False
+
             new_year = int(new_year)
 
             # 수정 여부 확인
@@ -687,15 +722,20 @@ class BookData(object):
             print("등록된 책이 존재하지 않습니다.")
             return False
 
-        search_book = input("검색할 책의 제목 또는 저자를 입력하세요: ")
+        search_book = input("검색할 책의 제목 또는 저자를 입력하세요: ").strip()
+
+        if search_book == CANCEL:
+            print("검색을 중단하며 메인 프롬프트로 돌아갑니다.")
+            return False
+        
+        if len(search_book) == 0:
+            bookData.print_book_debug()
+            return True
+
         is_valid, error_message = self.check_string_validate("제목 또는 저자", search_book)
         if not is_valid:
             print(f"ERROR: {error_message}")
             return None
-        
-        if search_book == "X":
-            print("검색을 중단하며 메인 프롬프트로 돌아갑니다.")
-            return False
         
         bookData.search_content_book(search_book)
 
@@ -711,7 +751,7 @@ class BookData(object):
                 self.search_book()
             else:
                 print("검색을 중단하며 메인 프롬프트로 돌아갑니다.")
-                return False
+                return True
         
 
         print(BookRecord.get_header())
@@ -727,9 +767,17 @@ class BookData(object):
         name = self.input_borrower_name()
         if not name:
             return False
+
+        if name == CANCEL:
+            print("대출을 중단하며 메인 프롬프트로 돌아갑니다.")
+            return False
         
         phone = self.input_phone_number()
         if not phone:
+            return False
+
+        if phone == CANCEL:
+            print("대출을 중단하며 메인 프롬프트로 돌아갑니다.")
             return False
         
         overdue_books = self.check_overdue_books(name, phone)
@@ -760,7 +808,11 @@ class BookData(object):
         if not book_id:
             return False
         
-        del_book_id = int(del_book_id)
+        if book_id == CANCEL:
+            print("대출을 중단하며 메인 프롬프트로 돌아갑니다.")
+            return False
+
+        book_id = int(book_id)
 
         book = self.search_id(book_id)
         print("책이 특정되었습니다.")
@@ -784,7 +836,7 @@ class BookData(object):
             self.save_data_to_file()
             return True
         else:
-            print("대출이 취소되었습니다.")
+            print("대출이 취소되었습니다. 메인 프롬프트로 돌아갑니다.")
             return False
 
     def check_overdue_books(self, name, phone):
@@ -802,8 +854,13 @@ class BookData(object):
     def return_book(self) -> bool:
         try:
             rtn_book_id = self.input_book_id("반납할 책의 고유번호를 입력해주세요: ", 1)
+
             if not rtn_book_id:
                 return False  # 입력 실패 시 반환
+
+            if rtn_book_id == CANCEL:
+                print("수정을 중단하며 메인 프롬프트로 돌아갑니다.")
+                return False
 
             rtn_book_id = int(rtn_book_id)
             
@@ -850,6 +907,9 @@ class BookData(object):
     
     def check_book_id_validate(self, book_id, flag): # flag == 0 -> 있으면 False 없으면 True, flag == 1 -> 없으면 False 있으면 True
         # 책 ID가 숫자로 구성되었는지 확인
+        if book_id == CANCEL:
+            return True, ""
+
         if not book_id.isdigit():
             return False, "책 ID는 숫자만 포함해야 합니다."
         
@@ -867,6 +927,8 @@ class BookData(object):
         return True, ""
 
     def check_string_validate(self, field_name, value):
+        if value == CANCEL:
+            return True, ""
         # 1. 문자열의 길이가 1 이상인지 확인
         if len(value) < 1:
             return False, f"{field_name}는 1자 이상이어야 합니다."
@@ -876,12 +938,11 @@ class BookData(object):
         # 3. 허용되지 않는 특수 기호가 포함되어 있는지 확인
         if '/' in value or '\\' in value:
             return False, f"{field_name}에 '/' 또는 '\\' 특수 문자는 허용되지 않습니다."
-        # 4. 문자열이 "X"와 일치하는지 확인
-        if value == "X":
-            return False, f"{field_name}에 'X'는 허용되지 않습니다."
         return True, ""
 
     def check_year_validate(self, year):
+        if year == CANCEL:
+            return True, ""
         # 1. 입력값이 숫자인지 확인
         if not year.isdigit():
             return False, "출판 연도는 숫자여야 합니다."
@@ -904,6 +965,8 @@ class BookData(object):
             return False, "날짜 형식이 올바르지 않습니다. (예: YYYY-MM-DD)"
 
     def check_isbn_validate(self, isbn):
+        if isbn == CANCEL:
+            return True, ""
         # ISBN이 두 자리 숫자(00~99)로 구성되어 있는지 확인
         if len(isbn) != 2 or not isbn.isdigit():
             return False, "ISBN은 두 자리 숫자 (00 ~ 99)여야 합니다."
@@ -1131,32 +1194,6 @@ def main_prompt(bookData) -> None:
 
     print("프로그램을 종료합니다.")
 
-def input_book_id() -> str:
-    book_id = input().strip()
-
-    # 공백 확인
-    if not book_id:
-        print("ERROR: 책의 고유번호는 공백일 수 없습니다.")
-        return None
-
-    # 길이 확인
-    if len(book_id) < 1:
-        print("ERROR: 1글자 이상 입력해주세요.")
-        return None
-
-    # 숫자 여부 확인
-    if not book_id.isdigit():
-        print("ERROR: 고유번호는 숫자여야 합니다.")
-        return None
-
-    # 특수문자 검사
-    if "/" in book_id or "\\" in book_id:
-        print('ERROR: 책의 고유번호에는 특수문자 "/" 또는 "\\"을 입력할 수 없습니다.')
-        return None
-
-    return book_id
-
-
 # 현재 날짜 입력
 def input_date(self):
     pattern = r"^\d{4}-\d{2}-\d{2}$"
@@ -1216,6 +1253,9 @@ def get_today_temp() -> MyDate:
 
 
 if __name__ == "__main__":
+    # CANCEL 상수
+    CANCEL = "X"
+
     # 현재 날짜 입력
     today = get_today_temp()
     
