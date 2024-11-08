@@ -980,9 +980,11 @@ class BookData(object):
 
     @classmethod
     def check_date_validate(self, date_str):
-        date_pattern = pattern = r'^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$'
+        date_pattern = r'^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$'
         
         try:
+            assert type(date_str) == str, "문자열이 아님"
+            
             if not re.match(date_pattern, date_str):
                 raise ValueError
             
@@ -993,7 +995,7 @@ class BookData(object):
                 return False, "날짜는 1583년부터 9999년 사이여야 합니다."
             
             if not MyDate.validate_day(year, month, day):
-                raise ValueError, "올바르지 않은 날짜"
+                raise ValueError
             
             return True, ""
         
@@ -1262,7 +1264,7 @@ def input_date(self):
         today = MyDate(year, month, day)    
         
         # 데이터 무결성 검사
-        is_validate, message = bookData.check_date_validate(today)
+        is_validate, message = bookData.check_today_by_data(today)
         
         if is_validate:
             return today
@@ -1278,10 +1280,6 @@ if __name__ == "__main__":
     
     # 데이터 파일 읽기
     bookData.read_data_file()
-    
-    # 데이터 파일 무결성 검사 (구현 전)
-    # 파일 오류나도 알아서 처리, 성공 여부 알 필요 X
-    bookData.check_data_file()
     
     # 현재 날짜 입력
     today = input_date(bookData)
