@@ -31,8 +31,8 @@ class MyDate(object):
             return MyDate(year, month, day)
             
         except Exception as e:
-            print(e)
-            print("텍스트 " + text +"을(를) 날짜로 변환할 수 없습니다.")
+            # print(e)
+            # print("텍스트 " + text +"을(를) 날짜로 변환할 수 없습니다.")
 
             return None
 
@@ -234,7 +234,7 @@ class BookData(object):
             self.book_data = []
             self.static_id = 0
             
-            print("1. 파일이 존재하지 않아 생성")
+            # print("1. 파일이 존재하지 않아 생성")
             
             # 1-3. 종료
             return
@@ -250,7 +250,7 @@ class BookData(object):
             self.book_data = []
             self.static_id = 0
             
-            print("2. 파일이 비어있어 생성")
+            # print("2. 파일이 비어있어 생성")
             
             # 2-3. 종료
             return
@@ -282,11 +282,11 @@ class BookData(object):
             self.book_data = []
             self.static_id = 0
             
-            print("3. 무결성이 깨져서 기존 파일 삭제")
+            # print("3. 무결성이 깨져서 기존 파일 삭제")
             
             return   
         
-        print("4. 무결성 검사 완료, 파일 읽기 시작")
+        # print("4. 무결성 검사 완료, 파일 읽기 시작")
         
         # 파일 읽기 시작 (무결성 검증 이후)
         book_records = []
@@ -343,7 +343,7 @@ class BookData(object):
         return (True, None)
     
     # 파일 무결성 검사
-    def check_data_file(self):
+    def check_data_file(self, verbose=False):
         """
         파일 무결성 검사
         """
@@ -363,22 +363,22 @@ class BookData(object):
             
         except ValueError:
             # 정수 변환 불가
-            print("1 첫 줄 정수 변환 불가")
+            if verbose: print("1 첫 줄 정수 변환 불가")
             return False
         except AssertionError:
             # 범위 벗어남
-            print("1 첫 줄 범위 벗어남")
+            if verbose: print("1 첫 줄 범위 벗어남")
             return False
         
         # 2 구분자가 10개인지 검사
         sep_list = list(map(lambda x : x.split("/"), lines[1:]))
         if not all(len(rec) == 11 for rec in sep_list): 
-            print("2 구분자가 10개가 아님")
+            if verbose: print("2 구분자가 10개가 아님")
             return False
         
         # 3, 4 모든 레코드의 앞 7개 항목 비어있지 않는지 모두 가지는지 검사
         if not all(all(len(item.strip()) > 0 for item in rec[:7]) for rec in sep_list):
-            print("3, 4. 모든 레코드의 앞 7개 항목 중 빈 값 존재")
+            if verbose: print("3, 4. 모든 레코드의 앞 7개 항목 중 빈 값 존재")
             return False
         
         # 7. 고유번호 검사
@@ -386,7 +386,7 @@ class BookData(object):
         
         # 모두 정수인지 검사
         if not all(x.isdigit() for x in first_elements):
-            print("7 고유번호가 정수가 아님")
+            if verbose: print("7 고유번호가 정수가 아님")
             return False
         
         # 모두 정수로 변환 가능
@@ -394,7 +394,7 @@ class BookData(object):
         
         # 범위 검사
         if not all(0 <= x <= static_id for x in first_elements):
-            print("7 고유번호 범위 벗어남")
+            if verbose: print("7 고유번호 범위 벗어남")
             return False
         
         # 8. 고유번호 중복 검사
@@ -407,38 +407,38 @@ class BookData(object):
         
         # 길이 2이며, 정수로 변환 가능
         if not all(len(x) == 2 and x.isdigit() for x in second_elements):
-            print("9 ISBN 길이")
+            if verbose: print("9 ISBN 길이")
             return False
         
         # 10. 3-5번째 제목, 저자, 출판사 (빈 문자열은 아님)
         for rec in sep_list:
             if any(map(lambda x: "/" in x or "\\" in x, rec[2:5])) or any(map(lambda x: x.strip() == "X", rec[2:5])):
-                print("3 ~ 5 잘못된 문자열")
+                if verbose: print("3 ~ 5 잘못된 문자열")
                 return False
             
         # 11. 출판년도
         sixth_elements = [rec[5] for rec in sep_list]
         
         if not all(len(x) == 4 and x.isdigit() for x in sixth_elements):
-            print("11 잘못된 출판년도")
+            if verbose: print("11 잘못된 출판년도")
             return False
         
         sixth_elements = list(map(int, sixth_elements))
         if not all(1583 <= x <= 9999 for x in sixth_elements):
-            print("11 년도 범위 잘못됨")
+            if verbose: print("11 년도 범위 잘못됨")
             return False
         
         # 12. 등록 날짜 검사
         for rec in sep_list:
             if MyDate.from_str(rec[6]) is None:
-                print("12 등록 날짜 잘못됨")
+                if verbose: print("12 등록 날짜 잘못됨")
                 return False
             
         # 13. 대출 데이터 검사
         for rec in sep_list:
             # 4개 값이 모두 빈 값이거나, 4개 값이 모두 빈 값이 아니어야 함
             if not (all(len(rec[i].strip()) == 0 for i in range(7, 11)) or all(len(rec[i].strip()) > 0 for i in range(7, 11))):
-                print("13 대출 데이터 모두 빈 값이거나, 모두 값이 있지 않음")
+                if verbose: print("13 대출 데이터 모두 빈 값이거나, 모두 값이 있지 않음")
                 return False
            
         for rec in sep_list:
@@ -446,13 +446,13 @@ class BookData(object):
             if len(rec[7]) > 0:
                 # 14. 대출자 이름 (전화번호도 함께 검사)
                 if any(map(lambda x: "/" in x or "\\" in x, rec[7:9])) or any(map(lambda x: x.strip() == "X", rec[7:9])):
-                    print("14 대출자 이름, 전화번호 잘못됨")
+                    if verbose: print("14 대출자 이름, 전화번호 잘못됨")
                     return False
                 
                 # 15 전화번호
                 phone_number_pattern = re.compile(r'^010-\d{4}-\d{4}$')
                 if not phone_number_pattern.match(rec[8]):
-                    print("15 전화번호 잘못됨")
+                    if verbose: print("15 전화번호 잘못됨")
                     return False
                 
                 # 16, 17 대출날짜, 반납예정날짜 검사
@@ -461,17 +461,17 @@ class BookData(object):
                 reg_date = MyDate.from_str(rec[6])
                 
                 if borrow_date is None or return_date is None:
-                    print("16, 17 대출 반납 날짜 잘못됨")
+                    if verbose: print("16, 17 대출 반납 날짜 잘못됨")
                     return False
                 
                 # 17. 반납 예정일은 7일 후여야 함
                 if borrow_date + 7 != return_date:
-                    print("반납 예정일이 7일 후가 아님")
+                    if verbose: print("반납 예정일이 7일 후가 아님")
                     return False
             
                 # 18. 등록 날짜와 대출 날짜 비교
                 if reg_date > borrow_date:
-                    print("18 등록 날짜가 대출 날짜보다 미래임")
+                    if verbose: print("18 등록 날짜가 대출 날짜보다 미래임")
                     return False
             
             # 20. 등록 날짜와 출판 년도 검사
@@ -490,7 +490,7 @@ class BookData(object):
                     # ISBN이 같으면 제목(2) 저자(3) 출판사(4) 출판년도(5)가 같아야 함
                     for k in range(2, 6):
                         if sep_list[i][k].strip() != sep_list[j][k].strip():
-                            print(f"24 ISBN 같은데 데이터 다름 {i} and {j} - {k}")
+                            if verbose: print(f"24 ISBN 같은데 데이터 다름 {i} and {j} - {k}")
                             return False
         
         return True
