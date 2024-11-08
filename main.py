@@ -203,9 +203,9 @@ class BookRecord(object):
     
 
 class BookData(object):
-    def __init__(self, file_path, today: MyDate):
+    def __init__(self, file_path):
         self.file_path = file_path
-        self.today = today
+        self.today: MyDate = None
         # 파일 읽어서 book_data 리스트 생성 (임시)
         self.book_data = []
         # 파일 읽어서 가장 큰 ID 저장
@@ -213,6 +213,9 @@ class BookData(object):
         
         # constant
         self.MAX_STATIC_ID = 99
+
+    def set_today(self, today: MyDate):
+        self.today = today
 
     # 파일 읽기
     def read_data_file(self):
@@ -403,7 +406,7 @@ class BookData(object):
             return False
         
         sixth_elements = list(map(int, sixth_elements))
-        if not all(1583 <= x <= self.today.year for x in sixth_elements):
+        if not all(1583 <= x <= 9999 for x in sixth_elements):
             print("11 년도 범위 잘못됨")
             return False
         
