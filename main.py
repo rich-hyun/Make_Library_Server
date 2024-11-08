@@ -978,15 +978,26 @@ class BookData(object):
         
         return True, ""
 
+    @classmethod
     def check_date_validate(self, date_str):
+        date_pattern = pattern = r'^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$'
+        
         try:
-            # 날짜 형식이 유효한지 확인 (YYYY-MM-DD 형식으로 가정)
-            date = datetime.strptime(date_str, "%Y-%m-%d")
+            if not re.match(date_pattern, date_str):
+                raise ValueError
+            
+            year, month, day = map(int, date_str.split("-"))
+            
             # 연도가 1583 이상 9999 이하인지 확인
-            if not (1583 <= date.year <= 9999):
+            if not (1583 <= year <= 9999):
                 return False, "날짜는 1583년부터 9999년 사이여야 합니다."
+            
+            if not MyDate.validate_day(year, month, day):
+                raise ValueError, "올바르지 않은 날짜"
+            
             return True, ""
-        except ValueError:
+        
+        except:
             return False, "날짜 형식이 올바르지 않습니다. (예: YYYY-MM-DD)"
 
     def check_isbn_validate(self, isbn):
