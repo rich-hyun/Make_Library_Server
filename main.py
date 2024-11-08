@@ -143,7 +143,6 @@ class BookRecord(object):
 / {self.author} / {self.publisher} \
 / {self.published_year} / {str(self.register_date)}"
 
-
     def borrow_book(self, borrower_name: str, borrower_phone_number: str, current_date: MyDate) -> None:
         assert not self.is_borrowing, "이미 대출중인 도서입니다."
         
@@ -544,7 +543,7 @@ class BookData(object):
     # 6. 반납
     # 7. 종료
 
-    # 1. 추가
+    """ 1. 추가 """
     def add_book(self) -> bool:
         if bookData.isFull():
             print("더 이상 추가할 수 없습니다.")
@@ -614,7 +613,7 @@ class BookData(object):
         self.increase_static_id()
         print("성공적으로 책을 추가하였습니다.")
 
-    # 2. 삭제
+    """ 2. 삭제 """
     def delete_book(self):
         del_book_id = self.input_book_id("삭제할 책의 고유번호를 입력해주세요: ", 1)
 
@@ -653,7 +652,7 @@ class BookData(object):
             print("삭제를 취소하였습니다. 메인프롬프트로 돌아갑니다.")
             return False
 
-    # 3. 수정 (업데이트)
+    """ 3. 수정 (업데이트) """
     def update_book(self) -> bool:
         try:
             isbn = self.input_isbn("수정할 책의 ISBN을 입력해주세요: ")
@@ -737,7 +736,7 @@ class BookData(object):
             print(f"ERROR: 예상하지 못한 오류가 발생했습니다. {str(e)}")
             return False
     
-    # 4. 검색
+    """ 4. 검색 """
     def search_book(self):
         if not self.book_data:
             print("등록된 책이 존재하지 않습니다.")
@@ -782,7 +781,7 @@ class BookData(object):
         print()
         return True
 
-    # 5. 책 대출
+    """ 5. 책 대출 """
     def borrow_book(self):
 
         name = self.input_borrower_name()
@@ -871,7 +870,7 @@ class BookData(object):
     def count_borrowed_books(self, name, phone):
         return sum(1 for book in self.book_data if book.borrower_name == name and book.borrower_phone_number == phone)
     
-    # 6. 반납
+    """ 6. 책 반납 """
     def return_book(self) -> bool:
         try:
             rtn_book_id = self.input_book_id("반납할 책의 고유번호를 입력해주세요: ", 1)
@@ -920,12 +919,8 @@ class BookData(object):
         except Exception as e:
             print(f"ERROR: 예상하지 못한 오류가 발생했습니다. {str(e)}")
             return False
-    
 
-
-
-    # 검사 함수
-    
+    """ 검사 함수 """
     def check_book_id_validate(self, book_id, flag): # flag == 0 -> 있으면 False 없으면 True, flag == 1 -> 없으면 False 있으면 True
         if book_id == CANCEL:
             return True, ""
@@ -1123,9 +1118,7 @@ class BookData(object):
             print(book.to_str(today=self.today, contain_borrow=True))
         print("="*30)
 
-
-    # input 함수
-
+    """ input 함수 """
     def input_isbn(self, input_message: str) -> str:
         isbn = input(input_message).strip()
         is_valid, error_message = self.check_isbn_validate(isbn)
@@ -1204,8 +1197,8 @@ class BookData(object):
             print(f"ERROR: {error_message}")
             return None
 
-    
-    
+
+""" main prompt """
 def main_prompt(bookData) -> None:
     slc = 0
     
@@ -1253,7 +1246,8 @@ def main_prompt(bookData) -> None:
 
     print("프로그램을 종료합니다.")
 
-# 현재 날짜 입력
+
+""" 현재 날짜 입력 """
 def input_date(self):
     pattern = r'^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$'
     
@@ -1290,6 +1284,7 @@ def input_date(self):
             print(message, end="\n\n")
 
 
+""" main """
 if __name__ == "__main__":
     # CANCEL 상수
     CANCEL = "X"
