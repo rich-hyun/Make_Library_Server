@@ -979,54 +979,54 @@ class BookData(object):
             return True, ""
         return False, "전화번호는 010-XXXX-XXXX 형식이어야 합니다."
 
-    def check_record_validate(self, book):
+    def check_record_validate(self, book: BookRecord) -> tuple[bool, str]:
         # ISBN, 책 제목, 저자, 출판사, 출판년도, 등록 날짜 유효성 검사
-        is_valid, error_message = self.check_isbn_validate(book["ISBN"])
+        is_valid, error_message = self.check_isbn_validate(str(book.isbn))
         if not is_valid:
             return False, f"ISBN 에러: {error_message}"
         
-        is_valid, error_message = self.check_string_validate("제목", book["title"])
+        is_valid, error_message = self.check_string_validate("제목", book.title)
         if not is_valid:
             return False, f"제목 에러: {error_message}"
         
-        is_valid, error_message = self.check_string_validate("저자", book["author"])
+        is_valid, error_message = self.check_string_validate("저자", book.author)
         if not is_valid:
             return False, f"저자 에러: {error_message}"
         
-        is_valid, error_message = self.check_string_validate("출판사", book["publisher"])
+        is_valid, error_message = self.check_string_validate("출판사", book.publisher)
         if not is_valid:
             return False, f"출판사 에러: {error_message}"
         
-        is_valid, error_message = self.check_year_validate(book["year"])
+        is_valid, error_message = self.check_year_validate(str(book.published_year))
         if not is_valid:
             return False, f"출판년도 에러: {error_message}"
         
-        is_valid, error_message = self.check_date_validate(book["등록날짜"])
+        is_valid, error_message = self.check_date_validate(str(book.register_date))
         if not is_valid:
             return False, f"등록 날짜 에러: {error_message}"
 
-        # 대출 중인 경우 추가 유효성 검사
-        if book.get("대출자") and book.get("대출자 전화번호"):
-            # 대출자, 전화번호, 대출 날짜, 반납 예정일 검사
-            is_valid, error_message = self.check_string_validate("대출자", book["대출자"])
+         # 대출 중인 경우 대출자 이름, 대출자 전화번호, 대출 날짜, 반납 예정일에 대한 추가 유효성 검사
+        if book.is_borrowing:
+
+            is_valid, error_message = self.check_string_validate("대출자", book.borrower_name)
             if not is_valid:
                 return False, f"대출자 에러: {error_message}"
-            
-            is_valid, error_message = self.check_phone_number_validate(book["대출자 전화번호"])
+        
+            is_valid, error_message = self.check_phone_number_validate(book.borrower_phone_number)
             if not is_valid:
                 return False, f"전화번호 에러: {error_message}"
-            
-            is_valid, error_message = self.check_date_validate(book["대출날짜"])
+        
+            is_valid, error_message = self.check_date_validate(str(book.borrow_date))
             if not is_valid:
                 return False, f"대출 날짜 에러: {error_message}"
-            
-            is_valid, error_message = self.check_date_validate(book["반납 예정일"])
+        
+            is_valid, error_message = self.check_date_validate(str(book.return_date))
             if not is_valid:
                 return False, f"반납 예정일 에러: {error_message}"
         else:
             # 대출자 정보가 없는 경우 대출 관련 필드가 비어있는지 확인
-            if book.get("대출날짜") or book.get("반납 예정일") or book.get("대출자") or book.get("대출자 전화번호"):
-                return False, "대출 관련 정보가 일부 누락되었습니다."
+            if book.borrower_name or book.borrower_phone_number or book.borrow_date or book.return_date:
+                return False, "대출 중이 아닌 도서에 대출 정보가 있습니다."
 
         return True, ""
 
