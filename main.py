@@ -906,17 +906,29 @@ class BookData(object):
     # 검사 함수
     
     def check_book_id_validate(self, book_id, flag): # flag == 0 -> 있으면 False 없으면 True, flag == 1 -> 없으면 False 있으면 True
-        # 책 ID가 숫자로 구성되었는지 확인
         if book_id == CANCEL:
             return True, ""
 
-        if not book_id.isdigit():
-            return False, "책 ID는 숫자만 포함해야 합니다."
+        # 1. 입력값이 있는지 확인
+        if len(book_id) == 0:
+            return False, "1글자 이상 입력해주세요."
         
-        # 책 ID가 음수가 아니고, 99 이하인지 확인
-        book_id = int(book_id)
-        if book_id < 0 or book_id > self.MAX_STATIC_ID:
-            return False, f"책 ID는 0에서 { self.MAX_STATIC_ID } 사이여야 합니다."
+        # 2. 입력값이 공백으로만 구성되지 않았는지 확인
+        if book_id.isspace():
+            return False, "책의 고유번호는 공백일 수 없습니다."
+        
+        # 3. 고유번호에 허용되지 않는 특수문자가 포함되어 있는지 확인
+        if "/" in book_id or "\\" in book_id:
+            return False, "책의 고유번호에는 특수문자 \"/\" 또는 \"\\\"을 입력할 수 없습니다."
+        
+        # 4. 고유번호가 숫자로만 구성되어 있는지 확인
+        if not book_id.isdigit():
+            return False, "고유번호는 숫자여야 합니다."
+        
+        # 5. 고유번호가 0에서 99 사이인지 확인
+        book_id_int = int(book_id)
+        if book_id_int < 0 or book_id_int > self.MAX_STATIC_ID:
+            return False, "고유번호는 0에서 99 사이여야 합니다."
         
         if flag == 0 and self.search_id(book_id):
             return False, "중복된 고유번호가 존재합니다."
@@ -931,13 +943,14 @@ class BookData(object):
             return True, ""
         # 1. 문자열의 길이가 1 이상인지 확인
         if len(value) < 1:
-            return False, f"{field_name}는 1자 이상이어야 합니다."
+            return False, f"책의 {field_name}은 1글자 이상이어야 합니다."
         # 2. 문자열이 공백인지 확인
         if value.strip() == "":
-            return False, f"{field_name}는 공백만 포함할 수 없습니다."
+            return False, f"책의 {field_name}은 공백일 수 없습니다."
         # 3. 허용되지 않는 특수 기호가 포함되어 있는지 확인
         if '/' in value or '\\' in value:
-            return False, f"{field_name}에 '/' 또는 '\\' 특수 문자는 허용되지 않습니다."
+            return False, f"책의 {field_name}에 특수문자 \"/\" 또는 \"\\\"는 허용되지 않습니다."
+        
         return True, ""
 
     def check_year_validate(self, year):
@@ -945,12 +958,21 @@ class BookData(object):
             return True, ""
         # 1. 입력값이 숫자인지 확인
         if not year.isdigit():
-            return False, "출판 연도는 숫자여야 합니다."
+            return False, "책의 출판년도는 오로지 숫자로만 구성되어야 합니다."
+    
+        # 2. 출판년도는 4자리 숫자여야 함을 확인
+        if len(year) != 4:
+            return False, "책의 출판년도는 4자리 양의 정수여야 합니다."
+        
         year_int = int(year)
-        # 2. 범위 확인
-        current_year = today.year
-        if year_int < 1583 or year_int > current_year:
-            return False, f"출판 연도는 1583년부터 {current_year}년 사이여야 합니다."
+        current_year = today.year  # 현재 연도를 확인하는 변수
+
+        # 3. 출판년도 범위 확인
+        if year_int < 1583:
+            return False, "책의 출판년도는 1583년 이후인 4자리 양의 정수여야 합니다."
+        elif year_int > current_year:
+            return False, f"책의 출판년도는 현재연도({current_year}년)보다 미래일 수 없습니다."
+        
         return True, ""
 
     def check_date_validate(self, date_str):
@@ -967,9 +989,12 @@ class BookData(object):
     def check_isbn_validate(self, isbn):
         if isbn == CANCEL:
             return True, ""
+        # ISBN이 공백인지 확인
+        if not isbn.strip():  # 공백을 제거한 후 빈 문자열인지 확인
+            return False, "책의 ISBN은 공백일 수 없습니다."
         # ISBN이 두 자리 숫자(00~99)로 구성되어 있는지 확인
         if len(isbn) != 2 or not isbn.isdigit():
-            return False, "ISBN은 두 자리 숫자 (00 ~ 99)여야 합니다."
+            return False, "ISBN은 두 자리 숫자여야 합니다."
         return True, ""
 
     def check_phone_number_validate(self, phone_number):
