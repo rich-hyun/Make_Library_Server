@@ -2,6 +2,10 @@ import os
 import datetime
 import re
 
+""" GLOBAL CONSTANTS """
+CANCEL = "X"
+BORROW_DATE = 7
+
 class MyDate(object):
     def __init__(self, year, month, day):
         assert type(year) is int
@@ -464,7 +468,7 @@ class BookData(object):
                     return False
                 
                 # 17. 반납 예정일은 7일 후여야 함
-                if borrow_date + 7 != return_date:
+                if borrow_date + BORROW_DATE != return_date:
                     if verbose: print("반납 예정일이 7일 후가 아님")
                     return False
             
@@ -846,7 +850,7 @@ class BookData(object):
 
         if self.input_response("위 책을 대출할까요? (Y/N): "):
             borrow_date = self.today
-            due_date = self.today+7
+            due_date = self.today + BORROW_DATE
             book.is_borrowing = True
             book.borrower_name = name
             book.borrower_phone_number = phone
@@ -1286,9 +1290,6 @@ def input_date(self):
 
 """ main """
 if __name__ == "__main__":
-    # CANCEL 상수
-    CANCEL = "X"
-    
     bookData = BookData(file_path="./book_data_temp.txt")
     
     # 데이터 파일 읽기
