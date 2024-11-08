@@ -203,9 +203,9 @@ class BookRecord(object):
     
 
 class BookData(object):
-    def __init__(self, file_path, today: MyDate):
+    def __init__(self, file_path):
         self.file_path = file_path
-        self.today = today
+        self.today: MyDate = None
         # 파일 읽어서 book_data 리스트 생성 (임시)
         self.book_data = []
         # 파일 읽어서 가장 큰 ID 저장
@@ -213,6 +213,9 @@ class BookData(object):
         
         # constant
         self.MAX_STATIC_ID = 99
+
+    def set_today(self, today: MyDate):
+        self.today = today
 
     # 파일 읽기
     def read_data_file(self):
@@ -320,6 +323,13 @@ class BookData(object):
                 book_records.append(book_record)
                 
             self.book_data = book_records
+    
+    # 파일에 기반한 현재 날짜 검사
+    def check_today_by_data(self, today: MyDate) -> tuple[bool, str]:
+        
+        
+        
+        return (True, None)
     
     # 파일 무결성 검사
     def check_data_file(self):
@@ -1264,27 +1274,47 @@ def last_bookdate(self):
         latest_book.borrow_date if latest_book.borrow_date else latest_book.reg_date
     )
 
-def get_today_temp() -> MyDate:
-    print("현재 함수는 임시 구현이므로 예외 처리 없음.")
-    try:
-        year = int(input("year: "))
-        month = int(input("month: "))
-        day = int(input("day: "))
-    except Exception as e:
-        print(e)
-        return None
+def get_today_temp(bookData: BookData) -> MyDate:
+    pattern = r'^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$'
     
-    return MyDate(year, month, day)
+    while True:
+        date_str = input("현재 날짜를 YYYY-MM-DD 형식으로 입력해주세요: ")
+    
+        # 문법 검사
+        if not re.match(pattern, date_str):
+            print("잘못된 형식입니다. 아래 형식을 참고하여 다시 입력해주세요.\n[네 자리 숫자][-][두 자리 숫자][-][두 자리 숫자]", end="\n\n")
+            continue
+            
+        try:
+            year, month, day = date_str.split("-")
+        except:
+            print("잘못된 형식입니다. 아래 형식을 참고하여 다시 입력해주세요.\n[네 자리 숫자][-][두 자리 숫자][-][두 자리 숫자]", end="\n\n")
+            continue
+            
+        # 날짜 유효성 검사
+        if not MyDate.validate_day(year, month, day):
+            print("올바르지 않은 날짜입니다. 다시 입력해주세요.", end="\n\n")
+        
+        # 연도가 1513보다 작은지 검사
+        if year < 1513:
+            print("연도는 1583년 부터 가능합니다.", end="\n\n")
+            
+        today = MyDate(year, month, day)    
+        
+        # 데이터 무결성 검사
+        is_validate, message = bookData.check_date_validate(today)
+        
+        if is_validate:
+            return today
+        else:
+            print(message, end="\n\n")
 
 
 if __name__ == "__main__":
     # CANCEL 상수
     CANCEL = "X"
-
-    # 현재 날짜 입력
-    today = get_today_temp()
     
-    bookData = BookData(file_path="./book_data_temp.txt", today=today)
+    bookData = BookData(file_path="./book_data_temp.txt")
     
     # 데이터 파일 읽기
     bookData.read_data_file()
@@ -1292,6 +1322,10 @@ if __name__ == "__main__":
     # 데이터 파일 무결성 검사 (구현 전)
     # 파일 오류나도 알아서 처리, 성공 여부 알 필요 X
     bookData.check_data_file()
+    
+    # 현재 날짜 입력
+    today = get_today_temp(bookData)
+    bookData.set_today(today)
     
     bookData.print_book_debug()
     
