@@ -711,7 +711,7 @@ class BookData(object):
             print(BookRecord.get_header(contain_borrow_info=False))
             print()
             for book in books:
-                print(book.to_str(today=self.today))
+                print(book.to_str(today=self.today, contain_borrow=False))
 
             # 새로운 정보 입력
             new_title = self.input_bookName("책의 수정될 제목을 입력해주세요: ")
