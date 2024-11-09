@@ -1231,8 +1231,8 @@ class BookData(object):
     def input_book_id(self, input_message: str, flag: int) -> int: # flag == 0 -> 중복되면 False, flag == 1 -> 중복되어도 True
         book_id = input(input_message)
         
-        if book_id == CANCEL:
-            print("작업을 취소하고 메인 프롬프트로 돌아갑니다.")
+        if book_id.strip() == CANCEL:
+            print("작업을 취소합니다. 메인 프롬프트로 돌아갑니다.")
             return None
     
         if not book_id:  # 입력값이 비어있는 경우
