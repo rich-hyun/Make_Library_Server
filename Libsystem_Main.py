@@ -1200,7 +1200,7 @@ class BookData(object):
             return None
 
     def input_publisher(self, input_message: str) -> str:
-        publisher = input(input_message).strip()
+        publisher = input(input_message)
 
         if not publisher:  # 입력값이 비어있는 경우
             print("ERROR: 책의 출판사는 1글자 이상이어야 합니다.")
@@ -1259,7 +1259,18 @@ class BookData(object):
         return False
     
     def input_borrower_name(self) -> str:
-        borrower_name = input("대출자 이름을 입력해주세요: ").strip()
+        borrower_name = input("대출자 이름을 입력해주세요: ")
+
+        if not borrower_name:  # 입력값이 비어있는 경우
+            print("ERROR: 책의 대출자 이름은 1글자 이상이어야 합니다.")
+            return None
+        
+        borrower_name = borrower_name.strip()  # 앞뒤 공백 제거
+        
+        if not borrower_name:  # 공백을 제거한 후 비어있는 경우
+            print("ERROR: 책의 대출자 이름은 공백일 수 없습니다.")
+            return None
+        
         is_valid, error_message = self.check_string_validate("대출자 이름", borrower_name)
         if is_valid:
             return borrower_name
