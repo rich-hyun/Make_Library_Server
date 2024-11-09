@@ -1056,6 +1056,8 @@ class BookData(object):
         return True, ""
 
     def check_phone_number_validate(self, phone_number):
+        if phone_number == CANCEL:
+            return True, ""
         # 정규표현식으로 010-XXXX-XXXX 형식 확인
         pattern = r'^010-\d{4}-\d{4}$'
         if re.fullmatch(pattern, phone_number):
@@ -1158,7 +1160,18 @@ class BookData(object):
             return None
 
     def input_bookName(self, input_message: str) -> str:
-        title = input(input_message).strip()
+        title = input(input_message)
+
+        if not title:  # 입력값이 비어있는 경우
+            print("ERROR: 책의 제목은 1글자 이상이어야 합니다.")
+            return None
+        
+        title = title.strip()
+
+        if not title:  # 공백을 제거한 후 비어있는 경우
+            print("ERROR: 책의 제목은 공백일 수 없습니다.")
+            return None
+        
         is_valid, error_message = self.check_string_validate("제목", title)
         if is_valid:
             return title
@@ -1167,7 +1180,18 @@ class BookData(object):
             return None
 
     def input_author(self, input_message: str) -> str:
-        author = input(input_message).strip()
+        author = input(input_message)
+    
+        if not author:  # 입력값이 비어있는 경우
+            print("ERROR: 책의 저자는 1글자 이상이어야 합니다.")
+            return None
+        
+        author = author.strip()  # 앞뒤 공백 제거
+        
+        if not author:  # 공백을 제거한 후 비어있는 경우
+            print("ERROR: 책의 저자는 공백일 수 없습니다.")
+            return None
+        
         is_valid, error_message = self.check_string_validate("저자", author)
         if is_valid:
             return author
@@ -1177,6 +1201,17 @@ class BookData(object):
 
     def input_publisher(self, input_message: str) -> str:
         publisher = input(input_message).strip()
+
+        if not publisher:  # 입력값이 비어있는 경우
+            print("ERROR: 책의 출판사는 1글자 이상이어야 합니다.")
+            return None
+        
+        publisher = publisher.strip()  # 앞뒤 공백 제거
+        
+        if not publisher:  # 공백을 제거한 후 비어있는 경우
+            print("ERROR: 책의 출판사는 공백일 수 없습니다.")
+            return None
+        
         is_valid, error_message = self.check_string_validate("출판사", publisher)
         if is_valid:
             return publisher
@@ -1194,7 +1229,22 @@ class BookData(object):
             return None
 
     def input_book_id(self, input_message: str, flag: int) -> int: # flag == 0 -> 중복되면 False, flag == 1 -> 중복되어도 True
-        book_id = input(input_message).strip()
+        book_id = input(input_message)
+        
+        if book_id == CANCEL:
+            print("작업을 취소하고 메인 프롬프트로 돌아갑니다.")
+            return None
+    
+        if not book_id:  # 입력값이 비어있는 경우
+            print("ERROR: 책의 고유번호는 1글자 이상이어야 합니다.")
+            return None
+        
+        book_id = book_id.strip()  # 앞뒤 공백 제거
+    
+        if not book_id:  # 공백을 제거한 후 비어있는 경우
+            print("ERROR: 책의 고유번호는 공백일 수 없습니다.")
+            return None
+
         is_valid, error_message = self.check_book_id_validate(book_id, flag)
         if is_valid:
             return int(book_id)
