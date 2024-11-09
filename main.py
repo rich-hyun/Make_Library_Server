@@ -12,7 +12,7 @@ class MyDate(object):
         assert type(month) is int
         assert type(day) is int
 
-        assert 1852 < year, "년도는 1852보다 큰 정수여야 합니다."
+        assert 1582 < year, "년도는 1582보다 큰 정수여야 합니다."
         assert 1 <= month <= 12, "월은 1과 12사이의 정수여야 합니다."
         assert self.validate_day(year, month, day), "년도와 월에 대해 일이 올바른 범위를 벗어났습니다."
         
@@ -28,7 +28,7 @@ class MyDate(object):
         try:
             year, month, day = map(int, text.split("-"))
             
-            assert 1852 < year, "년도는 1852보다 큰 정수여야 합니다."
+            assert 1582 < year, "년도는 1582보다 큰 정수여야 합니다."
             assert 1 <= month <= 12, "월은 1과 12사이의 정수여야 합니다."
             assert self.validate_day(year, month, day), "년도와 월에 대해 일이 올바른 범위를 벗어났습니다."
             
@@ -1272,10 +1272,12 @@ def input_date(self):
         # 날짜 유효성 검사
         if not MyDate.validate_day(year, month, day):
             print("올바르지 않은 날짜입니다. 다시 입력해주세요.", end="\n\n")
+            continue
         
         # 연도가 1513보다 작은지 검사
-        if year < 1513:
+        if year < 1583:
             print("연도는 1583년 부터 가능합니다.", end="\n\n")
+            continue
             
         today = MyDate(year, month, day)    
         
