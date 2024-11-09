@@ -1203,7 +1203,7 @@ class BookData(object):
             return None
 
     def input_response(self, input_message: str) -> bool:
-        response = input(input_message).strip()
+        response = input(input_message) #.strip()
         if response == 'Y':
             return True
         return False
