@@ -1280,7 +1280,7 @@ def main_prompt(bookData) -> None:
 
 
 """ 현재 날짜 입력 """
-def input_date(self):
+def input_date(bookData: BookData):
     pattern = r'^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$'
     
     while True:
