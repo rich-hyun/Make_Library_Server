@@ -356,7 +356,7 @@ class BookData(object):
     def check_today_by_data(self, today: MyDate) -> tuple[bool, str]:
         for record in self.book_data:
             # 1. 등록일과 비교
-            if record.borrow_date > today:
+            if record.register_date > today:
                 return (False, "가장 최근에 저장된 책의 등록날짜 또는 대출날짜보다 과거의 날짜입니다.")
                 
             # 2. 출판년도는 현재 날짜보다 미래일 수 없음 (무결성검사에서 검사해서 여기서 오류나면 안됨)
