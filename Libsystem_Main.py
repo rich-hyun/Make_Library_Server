@@ -1375,7 +1375,8 @@ if __name__ == "__main__":
     # 현재 날짜 입력
     today = input_date(bookData)
     bookData.set_today(today)
-    
-    bookData.print_book_debug()
+
+    # 디버깅용 함수 주석 처리
+    # bookData.print_book_debug()
     
     main_prompt(bookData=bookData)
