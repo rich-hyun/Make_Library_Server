@@ -402,7 +402,7 @@ class BookData(object):
         
         # 8. 고유번호 중복 검사
         if len(first_elements) > len(set(first_elements)):
-            print("8 고유번호 중복")
+            if verbose: print("8 고유번호 중복")
             return False
         
         # 9. ISBN 검사
