@@ -1320,7 +1320,7 @@ def input_date(bookData: BookData):
 
 """ main """
 if __name__ == "__main__":
-    bookData = BookData(file_path="./book_data_temp.txt")
+    bookData = BookData(file_path="./Libsystem_data.txt")
     
     # 데이터 파일 읽기
     bookData.read_data_file()
