@@ -649,7 +649,7 @@ class BookData(object):
     def delete_book(self):
         del_book_id = self.input_book_id("삭제할 책의 고유번호를 입력해주세요: ", 1)
 
-        if not del_book_id:
+        if (del_book_id==None):
             return False
         
         if del_book_id == CANCEL:
@@ -857,7 +857,7 @@ class BookData(object):
 
         book_id = self.input_book_id("대출할 책의 고유번호를 입력해주세요: ", 1)
         
-        if not book_id:
+        if (book_id==None):
             return False
         
         if book_id == CANCEL:
@@ -907,7 +907,7 @@ class BookData(object):
         try:
             rtn_book_id = self.input_book_id("반납할 책의 고유번호를 입력해주세요: ", 1)
 
-            if not rtn_book_id:
+            if (rtn_book_id==None):
                 return False  # 입력 실패 시 반환
 
             if rtn_book_id == CANCEL:
@@ -1280,7 +1280,7 @@ def main_prompt(bookData) -> None:
 
 
 """ 현재 날짜 입력 """
-def input_date(self):
+def input_date(bookData: BookData):
     pattern = r'^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$'
     
     while True:
@@ -1320,7 +1320,7 @@ def input_date(self):
 
 """ main """
 if __name__ == "__main__":
-    bookData = BookData(file_path="./book_data_temp.txt")
+    bookData = BookData(file_path="./Libsystem_data.txt")
     
     # 데이터 파일 읽기
     bookData.read_data_file()
