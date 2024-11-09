@@ -759,7 +759,7 @@ class BookData(object):
         is_valid, error_message = self.check_string_validate("제목 또는 저자", search_book)
         if not is_valid:
             print(f"ERROR: {error_message}")
-            return None
+            return False
         
         bookData.search_content_book(search_book)
 
@@ -775,7 +775,7 @@ class BookData(object):
                 self.search_book()
             else:
                 print("검색을 중단하며 메인 프롬프트로 돌아갑니다.")
-                return True
+                return False
         
 
         print(BookRecord.get_header())
