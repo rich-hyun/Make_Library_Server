@@ -2,6 +2,8 @@ import os
 import datetime
 import re
 
+opj = os.path.join
+
 """ GLOBAL CONSTANTS """
 CANCEL = "X"
 BORROW_DATE = 7
@@ -1386,9 +1388,24 @@ def input_date(bookData: BookData):
             print(message, end="\n\n")
 
 
+""" Windows 기준 사용자의 Home 경로 가져오는 함수 """
+def get_user_home_path() -> str:
+    home_path = os.path.expanduser("~")
+    return home_path
+
+
 """ main """
 if __name__ == "__main__":
-    bookData = BookData(file_path="./Libsystem_data.txt")
+    try:
+        dir_path = get_user_home_path()
+        
+        if dir_path is None or len(dir_path) == 0:
+            raise ValueError 
+        
+    except:
+        dir_path = "./"
+    
+    bookData = BookData(file_path=opj(dir_path, "Libsystem_data.txt"))
     
     # 데이터 파일 읽기
     bookData.read_data_file()
