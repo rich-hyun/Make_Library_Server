@@ -555,7 +555,14 @@ class BookData(object):
         matching_books = [book for book in self.book_data if book.isbn == isbn]
         return matching_books
     
-    def search_id(self, book_id: int):
+    def search_id(self, book_id):
+        if book_id == CANCEL:
+            return None
+        if isinstance(book_id, str):
+            if book_id.isdigit():
+                book_id = int(book_id)
+            else:
+                return None
         matching_book = next((book for book in self.book_data if book.book_id == book_id), None)
         return matching_book
 
@@ -1236,8 +1243,7 @@ class BookData(object):
         book_id = input(input_message)
         
         if book_id.strip() == CANCEL:
-            print("작업을 취소합니다. 메인 프롬프트로 돌아갑니다.")
-            return None
+            return CANCEL
     
         if not book_id:  # 입력값이 비어있는 경우
             print("ERROR: 책의 고유번호는 1글자 이상이어야 합니다.")
