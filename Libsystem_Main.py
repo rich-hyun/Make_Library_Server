@@ -609,7 +609,7 @@ class BookData(object):
                     
                 book_info.append(info)
         else:
-            print(f"ISBN이 {isbn}인 책 데이터가 {len(books)}권 있습니다.")
+            print(f"ISBN이 {isbn}인 책이 이미 {len(books)}권이 있습니다.")
             book_info = str(books[0]).split(" / ")
             book_info = book_info[2:6]
 
@@ -701,7 +701,7 @@ class BookData(object):
                 print("ERROR: 해당 ISBN을 가진 책이 존재하지 않습니다.")
                 return False
             else:
-                print(f"ISBN이 {isbn}인 책이 이미 {len(books)}권이 있습니다.")
+                print(f"ISBN이 {isbn}인 책 데이터가 {len(books)}권 있습니다.")
                 print()
 
             # 기존 책 정보 출력
