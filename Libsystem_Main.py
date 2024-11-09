@@ -869,7 +869,7 @@ class BookData(object):
             return False
         
         if book_id == CANCEL:
-            print("대출을 중단하며 메인 프롬프트로 돌아갑니다.")
+            print("대출이 취소되었습니다. 메인 프롬프트로 돌아갑니다.")
             return False
 
         book_id = int(book_id)
@@ -919,7 +919,7 @@ class BookData(object):
                 return False  # 입력 실패 시 반환
 
             if rtn_book_id == CANCEL:
-                print("반납을 중단하며 메인 프롬프트로 돌아갑니다.")
+                print("반납을 취소했습니다. 메인 프롬프트로 돌아갑니다.")
                 return False
 
             rtn_book_id = int(rtn_book_id)
