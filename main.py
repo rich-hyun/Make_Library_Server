@@ -911,7 +911,7 @@ class BookData(object):
                 return False  # 입력 실패 시 반환
 
             if rtn_book_id == CANCEL:
-                print("수정을 중단하며 메인 프롬프트로 돌아갑니다.")
+                print("반납을 중단하며 메인 프롬프트로 돌아갑니다.")
                 return False
 
             rtn_book_id = int(rtn_book_id)
@@ -978,10 +978,10 @@ class BookData(object):
         if book_id_int < 0 or book_id_int > self.MAX_STATIC_ID:
             return False, "고유번호는 0에서 99 사이여야 합니다."
         
-        if flag == 0 and self.search_id(book_id):
+        if flag == 0 and self.search_id(book_id_int):
             return False, "중복된 고유번호가 존재합니다."
         
-        if flag == 1 and self.search_id(book_id) is None:
+        if flag == 1 and self.search_id(book_id_int) is None:
             return False, "해당 고유번호를 가진 책이 존재하지 않습니다."
         
         return True, ""
@@ -1196,11 +1196,11 @@ class BookData(object):
             print(f"ERROR: {error_message}")
             return None
 
-    def input_book_id(self, input_message: str, flag: int) -> str: # flag == 0 -> 중복되면 False, flag == 1 -> 중복되어도 True
+    def input_book_id(self, input_message: str, flag: int) -> int: # flag == 0 -> 중복되면 False, flag == 1 -> 중복되어도 True
         book_id = input(input_message).strip()
         is_valid, error_message = self.check_book_id_validate(book_id, flag)
         if is_valid:
-            return book_id
+            return int(book_id)
         else:
             print(f"ERROR: {error_message}")
             return None
