@@ -229,9 +229,8 @@ class BookData(object):
         # 1. 경로에 데이터 파일 존재 여부 확인        
         if not os.path.isfile(self.file_path):
             # 1-1 파일이 존재하지 않는 경우 빈 파일 생성
-            with open(self.file_path, "w", encoding="utf-8", newline="\r\n") as f:
-                # 1-2. 파일에 0 기입,
-                f.write("0")
+            with open(self.file_path, "wb") as f:
+                f.write(b"0\r\n")
             
             # 1-2. 최대 고유번호 0 설정
             self.book_data = []
@@ -245,9 +244,8 @@ class BookData(object):
         # 2. 파일이 비어있는지 검사
         if os.stat(self.file_path).st_size == 0:
             # 2-1. 빈 파일 생성
-            with open(self.file_path, "w", encoding="utf-8", newline="\r\n") as f:
-                # 2-2 파일에 0 기입,
-                f.write("0")
+            with open(self.file_path, "wb") as f:
+                f.write(b"0\r\n")
                 
             # 1-2. 최대 고유번호 0 설정
             self.book_data = []
@@ -273,9 +271,8 @@ class BookData(object):
         
         if not crlf_flag:
             # 3-1. 빈 파일 생성
-            with open(self.file_path, "w", encoding="utf-8", newline="\r\n") as f:
-                # 3-2 파일에 0 기입,
-                f.write("0")
+            with open(self.file_path, "wb") as f:
+                f.write(b"0\r\n")
                 
             # 3-2. 최대 고유번호 0 설정
             self.book_data = []
@@ -307,8 +304,8 @@ class BookData(object):
             # os.rename(self.file_path, new_file_name)
             
             # 4-3. 새 파일 생성, 0 기입
-            with open(self.file_path, "w", encoding="utf-8", newline="\r\n") as f:
-                f.write("0")
+            with open(self.file_path, "wb") as f:
+                f.write(b"0\r\n")
             
             self.book_data = []
             self.static_id = 0
