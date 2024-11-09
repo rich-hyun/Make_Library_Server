@@ -258,16 +258,44 @@ class BookData(object):
             # 2-3. 종료
             return
         
-        # 3. 무결성 검사 실행
+        # 3. CRLF인지 확인
+        with open(self.file_path, "rb") as f:
+            content = f.read()
+            
+            crlf_flag = False
+            
+            if b"\r\n" in content:
+                # print("CRLF")
+                crlf_flag = True
+            else:
+                # print("NO CRLF")
+                pass
+        
+        if not crlf_flag:
+            # 3-1. 빈 파일 생성
+            with open(self.file_path, "w", encoding="utf-8") as f:
+                # 3-2 파일에 0 기입,
+                f.write("0")
+                
+            # 3-2. 최대 고유번호 0 설정
+            self.book_data = []
+            self.static_id = 0
+            
+            # print("3. 파일이 CRLF가 아니므로 삭제 후 생성")
+            
+            # 3-3. 종료
+            return
+        
+        # 4. 무결성 검사 실행
         checked = self.check_data_file()
         
-        # 3-1. 무결성 확인되면 계속 진행
+        # 4-1. 무결성 확인되면 계속 진행
         if checked:
             pass
         
-        # 3-2. 무결성 깨지면 기존 파일을 삭제
+        # 4-2. 무결성 깨지면 기존 파일을 삭제
         else:
-            # 3-2. 기존 파일 삭제
+            # 4-2. 기존 파일 삭제
             os.remove(self.file_path)
 
             # 추후 백업 기능
@@ -278,18 +306,18 @@ class BookData(object):
             # 파일명 변경
             # os.rename(self.file_path, new_file_name)
             
-            # 3-3. 새 파일 생성, 0 기입
+            # 4-3. 새 파일 생성, 0 기입
             with open(self.file_path, "w", encoding="utf-8") as f:
                 f.write("0")
             
             self.book_data = []
             self.static_id = 0
             
-            # print("3. 무결성이 깨져서 기존 파일 삭제")
+            # print("4. 무결성이 깨져서 기존 파일 삭제")
             
             return   
         
-        # print("4. 무결성 검사 완료, 파일 읽기 시작")
+        # print("5. 무결성 검사 완료, 파일 읽기 시작")
         
         # 파일 읽기 시작 (무결성 검증 이후)
         book_records = []
