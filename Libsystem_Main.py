@@ -818,7 +818,7 @@ class BookData(object):
             return False
 
         if name == CANCEL:
-            print("대출을 중단하며 메인 프롬프트로 돌아갑니다.")
+            print("대출이 취소되었습니다. 메인 프롬프트로 돌아갑니다.")
             return False
         
         phone = self.input_phone_number()
@@ -826,7 +826,7 @@ class BookData(object):
             return False
 
         if phone == CANCEL:
-            print("대출을 중단하며 메인 프롬프트로 돌아갑니다.")
+            print("대출이 취소되었습니다. 메인 프롬프트로 돌아갑니다.")
             return False
         
         overdue_books = self.check_overdue_books(name, phone)
