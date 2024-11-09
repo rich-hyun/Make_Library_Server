@@ -1402,9 +1402,12 @@ if __name__ == "__main__":
         if dir_path is None or len(dir_path) == 0:
             raise ValueError 
         
-    except:
+    except Exception as e:
+        # print(e)
+        # print("[DEBUG] HOME 경로를 찾을 수 없어 현재 경로로 지정")
         dir_path = "./"
     
+    # print("[DEBUG] HOME 경로:", dir_path)
     bookData = BookData(file_path=opj(dir_path, "Libsystem_data.txt"))
     
     # 데이터 파일 읽기
