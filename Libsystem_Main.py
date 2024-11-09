@@ -143,7 +143,8 @@ class BookRecord(object):
         self.is_borrowing: bool = borrower_name is not None
         
     def __str__(self) -> str:
-        return f"{self.book_id} / {self.isbn} / {self.title} \
+        isbn_str = str(self.isbn).zfill(2)
+        return f"{self.book_id} / {isbn_str} / {self.title} \
 / {self.author} / {self.publisher} \
 / {self.published_year} / {str(self.register_date)}"
 
@@ -170,7 +171,9 @@ class BookRecord(object):
         Args:
             contain_borrow (bool, optional): Whether to include loan/return information when converting strings. Defaults to True.
         """
-        return f"{self.book_id} / {self.isbn} \
+        isbn_str = str(self.isbn).zfill(2)
+        
+        return f"{self.book_id} / {isbn_str} \
 / {self.title} / {self.author} \
 / {self.publisher} / {self.published_year} \
 / {str(self.register_date)}" \
@@ -179,7 +182,8 @@ class BookRecord(object):
 + (" *" if self.return_date < today else "")
 
     def to_record_str(self) -> str:
-        return f"{self.book_id}/{self.isbn}\
+        isbn_str = str(self.isbn).zfill(2)
+        return f"{self.book_id}/{isbn_str}\
 /{self.title}/{self.author}\
 /{self.publisher}/{self.published_year}\
 /{str(self.register_date)}" \
