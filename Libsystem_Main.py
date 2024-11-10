@@ -1135,21 +1135,26 @@ class BookData(object):
         return False
 
     def save_data_to_file(self) -> None:
-        """파일에 현재 book_data 리스트를 저장합니다."""
+        """파일에 현재 book_data 리스트를 CRLF 형식으로 저장합니다."""
         try:
-            with open(self.file_path, "w", encoding="utf-8") as f:
-                # 첫 줄에 static_id 저장
-                f.write(f"{self.static_id}\n")
+            with open(self.file_path, "wb") as f:
+                # 첫 줄에 static_id 저장 (CRLF 포함)
+                f.write(f"{self.static_id}\r\n".encode("utf-8"))
 
                 # 각 BookRecord 객체를 파일에 저장
                 for book in self.book_data:
-                    f.write(f"{book.book_id}/{book.isbn}/{book.title}/{book.author}/{book.publisher}/"
-                            f"{book.published_year}/{str(book.register_date)}/"
-                            f"{book.borrower_name if book.borrower_name else ''}/"
-                            f"{book.borrower_phone_number if book.borrower_phone_number else ''}/"
-                            f"{str(book.borrow_date) if book.borrow_date else ''}/"
-                            f"{str(book.return_date) if book.return_date else ''}\n")
-            print("데이터가 파일에 성공적으로 저장되었습니다.")
+                    isbn_str = str(book.isbn).zfill(2)
+                    line = (
+                        f"{book.book_id}/{isbn_str}/{book.title}/{book.author}/{book.publisher}/"
+                        f"{book.published_year}/{str(book.register_date)}/"
+                        f"{book.borrower_name if book.borrower_name else ''}/"
+                        f"{book.borrower_phone_number if book.borrower_phone_number else ''}/"
+                        f"{str(book.borrow_date) if book.borrow_date else ''}/"
+                        f"{str(book.return_date) if book.return_date else ''}\r\n"
+                    )
+                    f.write(line.encode("utf-8"))
+                    
+            print("데이터가 파일에 CRLF 형식으로 성공적으로 저장되었습니다.")
         except Exception as e:
             print(f"ERROR: 데이터를 파일에 저장하는 중 오류가 발생했습니다. {str(e)}")
     
