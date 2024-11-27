@@ -973,11 +973,11 @@ class BookData(object):
 
             if user_input == CANCEL:
                 print("설정을 취소하였습니다. 메인 프롬프트로 돌아갑니다.")
-                return
+                return False
 
             if user_input == "1":
                 self.change_return_period()
-                return
+                return True
 
 
     def change_return_period(self):
@@ -987,11 +987,11 @@ class BookData(object):
 
             if new_period == CANCEL:
                 print("설정을 취소하였습니다. 메인 프롬프트로 돌아갑니다.")
-                return
+                return False
 
             if new_period is not None:
                 self.confirm_return_period_change(new_period)
-                return
+                return True
 
 
     def confirm_return_period_change(self, new_period):
@@ -1000,9 +1000,10 @@ class BookData(object):
             global BORROW_DATE
             BORROW_DATE = new_period
             print("변경이 완료되었습니다. 메인 프롬프트로 돌아갑니다.")
+            return True
         else:
             print("변경을 취소하였습니다. 메인 프롬프트로 돌아갑니다.")
-        
+            return False
 
 
     """ 검사 함수 """
