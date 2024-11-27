@@ -1,0 +1,14 @@
+{
+    "configuration": [
+        {
+            "constant_name": "borrow_date",
+            "value_type": "int",
+            "value": 7
+        },
+        {
+            "constant_name": "cancel",
+            "value_type": "str",
+            "value": "X"
+        }
+    ]
+}
