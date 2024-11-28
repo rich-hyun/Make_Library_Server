@@ -345,17 +345,16 @@ class DataManager(object):
                 break
             
         # find author isbn relationship
-        author_isbn_data = None
+        author_isbn_data = []
         for isbn_author in self.isbn_author_table:
             if isbn_author.isbn == isbn_data.isbn:
-                author_isbn_data = isbn_author
-                break
+                author_isbn_data.append(isbn_author)
         
-        author_data = None
+        author_data = []
         for author in self.author_table:
-            if author.author_id == author_isbn_data.author_id:
-                author_data = author
-                break
+            for author_isbn in author_isbn_data:
+                if author.author_id == author_isbn.author_id:
+                    author_data.append(author)
             
         # find publisher
         publisher_data = None
@@ -383,7 +382,7 @@ class DataManager(object):
         return_str = f"{book_data.book_id}/"
         return_str += str(isbn_data.isbn).zfill(2) + "/"
         return_str += f"{isbn_data.title}/"
-        return_str += f"{author_data.name}/"
+        return_str += f"{" & ".join(list(map(lambda x:f"{x.name} #{x.author_id}", author_data)))}/"
         return_str += f"{publisher_data.name}/"
         return_str += f"{isbn_data.published_year}/"
         return_str += str(book_data.register_date)
