@@ -502,13 +502,13 @@ class DataManager(object):
         
         # 5. 고유번호가 0에서 99 사이인지 확인
         book_id_int = int(book_id)
-        if book_id_int < 0 or book_id_int > self.MAX_STATIC_ID:
-            return False, "고유번호는 0에서 99 사이여야 합니다."
+        if book_id_int < 0 or book_id_int > self.config['max_static_id']:
+            return False, f"고유번호는 0에서 {config['max_static_id']} 사이여야 합니다."
         
-        if flag == 0 and self.search_id(book_id_int):
+        if flag == 0 and self.search_book_by_id(book_id_int):
             return False, "중복된 고유번호가 존재합니다."
         
-        if flag == 1 and self.search_id(book_id_int) is None:
+        if flag == 1 and self.search_book_by_id(book_id_int) is None:
             return False, "해당 고유번호를 가진 책이 존재하지 않습니다."
         
         return True, ""
@@ -651,6 +651,74 @@ class DataManager(object):
                 return True
         return False
 
+    # ========== 검색 함수 ========== #
+    # 고유번호로 검색
+    def search_book_by_id(self, book_id):
+        books = []
+        for book in self.book_table:
+            if book.book_id == book_id:
+                books.append(book)
+                
+        return books
+    
+    # isbn 정보 검색 (제목, 저자, 출판사 등)
+    def search_isbn_data(self, isbn):
+        for i in self.isbn_table:
+            if i.isbn == isbn:
+                return i
+            
+        return None
+    
+    # Book 테이블 내 isbn을 갖는 모든 책 검색
+    def search_book_by_isbn(self, isbn):
+        books = []
+        for book in self.book_table:
+            if book.isbn == isbn:
+                books.append(book)
+                
+        return books
+    
+    # Author ID로 검색
+    def search_author_by_id(self, author_id):
+        if author_id < 1:
+            return None
+        
+        for author in self.author_table:
+            if author.author_id == author_id:
+                return author
+            
+        return None
+    
+    # Publisher ID로 검색
+    def search_publisher_by_id(self, publisher_id):
+        if publisher_id < 0:
+            return None
+        
+        for publisher in self.publisher_table:
+            if publisher.publisher_id == publisher_id:
+                return publisher
+            
+        return None
+    
+    # 저자가 작성한 책 ISBN 검색
+    def search_isbn_by_author_id(self, author_id):
+        isbns = []
+        for isbn_author in self.isbn_author_table:
+            if isbn_author.author_id == author_id:
+                isbns.append(isbn_author.isbn)
+                
+        return isbns
+    
+    # ISBN의 저자 모두 검색
+    def search_author_by_isbn(self, isbn):
+        author_ids = []
+        for isbn_author in self.isbn_author_table:
+            if isbn_author.isbn == isbn:
+                author_ids.append(isbn_author.author_id)
+                
+        return author_ids
+
+    
     # ========== 1. 추가 ========== #
     def add_book(self):
         pass
