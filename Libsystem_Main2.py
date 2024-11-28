@@ -198,67 +198,91 @@ class DataManager(object):
         self.publisher_table = []
         self.today = None
         self.config = dict()
+        self.static_id = -1
     
     # 오늘 날짜 설정
     def set_today(self, today: MyDate):
         self.today = today
         
     # 데이터 파일 읽기
-    def read_data_files(self):
+    def read_data_files(self, sep: str="/", verbose=True):
+        
+        if verbose: print("="*10, "Start Reading Data Files", "="*10)
+        
         # 1. Book Data
         with open(opj(self.file_path, "data", "Libsystem_Data_Book.txt"), "r") as f:
             lines = f.readlines()
             
-            max_book_id = int(lines[0])
+            self.static_id = int(lines[0])
             
             for line in lines[1:]:
-                book_id, isbn, register_date, deleted, delete_date = line.strip().split("/")
+                book_id, isbn, register_date, deleted, delete_date = line.strip().split(sep)
                 self.book_table.append(BookRecord(int(book_id), int(isbn), MyDate.from_str(register_date), MyDate.from_str(delete_date), bool(int(deleted))))
+          
+        if verbose:      
+            print(f"{len(self.book_table)} Book Data Loaded")
+            print(f"max_book_id: {self.static_id}")
                 
         # 2. ISBN Data
         with open(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt"), "r") as f:
             for line in f:
-                isbn, title, publisher_id, published_year, isbn_register_date = line.strip().split("/")
+                isbn, title, publisher_id, published_year, isbn_register_date = line.strip().split(sep)
                 self.isbn_table.append(ISBNRecord(int(isbn), title, int(publisher_id), int(published_year), MyDate.from_str(isbn_register_date)))
+                
+        if verbose: print(f"{len(self.isbn_table)} ISBN Data Loaded")
                 
         # 3. Author Data
         with open(opj(self.file_path, "data", "Libsystem_Data_Author.txt"), "r") as f:
             for line in f:
-                author_id, name, deleted = line.strip().split("/")
+                author_id, name, deleted = line.strip().split(sep)
                 self.author_table.append(AuthorRecord(int(author_id), name, bool(int(deleted))))
+                
+        if verbose: print(f"{len(self.author_table)} Author Data Loaded")
                 
         # 4. ISBN - Author Data
         with open(opj(self.file_path, "data", "Libsystem_Data_IsbnAuthor.txt"), "r") as f:
             for line in f:
-                isbn, author_id = line.strip().split("/")
+                isbn, author_id = line.strip().split(sep)
                 self.isbn_author_table.append(IsbnAuthorRecord(int(isbn), int(author_id)))
+                
+        if verbose: print(f"{len(self.isbn_author_table)} ISBN - Author Data Loaded")
                 
         # 5. Book Edit Log Data
         with open(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), "r") as f:
             for line in f:
-                log_id, isbn, edit_date = line.strip().split("/")
+                log_id, isbn, edit_date = line.strip().split(sep)
                 self.book_edit_log_table.append(BookEditLogRecord(int(log_id), int(isbn), MyDate.from_str(edit_date)))
+                
+        if verbose: print(f"{len(self.book_edit_log_table)} Book Edit Log Data Loaded")
                 
         # 6. Borrow Data
         with open(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), "r") as f:
             for line in f:
-                book_id, user_id, borrow_date, return_date, actual_return_date, deleted = line.strip().split("/")
+                book_id, user_id, borrow_date, return_date, actual_return_date, deleted = line.strip().split(sep)
                 self.borrow_table.append(BorrowRecord(int(book_id), int(user_id), MyDate.from_str(borrow_date), MyDate.from_str(return_date), MyDate.from_str(actual_return_date), bool(int(deleted))))
                 
+        if verbose: print(f"{len(self.borrow_table)} Borrow Data Loaded")            
+    
         # 7. User Data
         with open(opj(self.file_path, "data", "Libsystem_Data_User.txt"), "r") as f:
             for line in f:
-                user_id, phone_number, name, deleted = line.strip().split("/")
+                user_id, phone_number, name, deleted = line.strip().split(sep)
                 self.user_table.append(UserRecord(int(user_id), phone_number, name, bool(int(deleted))))
+        
+        if verbose: print(f"{len(self.user_table)} User Data Loaded")
         
         # 8. Publisher Data
         with open(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt"), "r") as f:
             for line in f:
-                publisher_id, name, deleted = line.strip().split("/")
+                publisher_id, name, deleted = line.strip().split(sep)
                 self.publisher_table.append(PublisherRecord(int(publisher_id), name, bool(int((deleted)))))
+                
+        if verbose: 
+            print(f"{len(self.publisher_table)} Publisher Data Loaded")
+            print("="*10, "End Reading Data Files", "="*10)
         
     
-    # ========== 데이터 파일 저장 ========== #
+    # ========== 데이터 파일 저장 (임시) ========== #
     def write_data_files(self):
         # 1. Book Data
         with open(opj(self.file_path, "data", "Libsystem_Data_Book.txt"), "w") as f:
@@ -300,6 +324,10 @@ class DataManager(object):
             for publisher in self.publisher_table:
                 f.write(f"{publisher.publisher_id}/{publisher.name}/{int(publisher.deleted)}\n")
     
+    # ========== 데이터 파일 메모리 -> 파일 동기화 (fetch) ========== #
+    def fetch_data_file(self):
+        pass
+    
     # ========== 데이터 파일 무결성 검사 ========== #
     def check_data_files(self):
         pass
@@ -321,17 +349,16 @@ class DataManager(object):
                 break
             
         # find author isbn relationship
-        author_isbn_data = None
+        author_isbn_data = []
         for isbn_author in self.isbn_author_table:
             if isbn_author.isbn == isbn_data.isbn:
-                author_isbn_data = isbn_author
-                break
+                author_isbn_data.append(isbn_author)
         
-        author_data = None
+        author_data = []
         for author in self.author_table:
-            if author.author_id == author_isbn_data.author_id:
-                author_data = author
-                break
+            for author_isbn in author_isbn_data:
+                if author.author_id == author_isbn.author_id:
+                    author_data.append(author)
             
         # find publisher
         publisher_data = None
@@ -359,7 +386,7 @@ class DataManager(object):
         return_str = f"{book_data.book_id}/"
         return_str += str(isbn_data.isbn).zfill(2) + "/"
         return_str += f"{isbn_data.title}/"
-        return_str += f"{author_data.name}/"
+        return_str += f"{" & ".join(list(map(lambda x:f"{x.name} #{x.author_id}", author_data)))}/"
         return_str += f"{publisher_data.name}/"
         return_str += f"{isbn_data.published_year}/"
         return_str += str(book_data.register_date)
@@ -423,6 +450,21 @@ class DataManager(object):
                         "constant_name": "borrow_date",
                         "value_type": "int",
                         "value": 7
+                    },
+                    {
+                        "constant_name": "cancel",
+                        "value_type": "str",
+                        "value": "X"
+                    },
+                    {
+                        "constant_name": "max_static_id",
+                        "value_type": "int",
+                        "value": 99
+                    },
+                    {
+                        "constant_name": "max_isbn",
+                        "value_type": "int",
+                        "value": 99
                     }
                 ]
             }
@@ -460,13 +502,13 @@ class DataManager(object):
         
         # 5. 고유번호가 0에서 99 사이인지 확인
         book_id_int = int(book_id)
-        if book_id_int < 0 or book_id_int > self.MAX_STATIC_ID:
-            return False, "고유번호는 0에서 99 사이여야 합니다."
+        if book_id_int < 0 or book_id_int > self.config['max_static_id']:
+            return False, f"고유번호는 0에서 {config['max_static_id']} 사이여야 합니다."
         
-        if flag == 0 and self.search_id(book_id_int):
+        if flag == 0 and self.search_book_by_id(book_id_int):
             return False, "중복된 고유번호가 존재합니다."
         
-        if flag == 1 and self.search_id(book_id_int) is None:
+        if flag == 1 and self.search_book_by_id(book_id_int) is None:
             return False, "해당 고유번호를 가진 책이 존재하지 않습니다."
         
         return True, ""
@@ -609,14 +651,131 @@ class DataManager(object):
                 return True
         return False
 
+    # ========== 검색 함수 ========== #
+    # 고유번호로 검색
+    def search_book_by_id(self, book_id):
+        books = []
+        for book in self.book_table:
+            if book.book_id == book_id:
+                books.append(book)
+                
+        return books
+    
+    # isbn 정보 검색 (제목, 저자, 출판사 등)
+    def search_isbn_data(self, isbn):
+        for i in self.isbn_table:
+            if i.isbn == isbn:
+                return i
+            
+        return None
+    
+    # Book 테이블 내 isbn을 갖는 모든 책 검색
+    def search_book_by_isbn(self, isbn):
+        books = []
+        for book in self.book_table:
+            if book.isbn == isbn:
+                books.append(book)
+                
+        return books
+    
+    # Author ID로 검색
+    def search_author_by_id(self, author_id):
+        if author_id < 1:
+            return None
+        
+        for author in self.author_table:
+            if author.author_id == author_id:
+                return author
+            
+        return None
+    
+    # Publisher ID로 검색
+    def search_publisher_by_id(self, publisher_id):
+        if publisher_id < 0:
+            return None
+        
+        for publisher in self.publisher_table:
+            if publisher.publisher_id == publisher_id:
+                return publisher
+            
+        return None
+    
+    # 저자가 작성한 책 ISBN 검색
+    def search_isbn_by_author_id(self, author_id):
+        isbns = []
+        for isbn_author in self.isbn_author_table:
+            if isbn_author.author_id == author_id:
+                isbns.append(isbn_author.isbn)
+                
+        return isbns
+    
+    # ISBN의 저자 모두 검색
+    def search_author_by_isbn(self, isbn):
+        author_ids = []
+        for isbn_author in self.isbn_author_table:
+            if isbn_author.isbn == isbn:
+                author_ids.append(isbn_author.author_id)
+                
+        return author_ids
+
+    
     # ========== 1. 추가 ========== #
     def add_book(self):
         pass
     
     # ========== 2. 삭제 ========== #
     def delete_book(self):
-        pass
-    
+        del_book_id = self.input_book_id("삭제할 책의 고유번호를 입력해주세요: ", 1)
+        
+        if (del_book_id == None):
+            return False
+        
+        if del_book_id == self.config["cancel"]:
+            print("삭제를 중단하며 메인 프롬프트로 돌아갑니다.")
+            return False
+        
+        del_book_id = int(del_book_id)
+        
+        if self.check_overdue_delete(del_book_id):
+            print("ERROR: 해당 책은 대출중이므로 삭제할 수 없습니다.")
+            return False
+        else:
+            print("책이 특정되었습니다.")
+            print(self.get_header(contain_borrow_info=False))
+            print()
+            print(self.print_book(del_book_id, include_borrow=False))
+            print()
+            
+            if self.confirm_delete(del_book_id):
+                self.fetch_data_file()
+        
+    def confirm_delete(self, del_book_id):
+        if self.input_response("삭제하면 되돌릴 수 없습니다. 정말로 삭제하시겠습니까?(Y/N): "):
+            self.book_table = [book for book in self.book_table if book.book_id != del_book_id]
+            print("삭제가 완료되었습니다. 메인프롬프트로 돌아갑니다.")
+            return True
+        else:
+            print("삭제를 취소하였습니다. 메인프롬프트로 돌아갑니다.")
+            return False
+        
+    # 대출중이거나 연체중인지 검사
+    def check_overdue_delete(self, book_id):
+        for borrow in self.borrow_table:
+            # 대출중인 케이스
+            # 1) actual_return_date 미존재
+            if borrow.book_id == book_id and borrow.actual_return_date is None:
+                return True
+        
+            # 연체중인 케이스
+            # 2) actual_return_date 존재, actual_return_date > return_date, 
+            # (연체일) actual_date - return_date > today - actual_date
+            if borrow.book_id == book_id and borrow.actual_return_date is not None:
+                if borrow.actual_return_date > borrow.return_date:
+                    if borrow.actual_return_date - borrow.return_date > self.today - borrow.actual_return_date:
+                        return True
+                    
+        return False
+            
     # ========== 3. 수정 ========== #
     def update_book(self):
         pass
@@ -701,6 +860,25 @@ class DataManager(object):
     # ========== 8. 연혁(로그) 조회 ========== #
     def history(self):
         pass
+    
+    # ========= 기타 Utility 함수 ========= #
+    # 데이터 개수 검사
+    def is_full(self) -> bool:
+        if self.static_id > self.config["max_static_id"]:
+            return True
+        else:
+            return False
+    
+    # 다음에 할당할 고유번호 반환
+    def get_static_id(self) -> int:
+        return self.static_id
+    
+    # 고유번호 증가
+    def increase_static_id(self) -> bool:
+        if self.is_full():
+            return False
+        self.static_id += 1
+        return True
     
     # ========== 현재 날짜가 데이터 파일에 올바른지 검사 ========== #
     def check_today_by_data(self, today: MyDate) -> tuple[bool, str]:
@@ -788,8 +966,8 @@ class DataManager(object):
     def input_book_id(self, input_message: str, flag: int) -> int: # flag == 0 -> 중복되면 False, flag == 1 -> 중복되어도 True
         book_id = input(input_message)
         
-        if book_id.strip() == CANCEL:
-            return CANCEL
+        if book_id.strip() == self.config["cancel"]:
+            return self.config["cancel"]
     
         if not book_id:  # 입력값이 비어있는 경우
             print("ERROR: 책의 고유번호는 1글자 이상이어야 합니다.")

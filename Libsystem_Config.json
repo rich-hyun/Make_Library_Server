@@ -9,6 +9,16 @@
             "constant_name": "cancel",
             "value_type": "str",
             "value": "X"
+        },
+        {
+            "constant_name": "max_static_id",
+            "value_type": "int",
+            "value": 99
+        },
+        {
+            "constant_name": "max_isbn",
+            "value_type": "int",
+            "value": 99
         }
     ]
 }
