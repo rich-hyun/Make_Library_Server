@@ -725,8 +725,57 @@ class DataManager(object):
     
     # ========== 2. 삭제 ========== #
     def delete_book(self):
-        pass
-    
+        del_book_id = self.input_book_id("삭제할 책의 고유번호를 입력해주세요: ", 1)
+        
+        if (del_book_id == None):
+            return False
+        
+        if del_book_id == self.config["cancel"]:
+            print("삭제를 중단하며 메인 프롬프트로 돌아갑니다.")
+            return False
+        
+        del_book_id = int(del_book_id)
+        
+        if self.check_overdue_delete(del_book_id):
+            print("ERROR: 해당 책은 대출중이므로 삭제할 수 없습니다.")
+            return False
+        else:
+            print("책이 특정되었습니다.")
+            print(self.get_header(contain_borrow_info=False))
+            print()
+            print(self.print_book(del_book_id, include_borrow=False))
+            print()
+            
+            if self.confirm_delete(del_book_id):
+                self.fetch_data_file()
+        
+    def confirm_delete(self, del_book_id):
+        if self.input_response("삭제하면 되돌릴 수 없습니다. 정말로 삭제하시겠습니까?(Y/N): "):
+            self.book_table = [book for book in self.book_table if book.book_id != del_book_id]
+            print("삭제가 완료되었습니다. 메인프롬프트로 돌아갑니다.")
+            return True
+        else:
+            print("삭제를 취소하였습니다. 메인프롬프트로 돌아갑니다.")
+            return False
+        
+    # 대출중이거나 연체중인지 검사
+    def check_overdue_delete(self, book_id):
+        for borrow in self.borrow_table:
+            # 대출중인 케이스
+            # 1) actual_return_date 미존재
+            if borrow.book_id == book_id and borrow.actual_return_date is None:
+                return True
+        
+            # 연체중인 케이스
+            # 2) actual_return_date 존재, actual_return_date > return_date, 
+            # (연체일) actual_date - return_date > today - actual_date
+            if borrow.book_id == book_id and borrow.actual_return_date is not None:
+                if borrow.actual_return_date > borrow.return_date:
+                    if borrow.actual_return_date - borrow.return_date > self.today - borrow.actual_return_date:
+                        return True
+                    
+        return False
+            
     # ========== 3. 수정 ========== #
     def update_book(self):
         pass
@@ -811,6 +860,25 @@ class DataManager(object):
     # ========== 8. 연혁(로그) 조회 ========== #
     def history(self):
         pass
+    
+    # ========= 기타 Utility 함수 ========= #
+    # 데이터 개수 검사
+    def is_full(self) -> bool:
+        if self.static_id > self.config["max_static_id"]:
+            return True
+        else:
+            return False
+    
+    # 다음에 할당할 고유번호 반환
+    def get_static_id(self) -> int:
+        return self.static_id
+    
+    # 고유번호 증가
+    def increase_static_id(self) -> bool:
+        if self.is_full():
+            return False
+        self.static_id += 1
+        return True
     
     # ========== 현재 날짜가 데이터 파일에 올바른지 검사 ========== #
     def check_today_by_data(self, today: MyDate) -> tuple[bool, str]:
@@ -898,8 +966,8 @@ class DataManager(object):
     def input_book_id(self, input_message: str, flag: int) -> int: # flag == 0 -> 중복되면 False, flag == 1 -> 중복되어도 True
         book_id = input(input_message)
         
-        if book_id.strip() == CANCEL:
-            return CANCEL
+        if book_id.strip() == self.config["cancel"]:
+            return self.config["cancel"]
     
         if not book_id:  # 입력값이 비어있는 경우
             print("ERROR: 책의 고유번호는 1글자 이상이어야 합니다.")
