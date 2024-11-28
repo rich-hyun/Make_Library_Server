@@ -198,64 +198,88 @@ class DataManager(object):
         self.publisher_table = []
         self.today = None
         self.config = dict()
+        self.static_id = -1
     
     # 오늘 날짜 설정
     def set_today(self, today: MyDate):
         self.today = today
         
     # 데이터 파일 읽기
-    def read_data_files(self):
+    def read_data_files(self, sep: str="/", verbose=True):
+        
+        if verbose: print("="*10, "Start Reading Data Files", "="*10)
+        
         # 1. Book Data
         with open(opj(self.file_path, "data", "Libsystem_Data_Book.txt"), "r") as f:
             lines = f.readlines()
             
-            max_book_id = int(lines[0])
+            self.static_id = int(lines[0])
             
             for line in lines[1:]:
-                book_id, isbn, register_date, deleted, delete_date = line.strip().split("/")
+                book_id, isbn, register_date, deleted, delete_date = line.strip().split(sep)
                 self.book_table.append(BookRecord(int(book_id), int(isbn), MyDate.from_str(register_date), MyDate.from_str(delete_date), bool(int(deleted))))
+          
+        if verbose:      
+            print(f"{len(self.book_table)} Book Data Loaded")
+            print(f"max_book_id: {self.static_id}")
                 
         # 2. ISBN Data
         with open(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt"), "r") as f:
             for line in f:
-                isbn, title, publisher_id, published_year, isbn_register_date = line.strip().split("/")
+                isbn, title, publisher_id, published_year, isbn_register_date = line.strip().split(sep)
                 self.isbn_table.append(ISBNRecord(int(isbn), title, int(publisher_id), int(published_year), MyDate.from_str(isbn_register_date)))
+                
+        if verbose: print(f"{len(self.isbn_table)} ISBN Data Loaded")
                 
         # 3. Author Data
         with open(opj(self.file_path, "data", "Libsystem_Data_Author.txt"), "r") as f:
             for line in f:
-                author_id, name, deleted = line.strip().split("/")
+                author_id, name, deleted = line.strip().split(sep)
                 self.author_table.append(AuthorRecord(int(author_id), name, bool(int(deleted))))
+                
+        if verbose: print(f"{len(self.author_table)} Author Data Loaded")
                 
         # 4. ISBN - Author Data
         with open(opj(self.file_path, "data", "Libsystem_Data_IsbnAuthor.txt"), "r") as f:
             for line in f:
-                isbn, author_id = line.strip().split("/")
+                isbn, author_id = line.strip().split(sep)
                 self.isbn_author_table.append(IsbnAuthorRecord(int(isbn), int(author_id)))
+                
+        if verbose: print(f"{len(self.isbn_author_table)} ISBN - Author Data Loaded")
                 
         # 5. Book Edit Log Data
         with open(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), "r") as f:
             for line in f:
-                log_id, isbn, edit_date = line.strip().split("/")
+                log_id, isbn, edit_date = line.strip().split(sep)
                 self.book_edit_log_table.append(BookEditLogRecord(int(log_id), int(isbn), MyDate.from_str(edit_date)))
+                
+        if verbose: print(f"{len(self.book_edit_log_table)} Book Edit Log Data Loaded")
                 
         # 6. Borrow Data
         with open(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), "r") as f:
             for line in f:
-                book_id, user_id, borrow_date, return_date, actual_return_date, deleted = line.strip().split("/")
+                book_id, user_id, borrow_date, return_date, actual_return_date, deleted = line.strip().split(sep)
                 self.borrow_table.append(BorrowRecord(int(book_id), int(user_id), MyDate.from_str(borrow_date), MyDate.from_str(return_date), MyDate.from_str(actual_return_date), bool(int(deleted))))
                 
+        if verbose: print(f"{len(self.borrow_table)} Borrow Data Loaded")            
+    
         # 7. User Data
         with open(opj(self.file_path, "data", "Libsystem_Data_User.txt"), "r") as f:
             for line in f:
-                user_id, phone_number, name, deleted = line.strip().split("/")
+                user_id, phone_number, name, deleted = line.strip().split(sep)
                 self.user_table.append(UserRecord(int(user_id), phone_number, name, bool(int(deleted))))
+        
+        if verbose: print(f"{len(self.user_table)} User Data Loaded")
         
         # 8. Publisher Data
         with open(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt"), "r") as f:
             for line in f:
-                publisher_id, name, deleted = line.strip().split("/")
+                publisher_id, name, deleted = line.strip().split(sep)
                 self.publisher_table.append(PublisherRecord(int(publisher_id), name, bool(int((deleted)))))
+                
+        if verbose: 
+            print(f"{len(self.publisher_table)} Publisher Data Loaded")
+            print("="*10, "End Reading Data Files", "="*10)
         
     
     # ========== 데이터 파일 저장 ========== #
