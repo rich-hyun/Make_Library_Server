@@ -198,7 +198,7 @@ class DataManager(object):
         self.publisher_table = []
         self.today = None
         self.config = dict()
-        self.static_id = -1
+        self.static_id = 0 # default is 0
     
     # 오늘 날짜 설정
     def set_today(self, today: MyDate):
