@@ -282,7 +282,7 @@ class DataManager(object):
             print("="*10, "End Reading Data Files", "="*10)
         
     
-    # ========== 데이터 파일 저장 ========== #
+    # ========== 데이터 파일 저장 (임시) ========== #
     def write_data_files(self):
         # 1. Book Data
         with open(opj(self.file_path, "data", "Libsystem_Data_Book.txt"), "w") as f:
@@ -323,6 +323,10 @@ class DataManager(object):
         with open(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt"), "w") as f:
             for publisher in self.publisher_table:
                 f.write(f"{publisher.publisher_id}/{publisher.name}/{int(publisher.deleted)}\n")
+    
+    # ========== 데이터 파일 메모리 -> 파일 동기화 (fetch) ========== #
+    def fetch_data_file(self):
+        pass
     
     # ========== 데이터 파일 무결성 검사 ========== #
     def check_data_files(self):
