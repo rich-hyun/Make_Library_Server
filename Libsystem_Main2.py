@@ -1688,12 +1688,6 @@ class DataManager(object):
     #             return True
     #     return False
 
-    def check_overdue_delete(self, book_id):
-        for borrow in self.borrow_table:
-            if borrow.book_id == book_id and borrow.return_date < self.today:
-                return True
-        return False
-
     # ========== 검색 함수 ========== #
     # 고유번호로 검색
     def search_book_by_id(self, book_id) -> BookRecord:
