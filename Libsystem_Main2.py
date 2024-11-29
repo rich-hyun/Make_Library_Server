@@ -160,7 +160,8 @@ class BookEditLogRecord(object):
         
 # Borrow
 class BorrowRecord(object):
-    def __init__(self, book_id: int, user_id: int, borrow_date: MyDate, return_date: MyDate, actual_return_date: MyDate=None, deleted: bool=False):
+    def __init__(self, borrow_id: int, book_id: int, user_id: int, borrow_date: MyDate, return_date: MyDate, actual_return_date: MyDate=None, deleted: bool=False):
+        self.borrow_id = borrow_id
         self.book_id = book_id
         self.user_id = user_id
         self.borrow_date = borrow_date
@@ -183,6 +184,13 @@ class PublisherRecord(object):
         self.name = name
         self.deleted = deleted
     
+# Overdue Penalty
+class OverduePenaltyRecord(object):
+    def __init__(self, penalty_id: int, user_id: int, penalty_start_date: MyDate, penalty_end_date: MyDate):
+        self.penalty_id = penalty_id
+        self.user_id = user_id
+        self.penalty_start_date = penalty_start_date
+        self.penalty_end_date = penalty_end_date
 
 """ ========== 도서 관리 클래스 구현 ========== """
 class DataManager(object):
@@ -196,9 +204,18 @@ class DataManager(object):
         self.borrow_table = []
         self.user_table = []
         self.publisher_table = []
+        self.overdue_penalty_table = []
         self.today = None
         self.config = dict()
         self.static_id = 0 # default is 0
+    
+        # auto increment id
+        self.static_author_id = 0
+        self.static_book_edit_log_id = 0
+        self.static_borrow_id = 0
+        self.static_user_id = 0
+        self.static_publisher_id = 0
+        self.static_overdue_penalty_id = 0
     
     # 오늘 날짜 설정
     def set_today(self, today: MyDate):
@@ -258,8 +275,8 @@ class DataManager(object):
         # 6. Borrow Data
         with open(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), "r") as f:
             for line in f:
-                book_id, user_id, borrow_date, return_date, actual_return_date, deleted = line.strip().split(sep)
-                self.borrow_table.append(BorrowRecord(int(book_id), int(user_id), MyDate.from_str(borrow_date), MyDate.from_str(return_date), MyDate.from_str(actual_return_date), bool(int(deleted))))
+                borrow_id, book_id, user_id, borrow_date, return_date, actual_return_date, deleted = line.strip().split(sep)
+                self.borrow_table.append(BorrowRecord(int(borrow_id), int(book_id), int(user_id), MyDate.from_str(borrow_date), MyDate.from_str(return_date), MyDate.from_str(actual_return_date), bool(int(deleted))))
                 
         if verbose: print(f"{len(self.borrow_table)} Borrow Data Loaded")            
     
@@ -276,9 +293,17 @@ class DataManager(object):
             for line in f:
                 publisher_id, name, deleted = line.strip().split(sep)
                 self.publisher_table.append(PublisherRecord(int(publisher_id), name, bool(int((deleted)))))
-                
+
+        if verbose: print(f"{len(self.publisher_table)} Publisher Data Loaded")
+
+        # 9. Overdue Penalty Data
+        with open(opj(self.file_path, "data", "Libsystem_Data_OverduePenalty.txt"), "r") as f:
+            for line in f:
+                penalty_id, user_id, penalty_start_date, penalty_end_date = line.strip().split(sep)
+                self.overdue_penalty_table.append(OverduePenaltyRecord(int(penalty_id), int(user_id), MyDate.from_str(penalty_start_date), MyDate.from_str(penalty_end_date)))
+
         if verbose: 
-            print(f"{len(self.publisher_table)} Publisher Data Loaded")
+            print(f"{len(self.overdue_penalty_table)} Overdue Penalty Data Loaded")
             print("="*10, "End Reading Data Files", "="*10)
         
     
@@ -323,6 +348,11 @@ class DataManager(object):
         with open(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt"), "w") as f:
             for publisher in self.publisher_table:
                 f.write(f"{publisher.publisher_id}/{publisher.name}/{int(publisher.deleted)}\n")
+                
+        # 9. Overdue Penalty Data
+        with open(opj(self.file_path, "data", "Libsystem_Data_OverduePenalty.txt"), "w") as f:
+            for penalty in self.overdue_penalty_table:
+                f.write(f"{penalty.penalty_id}/{penalty.user_id}/{str(penalty.penalty_start_date)}/{str(penalty.penalty_end_date)}\n")
     
     # ========== 데이터 파일 메모리 -> 파일 동기화 (fetch) ========== #
     def fetch_data_file(self):
@@ -436,6 +466,8 @@ class DataManager(object):
             for c in config['configuration']:
                 if c['value_type'] == 'int':
                     config_dict[c['constant_name']] = int(c['value'])
+                elif c['value_type'] == 'float':
+                    config_dict[c['constant_name']] = float(c['value'])
                 else:
                     config_dict[c['constant_name']] = c['value']
                     
@@ -465,6 +497,16 @@ class DataManager(object):
                         "constant_name": "max_isbn",
                         "value_type": "int",
                         "value": 99
+                    },
+                    {
+                        "constant_name": "max_borrow_count",
+                        "value_type": "int",
+                        "value": 3
+                    },
+                    {
+                        "constant_name": "overdue_penalty_scale",
+                        "value_type": "float",
+                        "value": 1.0
                     }
                 ]
             }

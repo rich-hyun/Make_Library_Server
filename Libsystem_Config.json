@@ -19,6 +19,16 @@
             "constant_name": "max_isbn",
             "value_type": "int",
             "value": 99
+        },
+        {
+            "constant_name": "max_borrow_count",
+            "value_type": "int",
+            "value": 3
+        },
+        {
+            "constant_name": "overdue_penalty_scale",
+            "value_type": "float",
+            "value": 1.0
         }
     ]
 }
