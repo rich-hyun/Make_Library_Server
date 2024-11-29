@@ -256,8 +256,8 @@ class DataManager(object):
         self.overdue_penalty_table = []
         self.today = None
         self.config = dict()
-        self.static_id = 0 # default is 0
-    
+        self.static_id = 0  # default is 0
+
         # auto increment id
         self.static_author_id = 0
         self.static_book_edit_log_id = 0
@@ -265,6 +265,16 @@ class DataManager(object):
         self.static_user_id = 0
         self.static_publisher_id = 0
         self.static_overdue_penalty_id = 0
+
+        # Load configuration and ensure "cancel" key exists
+        self.load_configuration()
+
+        # 디버깅 및 기본값 보장
+        if "cancel" not in self.config:
+            print("ERROR: 'cancel' 키가 설정에 없습니다. 기본값 'X'를 추가합니다.")
+            self.config["cancel"] = "X"
+
+
     
     # 오늘 날짜 설정
     def set_today(self, today: MyDate):
@@ -276,7 +286,7 @@ class DataManager(object):
         if verbose: print("="*10, "Start Reading Data Files", "="*10)
         
         # 1. Book Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_Book.txt"), "r", encoding="utf-8") as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_Book.txt"), "r",encoding='utf-8') as f:
             lines = f.readlines()
             
             self.static_id = int(lines[0])
@@ -290,7 +300,7 @@ class DataManager(object):
             print(f"max_book_id: {self.static_id}")
                 
         # 2. ISBN Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt"), "r", encoding="utf-8") as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt"), "r",encoding='utf-8') as f:
             for line in f:
                 isbn, title, publisher_id, published_year, isbn_register_date = line.strip().split(sep)
                 self.isbn_table.append(ISBNRecord(int(isbn), title, int(publisher_id), int(published_year), MyDate.from_str(isbn_register_date)))
@@ -298,7 +308,7 @@ class DataManager(object):
         if verbose: print(f"{len(self.isbn_table)} ISBN Data Loaded")
                 
         # 3. Author Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_Author.txt"), "r", encoding="utf-8") as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_Author.txt"), "r",encoding='utf-8') as f:
             for line in f:
                 author_id, name, deleted = line.strip().split(sep)
                 self.author_table.append(AuthorRecord(int(author_id), name, bool(int(deleted))))
@@ -306,7 +316,7 @@ class DataManager(object):
         if verbose: print(f"{len(self.author_table)} Author Data Loaded")
                 
         # 4. ISBN - Author Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_IsbnAuthor.txt"), "r", encoding="utf-8") as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_IsbnAuthor.txt"), "r",encoding='utf-8') as f:
             for line in f:
                 isbn, author_id = line.strip().split(sep)
                 self.isbn_author_table.append(IsbnAuthorRecord(int(isbn), int(author_id)))
@@ -314,7 +324,7 @@ class DataManager(object):
         if verbose: print(f"{len(self.isbn_author_table)} ISBN - Author Data Loaded")
                 
         # 5. Book Edit Log Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), "r", encoding="utf-8") as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), "r",encoding='utf-8') as f:
             for line in f:
                 log_id, isbn, edit_date = line.strip().split(sep)
                 self.book_edit_log_table.append(BookEditLogRecord(int(log_id), int(isbn), MyDate.from_str(edit_date)))
@@ -322,7 +332,7 @@ class DataManager(object):
         if verbose: print(f"{len(self.book_edit_log_table)} Book Edit Log Data Loaded")
                 
         # 6. Borrow Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), "r", encoding="utf-8") as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), "r",encoding='utf-8') as f:
             for line in f:
                 borrow_id, book_id, user_id, borrow_date, return_date, actual_return_date, deleted = line.strip().split(sep)
                 self.borrow_table.append(BorrowRecord(int(borrow_id), int(book_id), int(user_id), MyDate.from_str(borrow_date), MyDate.from_str(return_date), MyDate.from_str(actual_return_date), bool(int(deleted))))
@@ -330,7 +340,7 @@ class DataManager(object):
         if verbose: print(f"{len(self.borrow_table)} Borrow Data Loaded")            
     
         # 7. User Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_User.txt"), "r", encoding="utf-8") as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_User.txt"), "r",encoding='utf-8') as f:
             for line in f:
                 user_id, phone_number, name, deleted = line.strip().split(sep)
                 self.user_table.append(UserRecord(int(user_id), phone_number, name, bool(int(deleted))))
@@ -338,7 +348,7 @@ class DataManager(object):
         if verbose: print(f"{len(self.user_table)} User Data Loaded")
         
         # 8. Publisher Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt"), "r", encoding="utf-8") as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt"), "r",encoding='utf-8') as f:
             for line in f:
                 publisher_id, name, deleted = line.strip().split(sep)
                 self.publisher_table.append(PublisherRecord(int(publisher_id), name, bool(int((deleted)))))
@@ -346,7 +356,7 @@ class DataManager(object):
         if verbose: print(f"{len(self.publisher_table)} Publisher Data Loaded")
 
         # 9. Overdue Penalty Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_OverduePenalty.txt"), "r", encoding="utf-8") as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_OverduePenalty.txt"), "r",encoding='utf-8') as f:
             for line in f:
                 penalty_id, user_id, penalty_start_date, penalty_end_date = line.strip().split(sep)
                 self.overdue_penalty_table.append(OverduePenaltyRecord(int(penalty_id), int(user_id), MyDate.from_str(penalty_start_date), MyDate.from_str(penalty_end_date)))
@@ -359,47 +369,47 @@ class DataManager(object):
     # ========== 데이터 파일 저장 (임시) ========== #
     def write_data_files(self):
         # 1. Book Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_Book.txt"), "w", encoding="utf-8") as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_Book.txt"), "w",encoding='utf-8') as f:
             for book in self.book_table:
                 f.write(f"{book.book_id}/{book.isbn}/{str(book.register_date)}/{int(book.deleted)}/{str(book.delete_date)}\n")
                 
         # 2. ISBN Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt"), "w", encoding="utf-8") as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt"), "w",encoding='utf-8') as f:
             for isbn in self.isbn_table:
                 f.write(f"{isbn.isbn}/{isbn.title}/{isbn.publisher_id}/{isbn.published_year}/{str(isbn.isbn_register_date)}\n")
                 
         # 3. Author Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_Author.txt"), "w", encoding="utf-8") as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_Author.txt"), "w",encoding='utf-8') as f:
             for author in self.author_table:
                 f.write(f"{author.author_id}/{author.name}/{int(author.deleted)}\n")
                 
         # 4. ISBN - Author Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_IsbnAuthor.txt"), "w", encoding="utf-8") as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_IsbnAuthor.txt"), "w",encoding='utf-8') as f:
             for isbn_author in self.isbn_author_table:
                 f.write(f"{isbn_author.isbn}/{isbn_author.author_id}\n")
                 
         # 5. Book Edit Log Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), "w", encoding="utf-8") as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), "w",encoding='utf-8') as f:
             for log in self.book_edit_log_table:
                 f.write(f"{log.log_id}/{log.isbn}/{str(log.edit_date)}\n")
                 
         # 6. Borrow Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), "w", encoding="utf-8") as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), "w",encoding='utf-8') as f:
             for borrow in self.borrow_table:
                 f.write(f"{borrow.book_id}/{borrow.user_id}/{str(borrow.borrow_date)}/{str(borrow.return_date)}/{str(borrow.actual_return_date)}/{int(borrow.deleted)}\n")
                 
         # 7. User Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_User.txt"), "w", encoding="utf-8") as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_User.txt"), "w",encoding='utf-8') as f:
             for user in self.user_table:
                 f.write(f"{user.user_id}/{user.phone_number}/{user.name}/{int(user.deleted)}\n")
                 
         # 8. Publisher Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt"), "w", encoding="utf-8") as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt"), "w",encoding='utf-8') as f:
             for publisher in self.publisher_table:
                 f.write(f"{publisher.publisher_id}/{publisher.name}/{int(publisher.deleted)}\n")
                 
         # 9. Overdue Penalty Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_OverduePenalty.txt"), "w", encoding="utf-8") as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_OverduePenalty.txt"), "w",encoding='utf-8') as f:
             for penalty in self.overdue_penalty_table:
                 f.write(f"{penalty.penalty_id}/{penalty.user_id}/{str(penalty.penalty_start_date)}/{str(penalty.penalty_end_date)}\n")
     
@@ -468,7 +478,7 @@ class DataManager(object):
         return_str = f"{book_id}/"
         return_str += str(isbn_data.isbn).zfill(2) + "/"
         return_str += f"{isbn_data.title}/"
-        #return_str += f"{" & ".join(list(map(lambda x:f"{x.name} #{x.author_id}", author_data)))}/"
+        return_str += f"{' & '.join(list(map(lambda x: f'{x.name} #{x.author_id}', author_data)))}/"
         return_str += f"{publisher_data.name}/"
         return_str += f"{isbn_data.published_year}/"
         return_str += str(book_data.register_date)
@@ -507,14 +517,15 @@ class DataManager(object):
         for book in self.book_table:
             print(self.print_book(book.book_id, include_borrow=True))
 
-    # =========== 설정 불러오기 ========== #
     def load_configuration(self) -> dict:
         config_dict = dict()
         
         try:
+            # 설정 파일 읽기
             with open(opj(self.file_path, "Libsystem_Config.json"), "r") as f:
                 config = json.load(f)
-                
+            
+            # 설정 값 처리
             for c in config['configuration']:
                 if c['value_type'] == 'int':
                     config_dict[c['constant_name']] = int(c['value'])
@@ -522,56 +533,80 @@ class DataManager(object):
                     config_dict[c['constant_name']] = float(c['value'])
                 else:
                     config_dict[c['constant_name']] = c['value']
-                    
+            
+            # config 설정
             self.config = config_dict
+
+        except FileNotFoundError:
+            print("설정 파일을 찾을 수 없습니다. 기본값으로 새로 생성합니다.")
+            self.create_default_configuration()
+        
+        except json.JSONDecodeError:
+            print("설정 파일이 손상되었습니다. 기본값으로 복구합니다.")
+            self.create_default_configuration()
         
         except Exception as e:
-            print("설정 파일을 찾을 수 없습니다.")
-            
-            new_config_dict = {
-                "configuration": [
-                    {
-                        "constant_name": "borrow_date",
-                        "value_type": "int",
-                        "value": 7
-                    },
-                    {
-                        "constant_name": "cancel",
-                        "value_type": "str",
-                        "value": "X"
-                    },
-                    {
-                        "constant_name": "max_static_id",
-                        "value_type": "int",
-                        "value": 99
-                    },
-                    {
-                        "constant_name": "max_isbn",
-                        "value_type": "int",
-                        "value": 99
-                    },
-                    {
-                        "constant_name": "max_borrow_count",
-                        "value_type": "int",
-                        "value": 3
-                    },
-                    {
-                        "constant_name": "overdue_penalty_scale",
-                        "value_type": "float",
-                        "value": 1.0
-                    }
-                ]
-            }
-            
-            # config 파일 저장
-            with open(opj(dir_path, "Libsystem_Config.json"), "w") as f:
-                json.dump(new_config_dict, f, indent=4)
-            
-            config_dict = {
-                "borrow_date": 7
-            }
-            
-            self.config = config_dict
+            print(f"알 수 없는 오류가 발생했습니다: {e}. 기본값으로 복구합니다.")
+            self.create_default_configuration()
+        
+        # 디버깅 및 기본값 보장
+        if "cancel" not in self.config:
+            print("ERROR: 'cancel' 키가 설정에 없습니다. 기본값 'X'를 추가합니다.")
+            self.config["cancel"] = "X"
+    def create_default_configuration(self):
+        # 기본 설정값
+        default_config = {
+            "configuration": [
+                {
+                    "constant_name": "borrow_date",
+                    "value_type": "int",
+                    "value": 7
+                },
+                {
+                    "constant_name": "cancel",
+                    "value_type": "str",
+                    "value": "X"
+                },
+                {
+                    "constant_name": "max_static_id",
+                    "value_type": "int",
+                    "value": 99
+                },
+                {
+                    "constant_name": "max_isbn",
+                    "value_type": "int",
+                    "value": 99
+                },
+                {
+                    "constant_name": "max_borrow_count",
+                    "value_type": "int",
+                    "value": 3
+                },
+                {
+                    "constant_name": "overdue_penalty_scale",
+                    "value_type": "float",
+                    "value": 1.0
+                }
+            ]
+        }
+        
+        # 기본값으로 설정
+        config_dict = {
+            "borrow_date": 7,
+            "cancel": "X",
+            "max_static_id": 99,
+            "max_isbn": 99,
+            "max_borrow_count": 3,
+            "overdue_penalty_scale": 1.0
+        }
+        
+        self.config = config_dict
+        
+        # 설정 파일 저장
+        with open(opj(self.file_path, "Libsystem_Config.json"), "w", encoding="utf-8") as f:
+            json.dump(default_config, f, indent=4)
+        print("기본 설정 파일이 생성되었습니다.")
+
 
     # ========== 검사 함수 ========== #
     def check_book_id_validate(self, book_id, flag): # flag == 0 -> 있으면 False 없으면 True, flag == 1 -> 없으면 False 있으면 True
@@ -608,7 +643,8 @@ class DataManager(object):
         return True, ""
 
     def check_string_validate(self, field_name, value):
-        if value == self.config["cancel"]:
+        # "cancel" 키가 없을 경우 기본값 "X"를 반환
+        if value == self.config.get("cancel", "X"):  
             return True, ""
         # 1. 문자열의 길이가 1 이상인지 확인
         if len(value) < 1:
@@ -623,18 +659,19 @@ class DataManager(object):
         return True, ""
 
     def check_year_validate(self, year):
-        if year == self.config["cancel"]:
+        cancel_value = self.config.get("cancel", "X")  # 기본값 "X" 설정
+        if year == cancel_value:
             return True, ""
         # 1. 입력값이 숫자인지 확인
         if not year.isdigit():
             return False, "책의 출판년도는 오로지 숫자로만 구성되어야 합니다."
-    
+        
         # 2. 출판년도는 4자리 숫자여야 함을 확인
         if len(year) != 4:
             return False, "책의 출판년도는 4자리 양의 정수여야 합니다."
         
         year_int = int(year)
-        current_year = today.year  # 현재 연도를 확인하는 변수
+        current_year = self.today.year  # 현재 연도를 확인하는 변수
 
         # 3. 출판년도 범위 확인
         if year_int < 1583:
@@ -669,7 +706,8 @@ class DataManager(object):
             return False, "날짜 형식이 올바르지 않습니다. (예: YYYY-MM-DD)"
 
     def check_isbn_validate(self, isbn):
-        if isbn == self.config["cancel"]:
+        cancel_value = self.config.get("cancel", "X")  # 기본값 "X" 설정
+        if isbn == cancel_value:
             return True, ""
         # ISBN이 공백인지 확인
         if not isbn.strip():  # 공백을 제거한 후 빈 문자열인지 확인
@@ -1078,95 +1116,179 @@ class DataManager(object):
         else:
             print("삭제를 취소하였습니다. 메인프롬프트로 돌아갑니다.")
             return False
-            
+    def validate_authors(self, authors_input: str) -> list[int]:
+        """
+        입력받은 저자 문자열을 검증하고, 유효한 저자의 ID 리스트를 반환합니다.
+        """
+        valid_author_ids = []
+        invalid_authors = []
+
+        # 저자 입력을 "&"로 분리
+        authors = authors_input.split("&")
+        for author in authors:
+            author = author.strip()  # 공백 제거
+            if "#" not in author:
+                invalid_authors.append(author)
+                continue
+
+            name, author_id = author.split("#")
+            name = name.strip()
+            try:
+                author_id = int(author_id)
+            except ValueError:
+                invalid_authors.append(author)
+                continue
+
+            # 저자가 author_table에 존재하는지 확인
+            author_record = self.search_author_by_id(author_id)
+            if not author_record or author_record.name != name:
+                invalid_authors.append(author)
+            else:
+                valid_author_ids.append(author_id)
+
+        if invalid_authors:
+            print(f"[ERROR] 다음 저자들이 존재하지 않습니다: {', '.join(invalid_authors)}")
+            return None
+        return valid_author_ids
+    def validate_publisher(self, publisher_name: str) -> int:
+        """
+        입력받은 출판사를 검증하고, 유효한 출판사의 ID를 반환합니다.
+        """
+        publisher = self.search_publisher_by_name(publisher_name.strip())
+        if not publisher:
+            print(f"[ERROR] 출판사 '{publisher_name}'가 존재하지 않습니다.")
+            return None
+        return publisher.publisher_id
+
     # ========== 3. 수정 ========== #
     def update_book(self):
         isbn = self.input_isbn("수정할 책의 ISBN을 입력하세요: ")
-        if not isbn:
-            return False  # 입력 실패 시 반환
-        
-        if isbn == self.config["cancel"]:
+        if not isbn or not self.check_isbn_validate(isbn):
+            print("ERROR: 입력한 ISBN이 유효하지 않습니다.")
+            return False
+
+        cancel_value = self.config.get("cancel", "X")  # 기본값 "X" 설정
+        if isbn == cancel_value:
             print("수정을 중단하며 메인 프롬프트로 돌아갑니다.")
             return False
         
         isbn = int(isbn)
-        
-        # 책 존재 여부 확인
         books = self.search_books_by_isbn(isbn)
-        
         if not books:
             print("ERROR: 해당 ISBN을 가진 책이 존재하지 않습니다.")
             return False
         else:
             print(f"ISBN이 {isbn}인 책 데이터가 {len(books)}권 있습니다.")
             print()
-            
-        # 기존 책 정보 출력
-        print(self.get_header(contain_borrow_info=False))
-        print()
-        for book in books:
-            print(self.print_book(book.book_id, include_borrow=False))
-            
-        # 새로운 정보 입력
-        new_title = self.input_bookName("책의 수정될 제목을 입력해주세요: ")
-        if not new_title:
-            return False
-
-        if new_title == self.config["cancel"]:
-            print("수정을 중단하며 메인 프롬프트로 돌아갑니다.")
-            return False
+            print(self.get_header(contain_borrow_info=False))
+            for book in books:
+                print(self.print_book(book.book_id, include_borrow=False))
         
-        # TODO: 저자 수정
-        # new_author = self.input_author("책의 수정될 저자를 입력해주세요: ")
-        # if not new_author:
-        #     return False
-
-        # if new_author == self.config["cancel"]:
-        #     print("수정을 중단하며 메인 프롬프트로 돌아갑니다.")
-        #     return False
-
-        new_publisher = self.input_publisher("책의 수정될 출판사를 입력해주세요: ")
-        if not new_publisher:
+        # 1. 책 제목 입력
+        new_title = self.input_bookName("수정할 책의 제목을 입력해주세요: ")
+        if not new_title or not self.check_string_validate("제목", new_title):
             return False
 
-        if new_publisher == self.config["cancel"]:
-            print("수정을 중단하며 메인 프롬프트로 돌아갑니다.")
-            return False
-            
-        new_year = self.input_year("책의 수정될 출판년도를 입력해주세요: ")
-        if not new_year:
-            return False
+        # 2. 책 저자 입력
+        while True:
+            new_authors = input("수정할 책의 저자를 입력해주세요 (이름 #번호 & ...): ").strip()
+            if new_authors == cancel_value:
+                print("수정을 중단하며 메인 프롬프트로 돌아갑니다.")
+                return False
+            if not new_authors:  # 공백 입력에 대해 처리
+                print("저자를 공백으로 입력하셨습니다. 공백 입력은 허용됩니다.")
+                valid_authors = []
+                break
 
-        if new_year == self.config["cancel"]:
-            print("수정을 중단하며 메인 프롬프트로 돌아갑니다.")
-            return False
-
-        new_year = int(new_year)
+            # 저자 파싱 및 유효성 검사
+            author_list = new_authors.split("&")
+            valid_authors = []
+            errors = []
+            unique_authors = set()  # 중복 확인을 위한 set
+            for author in author_list:
+                author = author.strip()
+                if "#" not in author:
+                    errors.append(f"[{author}] ERROR: 입력한 저자의 식별번호가 없습니다.")
+                    continue
+                name, _, number = author.partition("#")
+                if not name.strip() or not number.isdigit():
+                    errors.append(f"[{author}] ERROR: 입력한 저자의 이름 또는 식별번호가 올바르지 않습니다.")
+                    continue
+                # 숫자 ID로 검색
+                author_record = self.search_author_by_id(int(number))
+                if not author_record or author_record.name != name.strip():
+                    errors.append(f"[{author}] ERROR: 입력한 저자가 존재하지 않거나 이름과 식별번호가 일치하지 않습니다.")
+                    continue
         
+                author_key = (name.strip(), int(number))
+                if author_key not in unique_authors:
+                    unique_authors.add(author_key)
+                    valid_authors.append(author_key)
+
+            # 최대 5명 제한
+            if len(valid_authors) > 5:
+                errors.append("ERROR: 책의 저자는 최대 5명입니다.")
+
+            # 에러가 있으면 출력하고 재입력 요구
+            if errors:
+                print("\n".join(errors))
+                print("모든 저자의 이름과 식별번호를 다시 입력해주세요.")
+            else:
+                break
+
+        # 3. 출판사 입력
+        while True:
+            new_publisher = input("수정할 책의 출판사를 입력해주세요: ").strip()
+            if not new_publisher or not self.check_string_validate("출판사", new_publisher):
+                print("ERROR: 입력한 출판사가 유효하지 않습니다.")
+                continue
+            new_publisher_id = self.validate_publisher(new_publisher)
+            if new_publisher_id is not None:
+                break
+
+        # 4. 출판년도 입력
+        new_year = self.input_year("수정할 책의 출판년도를 입력해주세요: ")
+        if not new_year or not self.check_year_validate(new_year):
+            print("ERROR: 입력한 출판년도가 유효하지 않습니다.")
+            return False
+
         # 수정 여부 확인
         if not self.input_response("수정한 데이터는 복구할 수 없습니다. 정말로 수정하시겠습니까?(Y/N): "):
             print("수정을 취소하였습니다. 메인 프롬프트로 돌아갑니다.")
             return False
-        
+
         # 수정 반영
-        # ISBN 수정
         for isbn_data in self.isbn_table:
             if isbn_data.isbn == isbn:
                 isbn_data.title = new_title
                 isbn_data.published_year = new_year
                 break
-        
-        # 출판사 이름 수정
+
+       # 출판사 수정
+        publisher_found = False
         for publisher in self.publisher_table:
-            if publisher.publisher_id == isbn_data.publisher_id:
-                publisher.name = new_publisher
+            if publisher.name == new_publisher:  # 입력된 출판사가 이미 존재하면
+                isbn_data.publisher_id = publisher.publisher_id  # 해당 출판사의 ID를 반영
+                publisher_found = True
                 break
-            
-        # TODO: 저자 수정
-        
+
+        if not publisher_found:  # 입력된 출판사가 존재하지 않으면
+            new_publisher_id = len(self.publisher_table)
+            self.publisher_table.append(PublisherRecord(new_publisher_id, new_publisher, False))  # 새 출판사 추가
+            isbn_data.publisher_id = new_publisher_id  # 새 출판사의 ID를 반영
+
+        # 저자 수정
+        # 기존 저자-ISBN 관계 삭제
+        self.isbn_author_table = [ia for ia in self.isbn_author_table if ia.isbn != isbn]
+        # 새 저자-ISBN 관계 추가
+        for name, number in valid_authors:
+            self.isbn_author_table.append(IsbnAuthorRecord(isbn, number))
+
         print("수정이 완료되었습니다.")
         self.fetch_data_file()
         return True
+
+
     
     # ========== 4. 검색 ========== #
     def search_book(self):
@@ -1637,7 +1759,7 @@ def main_prompt(bookData: DataManager) -> None:
         
         try:
             slc = int(input())
-            assert 0 < slc <= 9, "원하는 동작에 해당하는 번호(숫자)만 입력해주세요."
+            assert 0 < slc < 9, "원하는 동작에 해당하는 번호(숫자)만 입력해주세요."
         except ValueError as e:
             print("원하는 동작에 해당하는 번호(숫자)만 입력해주세요.")
             continue
