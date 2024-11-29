@@ -760,6 +760,53 @@ class DataManager(object):
                 
         return author_ids
 
+    # 전화번호로 유저 검색 (전화번호는 unique)
+    def search_user_by_phone_number(self, phone_number):
+        for user in self.user_table:
+            if user.phone_number == phone_number:
+                return user
+            
+    # 이름으로 유저 검색
+    def search_user_by_name(self, name):
+        users = []
+        for user in self.user_table:
+            if user.name == name:
+                users.append(user)
+                
+        return users
+    
+    # 대출중인 책 검색
+    # overdue_only=False -> 대출중인 책 모두 검색 (연체중 포함)
+    # overdue_only=True -> 연체중인 책만 검색
+    def search_borrow_books(self, user_id, overdue_only:bool=False) -> list[int]:
+        book_ids = []
+        
+        for borrow in self.borrow_table:
+            if borrow.user_id == user_id and borrow.actual_return_date is None:
+                # 대출중인 책 모두 검색 (연체중 포함)
+                if not overdue_only:
+                    book_ids.append(borrow.book_id)
+                    
+                # 연체중인 책만 검색
+                else:
+                    if borrow.return_date < self.today:
+                        book_ids.append(borrow.book_id)
+        
+        return book_ids
+        
+    # 해당 책을 대출한 유저 ID 반환
+    def search_borrower_by_book_id(self, book_id):
+        for borrow in self.borrow_table:
+            if borrow.book_id == book_id:
+                return borrow.user_id
+            
+        return None
+        
+    # 연체 패널티 user id로 검색
+    def search_overdue_penalty(self, user_id) -> bool:
+        for penalty in self.overdue_penalty_table:
+            if penalty.user_id == user_id and penalty.penalty_end_date >= self.today >= penalty.penalty_start_date:
+                return True
     
     # ========== 1. 추가 ========== #
     def add_book(self):
@@ -889,8 +936,85 @@ class DataManager(object):
     
     # ========== 5. 대출 ========== #
     def borrow_book(self):
-        pass
-    
+        name = self.input_borrower_name()
+        if not name:
+            return False
+        
+        if name == self.config["cancel"]:
+            print("대출이 취소되었습니다. 메인 프롬프트로 돌아갑니다.")
+            return False
+        
+        phone = self.input_phone_number()
+        if not phone:
+            return False
+        
+        if phone == self.config["cancel"]:
+            print("대출이 취소되었습니다. 메인 프롬프트로 돌아갑니다.")
+            return False
+        
+        borrower_id = self.search_user_by_phone_number(phone)
+        
+        overdue_books = []
+        if borrower_id:
+            overdue_books = self.search_overdue_penalty(borrower_id)
+        
+        if overdue_books:
+            print("연체중인 책을 보유하고 있어 대출이 불가능합니다.")
+            print("아래 목록은 대출자가 현재 연체중인 책입니다.")
+            print(self.get_header(contain_borrow_info=True))
+            print()
+            for book_id in overdue_books:
+                print(self.print_book(book_id, include_borrow=True))
+            return False
+        
+        borrowed_books = self.search_borrow_books(borrower_id, overdue_only=False)
+        borrowed_count = len(borrowed_books)
+        if borrowed_count >= self.config["max_borrow_count"]:
+            print(f"대출 중인 책이 {borrowed_count}권 있으며 더 이상 대출이 불가능합니다.")
+            print(BookRecord.get_header(contain_borrow_info=True))
+            print()
+            for book_id in borrowed_books:
+                print(self.print_book(book_id, include_borrow=True))  
+            return False
+        else:
+            print(f"대출중인 책이 {borrowed_count}권 있으며, {self.config["max_borrow_count"] - borrowed_count}권 대출이 가능합니다.")
+
+        book_id = self.input_book_id("대출할 책의 고유번호를 입력해주세요: ", 1)
+        
+        if (book_id==None):
+            return False
+        
+        if book_id == self.config["cancel"]:
+            print("대출이 취소되었습니다. 메인 프롬프트로 돌아갑니다.")
+            return False
+
+        book_id = int(book_id)
+        
+        book = self.search_book_by_id(book_id)
+        print("책이 특정되었습니다.")
+        print(self.get_header(contain_borrow_info=False))
+        print()
+        print(self.print_book(book_id, include_borrow=False))
+        
+        if self.search_borrower_by_book_id(book_id):
+            print("이미 다른 사용자에 의해 대출 중이므로 대출이 불가능합니다.")
+            return False
+        
+        if self.input_response("위 책을 대출할까요? (Y/N): "):
+            borrow_date = self.today
+            due_date = self.today + config["borrow_date"]
+            
+            borrow = BorrowRecord(len(self.borrow_table), book_id, borrower_id, borrow_date, due_date, None, False)
+            self.borrow_table.append(borrow)
+            
+            print(f"대출이 완료되었습니다. 반납 예정일은 {due_date} 입니다.")
+            self.fetch_data_file()
+            return True
+        
+        else:
+            print("대출이 취소되었습니다. 메인 프롬프트로 돌아갑니다.")
+            return False
+
     # ========== 6. 반납 ========== #
     def return_book(self):
         pass
