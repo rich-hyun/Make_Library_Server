@@ -276,7 +276,7 @@ class DataManager(object):
         if verbose: print("="*10, "Start Reading Data Files", "="*10)
         
         # 1. Book Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_Book.txt"), "r") as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_Book.txt"), "r", encoding="utf-8") as f:
             lines = f.readlines()
             
             self.static_id = int(lines[0])
@@ -290,7 +290,7 @@ class DataManager(object):
             print(f"max_book_id: {self.static_id}")
                 
         # 2. ISBN Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt"), "r") as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt"), "r", encoding="utf-8") as f:
             for line in f:
                 isbn, title, publisher_id, published_year, isbn_register_date = line.strip().split(sep)
                 self.isbn_table.append(ISBNRecord(int(isbn), title, int(publisher_id), int(published_year), MyDate.from_str(isbn_register_date)))
@@ -298,7 +298,7 @@ class DataManager(object):
         if verbose: print(f"{len(self.isbn_table)} ISBN Data Loaded")
                 
         # 3. Author Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_Author.txt"), "r") as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_Author.txt"), "r", encoding="utf-8") as f:
             for line in f:
                 author_id, name, deleted = line.strip().split(sep)
                 self.author_table.append(AuthorRecord(int(author_id), name, bool(int(deleted))))
@@ -306,7 +306,7 @@ class DataManager(object):
         if verbose: print(f"{len(self.author_table)} Author Data Loaded")
                 
         # 4. ISBN - Author Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_IsbnAuthor.txt"), "r") as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_IsbnAuthor.txt"), "r", encoding="utf-8") as f:
             for line in f:
                 isbn, author_id = line.strip().split(sep)
                 self.isbn_author_table.append(IsbnAuthorRecord(int(isbn), int(author_id)))
@@ -314,7 +314,7 @@ class DataManager(object):
         if verbose: print(f"{len(self.isbn_author_table)} ISBN - Author Data Loaded")
                 
         # 5. Book Edit Log Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), "r") as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), "r", encoding="utf-8") as f:
             for line in f:
                 log_id, isbn, edit_date = line.strip().split(sep)
                 self.book_edit_log_table.append(BookEditLogRecord(int(log_id), int(isbn), MyDate.from_str(edit_date)))
@@ -322,7 +322,7 @@ class DataManager(object):
         if verbose: print(f"{len(self.book_edit_log_table)} Book Edit Log Data Loaded")
                 
         # 6. Borrow Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), "r") as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), "r", encoding="utf-8") as f:
             for line in f:
                 borrow_id, book_id, user_id, borrow_date, return_date, actual_return_date, deleted = line.strip().split(sep)
                 self.borrow_table.append(BorrowRecord(int(borrow_id), int(book_id), int(user_id), MyDate.from_str(borrow_date), MyDate.from_str(return_date), MyDate.from_str(actual_return_date), bool(int(deleted))))
@@ -330,7 +330,7 @@ class DataManager(object):
         if verbose: print(f"{len(self.borrow_table)} Borrow Data Loaded")            
     
         # 7. User Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_User.txt"), "r") as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_User.txt"), "r", encoding="utf-8") as f:
             for line in f:
                 user_id, phone_number, name, deleted = line.strip().split(sep)
                 self.user_table.append(UserRecord(int(user_id), phone_number, name, bool(int(deleted))))
@@ -338,7 +338,7 @@ class DataManager(object):
         if verbose: print(f"{len(self.user_table)} User Data Loaded")
         
         # 8. Publisher Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt"), "r") as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt"), "r", encoding="utf-8") as f:
             for line in f:
                 publisher_id, name, deleted = line.strip().split(sep)
                 self.publisher_table.append(PublisherRecord(int(publisher_id), name, bool(int((deleted)))))
@@ -346,7 +346,7 @@ class DataManager(object):
         if verbose: print(f"{len(self.publisher_table)} Publisher Data Loaded")
 
         # 9. Overdue Penalty Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_OverduePenalty.txt"), "r") as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_OverduePenalty.txt"), "r", encoding="utf-8") as f:
             for line in f:
                 penalty_id, user_id, penalty_start_date, penalty_end_date = line.strip().split(sep)
                 self.overdue_penalty_table.append(OverduePenaltyRecord(int(penalty_id), int(user_id), MyDate.from_str(penalty_start_date), MyDate.from_str(penalty_end_date)))
@@ -359,47 +359,47 @@ class DataManager(object):
     # ========== 데이터 파일 저장 (임시) ========== #
     def write_data_files(self):
         # 1. Book Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_Book.txt"), "w") as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_Book.txt"), "w", encoding="utf-8") as f:
             for book in self.book_table:
                 f.write(f"{book.book_id}/{book.isbn}/{str(book.register_date)}/{int(book.deleted)}/{str(book.delete_date)}\n")
                 
         # 2. ISBN Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt"), "w") as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt"), "w", encoding="utf-8") as f:
             for isbn in self.isbn_table:
                 f.write(f"{isbn.isbn}/{isbn.title}/{isbn.publisher_id}/{isbn.published_year}/{str(isbn.isbn_register_date)}\n")
                 
         # 3. Author Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_Author.txt"), "w") as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_Author.txt"), "w", encoding="utf-8") as f:
             for author in self.author_table:
                 f.write(f"{author.author_id}/{author.name}/{int(author.deleted)}\n")
                 
         # 4. ISBN - Author Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_IsbnAuthor.txt"), "w") as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_IsbnAuthor.txt"), "w", encoding="utf-8") as f:
             for isbn_author in self.isbn_author_table:
                 f.write(f"{isbn_author.isbn}/{isbn_author.author_id}\n")
                 
         # 5. Book Edit Log Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), "w") as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), "w", encoding="utf-8") as f:
             for log in self.book_edit_log_table:
                 f.write(f"{log.log_id}/{log.isbn}/{str(log.edit_date)}\n")
                 
         # 6. Borrow Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), "w") as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), "w", encoding="utf-8") as f:
             for borrow in self.borrow_table:
                 f.write(f"{borrow.book_id}/{borrow.user_id}/{str(borrow.borrow_date)}/{str(borrow.return_date)}/{str(borrow.actual_return_date)}/{int(borrow.deleted)}\n")
                 
         # 7. User Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_User.txt"), "w") as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_User.txt"), "w", encoding="utf-8") as f:
             for user in self.user_table:
                 f.write(f"{user.user_id}/{user.phone_number}/{user.name}/{int(user.deleted)}\n")
                 
         # 8. Publisher Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt"), "w") as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt"), "w", encoding="utf-8") as f:
             for publisher in self.publisher_table:
                 f.write(f"{publisher.publisher_id}/{publisher.name}/{int(publisher.deleted)}\n")
                 
         # 9. Overdue Penalty Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_OverduePenalty.txt"), "w") as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_OverduePenalty.txt"), "w", encoding="utf-8") as f:
             for penalty in self.overdue_penalty_table:
                 f.write(f"{penalty.penalty_id}/{penalty.user_id}/{str(penalty.penalty_start_date)}/{str(penalty.penalty_end_date)}\n")
     
@@ -1567,7 +1567,7 @@ def main_prompt(bookData: DataManager) -> None:
         
         try:
             slc = int(input())
-            assert 0 < slc < 9, "원하는 동작에 해당하는 번호(숫자)만 입력해주세요."
+            assert 0 < slc <= 9, "원하는 동작에 해당하는 번호(숫자)만 입력해주세요."
         except ValueError as e:
             print("원하는 동작에 해당하는 번호(숫자)만 입력해주세요.")
             continue
