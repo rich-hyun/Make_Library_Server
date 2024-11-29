@@ -419,6 +419,9 @@ class DataManager(object):
             if book.book_id == book_id:
                 book_data = book
                 break
+            
+        if book_data is None:
+            raise NotImplementedError("해당 고유번호를 가진 책이 존재하지 않습니다.")
         
         # find isbn
         isbn_data = None
@@ -462,7 +465,7 @@ class DataManager(object):
                     user_data = user
                     break
                 
-        return_str = f"{book_data.book_id}/"
+        return_str = f"{book_id}/"
         return_str += str(isbn_data.isbn).zfill(2) + "/"
         return_str += f"{isbn_data.title}/"
         return_str += f"{" & ".join(list(map(lambda x:f"{x.name} #{x.author_id}", author_data)))}/"
@@ -875,9 +878,124 @@ class DataManager(object):
             
         return None
     
+    # 출판사 이름으로 검색
+    def search_publisher_by_name(self, name):
+        for publisher in self.publisher_table:
+            if publisher.name == name:
+                return publisher
+            
+        return None
+    
     # ========== 1. 추가 ========== #
     def add_book(self):
-        pass
+        if self.is_full():
+            print("더 이상 추가할 수 없습니다.")
+            return False
+        
+        isbn = self.input_isbn("추가할 책의 ISBN을 입력하세요: ")
+        if not isbn:
+            return False
+
+        if isbn == self.config["cancel"]:
+            print("추가를 중단하며 메인 프롬프트로 돌아갑니다.")
+            return False
+        
+        isbn = int(isbn)
+        book_info = []
+        books = self.search_book_by_isbn(isbn)
+        
+        # ISBN 최초 등록
+        if not books:
+            messages_and_functions = [
+                ("추가할 책의 제목을 입력하세요: ", self.input_bookName),
+                ("추가할 책의 저자를 입력하세요: ", self.input_author),
+                ("추가할 책의 출판사를 입력하세요: ", self.input_publisher),
+                ("추가할 책의 출판년도를 입력하세요: ", self.input_year),
+            ]
+            
+            for message, func in messages_and_functions:
+                info = func(message)
+                if not info:
+                    return False
+
+                if info == self.config["cancel"]:
+                    print("추가를 중단하며 메인 프롬프트로 돌아갑니다.")
+                    return False
+                    
+                book_info.append(info)
+                
+            # TODO: 저자 동명이인 처리
+            # TODO: 저자 없는 경우 처리
+            
+            # 출판사 있는지 검색, 없으면 추가
+            publisher = self.search_publisher_by_name(book_info[2])
+            
+            if not publisher:
+                publisher_flag = False
+                publisher_id = len(self.publisher_table)
+                publisher = PublisherRecord(len(self.publisher_table), book_info[2], False)
+            else:
+                publisher_flag = True
+                publisher_id = publisher.publisher_id
+                
+            # isbn 데이터
+            new_isbn = ISBNRecord(isbn, book_info[0], publisher_id, book_info[3], self.today)
+
+            # book 데이터
+            book_id = len(self.book_table)
+            new_book = BookRecord(book_id, isbn, self.today, None, False)
+            
+            print(f"{book_id}/{new_isbn.isbn}/{new_isbn.title}/{publisher.name}/{new_isbn.published_year}/{new_isbn.isbn_register_date}")
+            print()
+            
+            if self.input_response("해당 책을 추가하시겠습니까?(Y/N): "):
+                if not publisher_flag:
+                    self.publisher_table.append(publisher)
+                
+                self.isbn_table.append(new_isbn)
+                self.book_table.append(new_book)    
+                
+                self.fetch_data_file()
+                return True
+            else:
+                print("추가를 중단하며 메인 프롬프트로 돌아갑니다.")
+                return False
+                
+        # 이미 ISBN이 존재하는 경우
+        else:
+            print(f"ISBN이 {isbn}인 책이 이미 {len(books)}권이 있습니다.")
+            
+            print(self.get_header())
+            print()
+            
+            for book in books:
+                print(self.print_book(book.book_id, include_borrow=True))
+            print("\n여기에\n")
+            
+            isbn_data = self.search_isbn_data(isbn)
+            publisher = self.search_publisher_by_id(isbn_data.publisher_id)
+            author_ids = self.search_author_by_isbn(isbn)
+            
+            print(f"{len(self.book_table)}/{isbn_data.isbn}/{isbn_data.title}/", end="")
+                
+            author_data = []
+            for author_id in author_ids:
+                author = self.search_author_by_id(author_id)
+                author_data.append(f"{author.name} #{author.author_id}")
+                
+            print(" & ".join(author_data), end="")
+                  
+            print(f"/{publisher.name}/{isbn_data.published_year}/{self.today}")
+            print()
+            
+            if self.input_response("해당 책을 추가하시겠습니까?(Y/N): "):
+                new_book = BookRecord(len(self.book_table), isbn, self.today, None, False)
+                self.book_table.append(new_book)
+                self.fetch_data_file()
+                return True
+            else:
+                print("추가를 중단하며 메인 프롬프트로 돌아갑니다.")
+                return False
     
     # ========== 2. 삭제 ========== #
     def delete_book(self):
@@ -913,24 +1031,6 @@ class DataManager(object):
         else:
             print("삭제를 취소하였습니다. 메인프롬프트로 돌아갑니다.")
             return False
-        
-    # # 대출중이거나 연체중인지 검사
-    # def check_overdue_delete(self, book_id):
-    #     for borrow in self.borrow_table:
-    #         # 대출중인 케이스
-    #         # 1) actual_return_date 미존재
-    #         if borrow.book_id == book_id and borrow.actual_return_date is None:
-    #             return True
-        
-    #         # 연체중인 케이스
-    #         # 2) actual_return_date 존재, actual_return_date > return_date, 
-    #         # (연체일) actual_date - return_date > today - actual_date
-    #         if borrow.book_id == book_id and borrow.actual_return_date is not None:
-    #             if borrow.actual_return_date > borrow.return_date:
-    #                 if borrow.actual_return_date - borrow.return_date > self.today - borrow.actual_return_date:
-    #                     return True
-                    
-    #     return False
             
     # ========== 3. 수정 ========== #
     def update_book(self):
