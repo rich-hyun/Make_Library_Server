@@ -583,7 +583,8 @@ class BookData(object):
     # 4. 검색
     # 5. 대출
     # 6. 반납
-    # 7. 종료
+    # 7. 설정
+    # 8. 종료
 
     """ 1. 추가 """
     def add_book(self) -> bool:
@@ -962,6 +963,49 @@ class BookData(object):
             print(f"ERROR: 예상하지 못한 오류가 발생했습니다. {str(e)}")
             return False
 
+    """ 7. 설정 """
+    def system_setting(self):
+        while True:
+            print("\n원하는 설정에 해당하는 번호를 입력하세요.")
+            print("1. 반납 기한(대출 일수)")
+            print("-------------")
+            user_input = self.input_setting_option()
+
+            if user_input == CANCEL:
+                print("설정을 취소하였습니다. 메인 프롬프트로 돌아갑니다.")
+                return False
+
+            if user_input == "1":
+                self.change_return_period()
+                return True
+
+
+    def change_return_period(self):
+        while True:
+            print(f"\n현재 반납 기한(대출 일수)은 {BORROW_DATE}일입니다.")
+            new_period = self.input_return_period("변경할 반납 기한을 입력하세요 : ")
+
+            if new_period == CANCEL:
+                print("설정을 취소하였습니다. 메인 프롬프트로 돌아갑니다.")
+                return False
+
+            if new_period is not None:
+                self.confirm_return_period_change(new_period)
+                return True
+
+
+    def confirm_return_period_change(self, new_period):
+        message = f"\n반납 기한을 {new_period}일로 변경하겠습니까?(Y/N): "
+        if self.input_response(message):
+            global BORROW_DATE
+            BORROW_DATE = new_period
+            print("변경이 완료되었습니다. 메인 프롬프트로 돌아갑니다.")
+            return True
+        else:
+            print("변경을 취소하였습니다. 메인 프롬프트로 돌아갑니다.")
+            return False
+
+
     """ 검사 함수 """
     def check_book_id_validate(self, book_id, flag): # flag == 0 -> 있으면 False 없으면 True, flag == 1 -> 없으면 False 있으면 True
         if book_id == CANCEL:
@@ -1305,6 +1349,30 @@ class BookData(object):
             return None
 
 
+    def input_setting_option(self) -> str:
+        setting_option = input().strip()
+        if setting_option == CANCEL:
+            return CANCEL
+
+        if setting_option not in ["1"]:
+            print("원하는 설정에 해당하는 번호(숫자)만 입력해주세요.")
+            return None
+            
+        return setting_option
+
+
+    def input_return_period(self, input_message: str) -> int:
+        return_period = input(input_message).strip()
+        if return_period == CANCEL:
+            return CANCEL
+        if not return_period.isdigit() or int(return_period) < 0:
+            print("0 이상의 올바른 정수를 입력해주세요.")
+            return None
+        return int(return_period)
+
+
+
+
 """ main prompt """
 def main_prompt(bookData) -> None:
     slc = 0
@@ -1315,14 +1383,15 @@ def main_prompt(bookData) -> None:
 4. 검색
 5. 대출
 6. 반납
-7. 종료\n"""
+7. 설정
+8. 종료\n"""
     
-    while slc != 7:
+    while slc != 8:
         print(main_prompt_text + "-"*20 + "\nLibsystem_Main > ", end="")
         
         try:
             slc = int(input())
-            assert 0 < slc <= 7, "원하는 동작에 해당하는 번호(숫자)만 입력해주세요."
+            assert 0 < slc <= 8, "원하는 동작에 해당하는 번호(숫자)만 입력해주세요."
         except ValueError as e:
             print("원하는 동작에 해당하는 번호(숫자)만 입력해주세요.")
             continue
@@ -1350,6 +1419,9 @@ def main_prompt(bookData) -> None:
             
         if slc == 6:
             bookData.return_book()
+
+        if slc == 7:
+            bookData.system_setting()
 
     print("프로그램을 종료합니다.")
 
