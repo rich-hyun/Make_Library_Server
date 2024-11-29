@@ -479,7 +479,6 @@ class DataManager(object):
         return_str += str(isbn_data.isbn).zfill(2) + "/"
         return_str += f"{isbn_data.title}/"
         return_str += f"{' & '.join(list(map(lambda x: f'{x.name} #{x.author_id}', author_data)))}/"
-
         return_str += f"{publisher_data.name}/"
         return_str += f"{isbn_data.published_year}/"
         return_str += str(book_data.register_date)
@@ -1399,7 +1398,7 @@ class DataManager(object):
                 print(self.print_book(book_id, include_borrow=True))  
             return False
         else:
-            print(f'대출중인 책이 {borrowed_count}권 있으며, {self.config["max_borrow_count"] - borrowed_count}권 대출이 가능합니다.')
+            print(f"대출중인 책이 {borrowed_count}권 있으며, {self.config['max_borrow_count'] - borrowed_count}권 대출이 가능합니다.")
 
         book_id = self.input_book_id("대출할 책의 고유번호를 입력해주세요: ", 1)
         
@@ -1503,8 +1502,56 @@ class DataManager(object):
         #     return False
             
     # ========== 7. 설정 ========== #
-    def setting(self):
-        pass
+    def system_setting(self):
+        while True:
+            print("\n원하는 설정에 해당하는 번호를 입력하세요.")
+            print("1. 반납 기한(대출 일수)")
+            print("-------------")
+            user_input = self.input_setting_option()
+
+            if user_input == self.config["cancel"]:
+                print("설정을 취소하였습니다. 메인 프롬프트로 돌아갑니다.")
+                return
+
+            if user_input == "1":
+                self.change_return_period()
+                return
+
+
+    def change_return_period(self):
+        while True:
+            print(f"\n현재 반납 기한(대출 일수)은 {self.config['borrow_date']}일입니다.")
+            new_period = self.input_return_period("변경할 반납 기한을 입력하세요 : ")
+
+            if new_period == self.config["cancel"]:
+                print("설정을 취소하였습니다. 메인 프롬프트로 돌아갑니다.")
+                return
+
+            if new_period is not None:
+                self.confirm_return_period_change(new_period)
+                return
+
+
+    def confirm_return_period_change(self, new_period):
+        message = f"\n반납 기한을 {new_period}일로 변경하겠습니까?(Y/N): "
+        if self.input_response(message):
+            self.config['borrow_date'] = new_period
+
+            config_data = {
+                "configuration": [
+                    {"constant_name": k,
+                     "value_type": "int" if isinstance(v, int) else "float" if isinstance(v, float) else "str",
+                      "value": v}
+                    for k, v in self.config.items()
+                ]
+            }
+            with open(os.path.join(self.file_path, "Libsystem_Config.json"), "w") as f:
+                json.dump(config_data, f, indent=4)
+
+            print("변경이 완료되었습니다. 메인 프롬프트로 돌아갑니다.")
+        else:
+            print("변경을 취소하였습니다. 메인 프롬프트로 돌아갑니다.")
+        
     
     # ========== 8. 연혁(로그) 조회 ========== #
     def history(self):
@@ -1670,6 +1717,28 @@ class DataManager(object):
             print(f"ERROR: {error_message}")
             return None
 
+    def input_setting_option(self) -> str:
+        setting_option = input().strip()
+        if setting_option == self.config["cancel"]:
+            return self.config["cancel"]
+
+        if setting_option not in ["1"]:
+            print("원하는 설정에 해당하는 번호(숫자)만 입력해주세요.")
+            return None
+            
+        return setting_option
+
+
+    def input_return_period(self, input_message: str) -> int:
+        return_period = input(input_message).strip()
+        if return_period == self.config["cancel"]:
+            return self.config["cancel"]
+        if not return_period.isdigit() or int(return_period) < 0:
+            print("0 이상의 올바른 정수를 입력해주세요.")
+            return None
+        return int(return_period)
+
+
 
 """ ========== main prompt ========== """
 def main_prompt(bookData: DataManager) -> None:
@@ -1721,14 +1790,12 @@ def main_prompt(bookData: DataManager) -> None:
     
         # 설정
         if slc == 7:
-            bookData.setting()
+            bookData.system_setting()
             
         # 연혁(로그) 조회
         if slc == 8:
             bookData.history()
     
-        if slc == 9:
-            bookData.return_book()
 
     print("프로그램을 종료합니다.")
 
@@ -1756,7 +1823,7 @@ def input_date(bookData: DataManager):
             print("올바르지 않은 날짜입니다. 다시 입력해주세요.", end="\n\n")
             continue
         
-        # 연도가 1513보다 작은지 검사
+        # 연도가 1583보다 작은지 검사
         if year < 1583:
             print("연도는 1583년 부터 가능합니다.", end="\n\n")
             continue
