@@ -753,13 +753,19 @@ class DataManager(object):
 
     # ========== 검색 함수 ========== #
     # 고유번호로 검색
-    def search_book_by_id(self, book_id):
+    def search_book_by_id(self, book_id) -> BookRecord:
+        """_summary_ 
+        책 고유번호로 책 인스턴스 반환
+        """
         for book in self.book_table:
             if book.book_id == book_id:
                 return book
     
     # isbn 정보 검색 (제목, 저자, 출판사 등)
-    def search_isbn_data(self, isbn):
+    def search_isbn_data(self, isbn) -> ISBNRecord:
+        """_summary_
+        ISBN으로 ISBN 인스턴스 반환
+        """
         for i in self.isbn_table:
             if i.isbn == isbn:
                 return i
@@ -767,7 +773,10 @@ class DataManager(object):
         return None
     
     # Book 테이블 내 isbn을 갖는 모든 책 검색
-    def search_book_by_isbn(self, isbn):
+    def search_books_by_isbn(self, isbn) -> list[int]:
+        """_summary_
+        ISBN을 가지는 모든 책 인스턴스 반환
+        """
         books = []
         for book in self.book_table:
             if book.isbn == isbn:
@@ -776,7 +785,10 @@ class DataManager(object):
         return books
     
     # Author ID로 검색
-    def search_author_by_id(self, author_id):
+    def search_author_by_id(self, author_id) -> AuthorRecord:
+        """_summary_
+        Author ID로 Author 인스턴스 반환
+        """
         if author_id < 1:
             return None
         
@@ -787,7 +799,10 @@ class DataManager(object):
         return None
     
     # Publisher ID로 검색
-    def search_publisher_by_id(self, publisher_id):
+    def search_publisher_by_id(self, publisher_id) -> PublisherRecord:
+        """_summary_
+        Publisher ID로 Publisher 인스턴스 반환
+        """
         if publisher_id < 0:
             return None
         
@@ -798,7 +813,10 @@ class DataManager(object):
         return None
     
     # 저자가 작성한 책 ISBN 검색
-    def search_isbn_by_author_id(self, author_id):
+    def search_isbns_by_author_id(self, author_id) -> list[int]:
+        """_summary_
+        저자 ID를 가지는 저자가 작성한 모든 책의 ISBN 반환
+        """
         isbns = []
         for isbn_author in self.isbn_author_table:
             if isbn_author.author_id == author_id:
@@ -807,7 +825,10 @@ class DataManager(object):
         return isbns
     
     # ISBN의 저자 모두 검색
-    def search_author_by_isbn(self, isbn):
+    def search_author_ids_by_isbn(self, isbn) -> list[int]:
+        """_summary_
+        ISBN 책을 작성한 모든 저자 ID 반환
+        """
         author_ids = []
         for isbn_author in self.isbn_author_table:
             if isbn_author.isbn == isbn:
@@ -816,13 +837,19 @@ class DataManager(object):
         return author_ids
 
     # 전화번호로 유저 검색 (전화번호는 unique)
-    def search_user_by_phone_number(self, phone_number):
+    def search_user_by_phone_number(self, phone_number) -> UserRecord:
+        """_summary_
+        전화번호로 유저 인스턴스 반환
+        """
         for user in self.user_table:
             if user.phone_number == phone_number:
                 return user
             
     # 이름으로 유저 검색
-    def search_user_by_name(self, name):
+    def search_users_by_name(self, name) -> list[UserRecord]:
+        """_summary_
+        이름으로 일치하는 모든 유저 인스턴스 반환
+        """
         users = []
         for user in self.user_table:
             if user.name == name:
@@ -831,7 +858,10 @@ class DataManager(object):
         return users
     
     # 유저 ID로 검색
-    def search_user_by_id(self, user_id):
+    def search_user_by_id(self, user_id) -> UserRecord:
+        """_summary_
+        User ID로 일치하는 유저 인스턴스 반환
+        """
         for user in self.user_table:
             if user.user_id == user_id:
                 return user
@@ -839,9 +869,12 @@ class DataManager(object):
         return None
     
     # 대출중인 책 검색
-    # overdue_only=False -> 대출중인 책 모두 검색 (연체중 포함)
-    # overdue_only=True -> 연체중인 책만 검색
-    def search_borrow_books(self, user_id, overdue_only:bool=False) -> list[int]:
+    def search_borrowing_book_ids_by_user_id(self, user_id, overdue_only:bool=False) -> list[int]:
+        """_summary_
+        유저 ID를 갖는 사용자가 대출중인 책의 고유번호 반환
+        overdue_only=False -> 대출중인 책 모두 검색 (연체중 포함)
+        overdue_only=True -> 연체중인 책만 검색
+        """
         book_ids = []
         
         for borrow in self.borrow_table:
@@ -858,7 +891,10 @@ class DataManager(object):
         return book_ids
         
     # 해당 책을 대출한 유저 ID 반환
-    def search_borrower_by_book_id(self, book_id):
+    def search_borrower_id_by_book_id(self, book_id) -> list[int]:
+        """_summary_
+        해당 book id 책을 대출한 유저 ID 반환
+        """
         for borrow in self.borrow_table:
             if borrow.book_id == book_id:
                 return borrow.user_id
@@ -866,12 +902,20 @@ class DataManager(object):
         return None
         
     # 연체 패널티 user id로 검색
-    def search_overdue_penalty(self, user_id) -> bool:
+    def search_overdue_penalty_by_user_id(self, user_id) -> bool:
+        """_summary_
+        해당 User ID를 가진 사용자가 연체 패널티를 받고 있는지 확인
+        """
         for penalty in self.overdue_penalty_table:
             if penalty.user_id == user_id and penalty.penalty_end_date >= self.today >= penalty.penalty_start_date:
                 return True
+        
+        return False
             
-    def search_borrow_data_by_id(self, book_id, user_id):
+    def search_borrow_by_user_id(self, book_id, user_id) -> BorrowRecord:
+        """_summary_
+        해당 유저가 해당 책을 대출한 대출 Borrow 인스턴스 반환
+        """
         for borrow in self.borrow_table:
             if borrow.book_id == book_id and borrow.user_id == user_id:
                 return borrow
@@ -879,7 +923,10 @@ class DataManager(object):
         return None
     
     # 출판사 이름으로 검색
-    def search_publisher_by_name(self, name):
+    def search_publisher_by_name(self, name) -> PublisherRecord:
+        """_summary_
+        출판사 이름으로 출판사 인스턴스 반환 (출판사 이름은 unique함)
+        """
         for publisher in self.publisher_table:
             if publisher.name == name:
                 return publisher
@@ -902,7 +949,7 @@ class DataManager(object):
         
         isbn = int(isbn)
         book_info = []
-        books = self.search_book_by_isbn(isbn)
+        books = self.search_books_by_isbn(isbn)
         
         # ISBN 최초 등록
         if not books:
@@ -974,7 +1021,7 @@ class DataManager(object):
             
             isbn_data = self.search_isbn_data(isbn)
             publisher = self.search_publisher_by_id(isbn_data.publisher_id)
-            author_ids = self.search_author_by_isbn(isbn)
+            author_ids = self.search_author_ids_by_isbn(isbn)
             
             print(f"{len(self.book_table)}/{isbn_data.isbn}/{isbn_data.title}/", end="")
                 
@@ -1034,7 +1081,92 @@ class DataManager(object):
             
     # ========== 3. 수정 ========== #
     def update_book(self):
-        pass
+        isbn = self.input_isbn("수정할 책의 ISBN을 입력하세요: ")
+        if not isbn:
+            return False  # 입력 실패 시 반환
+        
+        if isbn == self.config["cancel"]:
+            print("수정을 중단하며 메인 프롬프트로 돌아갑니다.")
+            return False
+        
+        isbn = int(isbn)
+        
+        # 책 존재 여부 확인
+        books = self.search_books_by_isbn(isbn)
+        
+        if not books:
+            print("ERROR: 해당 ISBN을 가진 책이 존재하지 않습니다.")
+            return False
+        else:
+            print(f"ISBN이 {isbn}인 책 데이터가 {len(books)}권 있습니다.")
+            print()
+            
+        # 기존 책 정보 출력
+        print(self.get_header(contain_borrow_info=False))
+        print()
+        for book in books:
+            print(self.print_book(book.book_id, include_borrow=False))
+            
+        # 새로운 정보 입력
+        new_title = self.input_bookName("책의 수정될 제목을 입력해주세요: ")
+        if not new_title:
+            return False
+
+        if new_title == self.config["cancel"]:
+            print("수정을 중단하며 메인 프롬프트로 돌아갑니다.")
+            return False
+        
+        # TODO: 저자 수정
+        # new_author = self.input_author("책의 수정될 저자를 입력해주세요: ")
+        # if not new_author:
+        #     return False
+
+        # if new_author == self.config["cancel"]:
+        #     print("수정을 중단하며 메인 프롬프트로 돌아갑니다.")
+        #     return False
+
+        new_publisher = self.input_publisher("책의 수정될 출판사를 입력해주세요: ")
+        if not new_publisher:
+            return False
+
+        if new_publisher == self.config["cancel"]:
+            print("수정을 중단하며 메인 프롬프트로 돌아갑니다.")
+            return False
+            
+        new_year = self.input_year("책의 수정될 출판년도를 입력해주세요: ")
+        if not new_year:
+            return False
+
+        if new_year == self.config["cancel"]:
+            print("수정을 중단하며 메인 프롬프트로 돌아갑니다.")
+            return False
+
+        new_year = int(new_year)
+        
+        # 수정 여부 확인
+        if not self.input_response("수정한 데이터는 복구할 수 없습니다. 정말로 수정하시겠습니까?(Y/N): "):
+            print("수정을 취소하였습니다. 메인 프롬프트로 돌아갑니다.")
+            return False
+        
+        # 수정 반영
+        # ISBN 수정
+        for isbn_data in self.isbn_table:
+            if isbn_data.isbn == isbn:
+                isbn_data.title = new_title
+                isbn_data.published_year = new_year
+                break
+        
+        # 출판사 이름 수정
+        for publisher in self.publisher_table:
+            if publisher.publisher_id == isbn_data.publisher_id:
+                publisher.name = new_publisher
+                break
+            
+        # TODO: 저자 수정
+        
+        print("수정이 완료되었습니다.")
+        self.fetch_data_file()
+        return True
     
     # ========== 4. 검색 ========== #
     def search_book(self):
@@ -1123,7 +1255,7 @@ class DataManager(object):
         
         overdue_books = []
         if borrower_id:
-            overdue_books = self.search_overdue_penalty(borrower_id)
+            overdue_books = self.search_overdue_penalty_by_user_id(borrower_id)
         
         if overdue_books:
             print("연체중인 책을 보유하고 있어 대출이 불가능합니다.")
@@ -1134,7 +1266,7 @@ class DataManager(object):
                 print(self.print_book(book_id, include_borrow=True))
             return False
         
-        borrowed_books = self.search_borrow_books(borrower_id, overdue_only=False)
+        borrowed_books = self.search_borrowing_book_ids_by_user_id(borrower_id, overdue_only=False)
         borrowed_count = len(borrowed_books)
         if borrowed_count >= self.config["max_borrow_count"]:
             print(f"대출 중인 책이 {borrowed_count}권 있으며 더 이상 대출이 불가능합니다.")
@@ -1163,7 +1295,7 @@ class DataManager(object):
         print()
         print(self.print_book(book_id, include_borrow=False))
         
-        if self.search_borrower_by_book_id(book_id):
+        if self.search_borrower_id_by_book_id(book_id):
             print("이미 다른 사용자에 의해 대출 중이므로 대출이 불가능합니다.")
             return False
         
@@ -1204,13 +1336,13 @@ class DataManager(object):
             return False
         
         # 대출 여부 확인
-        if not self.search_borrower_by_book_id(rtn_book_id):
+        if not self.search_borrower_id_by_book_id(rtn_book_id):
             print("ERROR: 현재 대출 중인 책이 아닙니다.")
             return False
         
         # 책 정보 및 대출자 정보 출력
         rtn_isbn = self.search_isbn_data(book_to_return.isbn)
-        author_ids = self.search_author_by_isbn(rtn_isbn.isbn)
+        author_ids = self.search_author_ids_by_isbn(rtn_isbn.isbn)
         
         # TODO: 임시로 저자 1명만 해두었습니다 수정 바람
         if len(author_ids) == 0:
@@ -1221,9 +1353,9 @@ class DataManager(object):
         rtn_publisher = self.search_publisher_by_id(rtn_isbn.publisher_id)
         print(f"{rtn_book_id} / {book_to_return.isbn} / {rtn_isbn.title} / {author_name} / {rtn_publisher.name} / {rtn_isbn.published_year} / {book_to_return.register_date}")
         
-        borrower_id = self.search_borrower_by_book_id(rtn_book_id)
+        borrower_id = self.search_borrower_id_by_book_id(rtn_book_id)
         rtn_user = self.search_user_by_id(borrower_id)
-        borrow_info = self.search_borrow_data_by_id(rtn_book_id, borrower_id)
+        borrow_info = self.search_borrow_by_user_id(rtn_book_id, borrower_id)
         print(f"대출자: {rtn_user.name} {rtn_user.phone_number} / 대출일: {borrow_info.borrow_date}")
         
         # 반납 여부 확인
