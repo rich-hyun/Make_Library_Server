@@ -118,6 +118,55 @@ class MyDate(object):
         
         return MyDate(year, month, day)
 
+    # 뺄셈 연산자 구현 (날짜 빼기)
+    def __sub__(self, days):
+        if not isinstance(days, int):
+            raise TypeError("날짜에서 뺄 일수는 정수여야 합니다.")
+        
+        day = self.day
+        month = self.month
+        year = self.year
+        
+        while days > 0:
+            if day > days:
+                day -= days
+                days = 0
+            else:
+                days -= day
+                month -= 1
+                if month < 1:
+                    month = 12
+                    year -= 1
+                day = 29 if (month == 2 and self.is_leap_year(year)) else [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1]
+        
+        return MyDate(year, month, day)
+    
+    def __add__(self, other):
+        if not isinstance(other, MyDate):
+            raise TypeError("더할 날짜는 MyDate 객체여야 합니다.")
+        
+        total_days = (self.year * 365 + self.month * 30 + self.day) + (other.year * 365 + other.month * 30 + other.day)
+        year = total_days // 365
+        total_days %= 365
+        month = total_days // 30
+        day = total_days % 30
+        
+        return MyDate(year, month, day)
+
+    def __sub__(self, other):
+        if not isinstance(other, MyDate):
+            raise TypeError("뺄 날짜는 MyDate 객체여야 합니다.")
+        
+        total_days_self = self.year * 365 + self.month * 30 + self.day
+        total_days_other = other.year * 365 + other.month * 30 + other.day
+        total_days = total_days_self - total_days_other
+        
+        year = total_days // 365
+        total_days %= 365
+        month = total_days // 30
+        day = total_days % 30
+        
+        return MyDate(year, month, day)
 
 """ ========== 데이터 테이블 구현 ========== """
 # Book
@@ -687,21 +736,24 @@ class DataManager(object):
 
         return True, ""
 
+    # def check_overdue_delete(self, book_id):
+    #     for book in self.book_data:
+    #         if book.book_id == book_id and book.return_date:
+    #             return True
+    #     return False
+
     def check_overdue_delete(self, book_id):
-        for book in self.book_data:
-            if book.book_id == book_id and book.return_date:
+        for borrow in self.borrow_table:
+            if borrow.book_id == book_id and borrow.return_date < self.today:
                 return True
         return False
 
     # ========== 검색 함수 ========== #
     # 고유번호로 검색
     def search_book_by_id(self, book_id):
-        books = []
         for book in self.book_table:
             if book.book_id == book_id:
-                books.append(book)
-                
-        return books
+                return book
     
     # isbn 정보 검색 (제목, 저자, 출판사 등)
     def search_isbn_data(self, isbn):
@@ -775,6 +827,14 @@ class DataManager(object):
                 
         return users
     
+    # 유저 ID로 검색
+    def search_user_by_id(self, user_id):
+        for user in self.user_table:
+            if user.user_id == user_id:
+                return user
+            
+        return None
+    
     # 대출중인 책 검색
     # overdue_only=False -> 대출중인 책 모두 검색 (연체중 포함)
     # overdue_only=True -> 연체중인 책만 검색
@@ -807,6 +867,13 @@ class DataManager(object):
         for penalty in self.overdue_penalty_table:
             if penalty.user_id == user_id and penalty.penalty_end_date >= self.today >= penalty.penalty_start_date:
                 return True
+            
+    def search_borrow_data_by_id(self, book_id, user_id):
+        for borrow in self.borrow_table:
+            if borrow.book_id == book_id and borrow.user_id == user_id:
+                return borrow
+            
+        return None
     
     # ========== 1. 추가 ========== #
     def add_book(self):
@@ -847,23 +914,23 @@ class DataManager(object):
             print("삭제를 취소하였습니다. 메인프롬프트로 돌아갑니다.")
             return False
         
-    # 대출중이거나 연체중인지 검사
-    def check_overdue_delete(self, book_id):
-        for borrow in self.borrow_table:
-            # 대출중인 케이스
-            # 1) actual_return_date 미존재
-            if borrow.book_id == book_id and borrow.actual_return_date is None:
-                return True
+    # # 대출중이거나 연체중인지 검사
+    # def check_overdue_delete(self, book_id):
+    #     for borrow in self.borrow_table:
+    #         # 대출중인 케이스
+    #         # 1) actual_return_date 미존재
+    #         if borrow.book_id == book_id and borrow.actual_return_date is None:
+    #             return True
         
-            # 연체중인 케이스
-            # 2) actual_return_date 존재, actual_return_date > return_date, 
-            # (연체일) actual_date - return_date > today - actual_date
-            if borrow.book_id == book_id and borrow.actual_return_date is not None:
-                if borrow.actual_return_date > borrow.return_date:
-                    if borrow.actual_return_date - borrow.return_date > self.today - borrow.actual_return_date:
-                        return True
+    #         # 연체중인 케이스
+    #         # 2) actual_return_date 존재, actual_return_date > return_date, 
+    #         # (연체일) actual_date - return_date > today - actual_date
+    #         if borrow.book_id == book_id and borrow.actual_return_date is not None:
+    #             if borrow.actual_return_date > borrow.return_date:
+    #                 if borrow.actual_return_date - borrow.return_date > self.today - borrow.actual_return_date:
+    #                     return True
                     
-        return False
+    #     return False
             
     # ========== 3. 수정 ========== #
     def update_book(self):
@@ -1017,8 +1084,69 @@ class DataManager(object):
 
     # ========== 6. 반납 ========== #
     def return_book(self):
-        pass
-    
+        # try:
+        rtn_book_id = self.input_book_id("반납할 책의 고유번호를 입력해주세요: ", 1)
+
+        if (rtn_book_id==None):
+            return False  # 입력 실패 시 반환
+
+        if rtn_book_id == self.config["cancel"]:
+            print("반납을 취소했습니다. 메인 프롬프트로 돌아갑니다.")
+            return False
+        
+        rtn_book_id = int(rtn_book_id)
+        
+        # 고유번호에 해당하는 책 존재 여부 확인
+        book_to_return = self.search_book_by_id(rtn_book_id)
+        
+        if not book_to_return:
+            print()
+            return False
+        
+        # 대출 여부 확인
+        if not self.search_borrower_by_book_id(rtn_book_id):
+            print("ERROR: 현재 대출 중인 책이 아닙니다.")
+            return False
+        
+        # 책 정보 및 대출자 정보 출력
+        rtn_isbn = self.search_isbn_data(book_to_return.isbn)
+        author_ids = self.search_author_by_isbn(rtn_isbn.isbn)
+        
+        # TODO: 임시로 저자 1명만 해두었습니다 수정 바람
+        if len(author_ids) == 0:
+            author_name = ""
+        else:
+            author_name = self.search_author_by_id(author_ids[0]).name
+        
+        rtn_publisher = self.search_publisher_by_id(rtn_isbn.publisher_id)
+        print(f"{rtn_book_id} / {book_to_return.isbn} / {rtn_isbn.title} / {author_name} / {rtn_publisher.name} / {rtn_isbn.published_year} / {book_to_return.register_date}")
+        
+        borrower_id = self.search_borrower_by_book_id(rtn_book_id)
+        rtn_user = self.search_user_by_id(borrower_id)
+        borrow_info = self.search_borrow_data_by_id(rtn_book_id, borrower_id)
+        print(f"대출자: {rtn_user.name} {rtn_user.phone_number} / 대출일: {borrow_info.borrow_date}")
+        
+        # 반납 여부 확인
+        if not self.input_response("위 책을 반납할까요? (Y/N): "):
+            print("반납을 취소했습니다. 메인 프롬프트로 돌아갑니다.")
+            return False
+        
+        # 반납 처리
+        for borrow in self.borrow_table:
+            if borrow.borrow_id == borrower_id and borrow.book_id == rtn_book_id:
+                borrow.actual_return_date = self.today
+                break
+            
+        # TODO: 연체 패널티 추가 
+
+        print("반납이 완료되었습니다. 메인 프롬프트로 돌아갑니다.")
+        self.fetch_data_file()
+        return True
+            
+        # except Exception as e:
+        #     print(f"ERROR: 예상하지 못한 오류가 발생했습니다. {str(e)}")
+        #     return False
+            
     # ========== 7. 설정 ========== #
     def setting(self):
         pass
