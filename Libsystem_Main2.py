@@ -1513,17 +1513,17 @@ class DataManager(object):
             return True, ""
         return False, "전화번호는 010-XXXX-XXXX 형식이어야 합니다."
     
-    def get_author_by_name(self, author_name): # 저자 이름으로 저자 정보 조회
-        for author in self.author_table:
-            if author.name == author_name:
-                return author
-        return None
+    # def get_author_by_name(self, author_name): # 저자 이름으로 저자 정보 조회
+    #     for author in self.author_table:
+    #         if author.name == author_name:
+    #             return author
+    #     return None
 
-    def get_author_by_id(self, author_id): # 저자 ID로 저자 정보 조회
-        for author in self.author_table:
-            if author.author_id == author_id:
-                return author
-        return None
+    # def get_author_by_id(self, author_id): # 저자 ID로 저자 정보 조회
+    #     for author in self.author_table:
+    #         if author.author_id == author_id:
+    #             return author
+    #     return None
 
     def check_author_validate(self, parts_used,value):
         valid_author = None
@@ -1571,15 +1571,15 @@ class DataManager(object):
             if author_id is not None and int(author_id) < 1:
                 error_messages += f"[{author}] ERROR: 저자의 식별번호는 1 이상이어야 합니다.\n"
         
-            # 저자의 식별번호가 존재하는 경우, 실제로 유효한지 확인
-            if author_id is not None:
-                valid_author = self.get_author_by_id(author_id)  # 가정: 이 메서드는 저자 ID로 저자 정보를 조회하는 함수
+            # # 저자의 식별번호가 존재하는 경우, 실제로 유효한지 확인
+            # if author_id is not None:
+            #     valid_author = self.get_author_by_id(author_id)  # 가정: 이 메서드는 저자 ID로 저자 정보를 조회하는 함수
             
-            if author_id is not None and valid_author is None:
-                error_messages += f"[{author}] ERROR: {author_id}번 저자는 없습니다.\n"
+            # if author_id is not None and valid_author is None:
+            #     error_messages += f"[{author}] ERROR: {author_id}번 저자는 없습니다.\n"
             
-            elif author_id is not None and valid_author.name != author_name.strip():
-                error_messages += f"[{author}] ERROR: {author_id}번 저자의 이름은 \"{valid_author.name}\"가 아닙니다.\n"     
+            # elif author_id is not None and valid_author.name != author_name.strip():
+            #     error_messages += f"[{author}] ERROR: {author_id}번 저자의 이름은 \"{valid_author.name}\"가 아닙니다.\n"     
                 
             # # 저자의 이름만 존재하고, 사용 파트가 "수정"인 경우 해당 저자가 존재하는지 확인
             # if author_id is None and parts_used == "수정":
