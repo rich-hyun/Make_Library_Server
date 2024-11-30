@@ -1504,15 +1504,6 @@ class DataManager(object):
         if len(isbn) != 2 or not isbn.isdigit():
             return False, "ISBN은 두 자리 숫자여야 합니다."
         return True, ""
-    
-    def check_author_id_validate(self, author_id):
-        if not author_id.isdigit():
-            return False, "저자 식별번호는 숫자여야 합니다."
-        
-        if author_id.startswith('0'):
-            return False, "저자 식별번호는 0으로 시작할 수 없습니다."
-            
-        return True, ""
 
     def check_phone_number_validate(self, phone_number):
         if phone_number == self.config["cancel"]:
@@ -1534,79 +1525,6 @@ class DataManager(object):
     #         if author.author_id == author_id:
     #             return author
     #     return None
-
-    def check_author_validate(self, parts_used,value):
-        valid_author = None
-        error_messages = ""
-        
-        # 입력값이 뒤로가기 문자와 일치하는지 확인
-        if value == self.config["cancel"]:
-            return True, ""
-        
-        authors = [author.strip() for author in value.split("&") if author.strip()]
-
-        # authors에 등록된 저자가 0명일 경우 True 반환
-        if len(authors) == 0:
-            return True, ""
-        
-        for author in authors:
-            # "/","\"가 포함되어 있는지 확인
-            if "/" in author or "\\" in author:
-                error_messages += f"[{author}] ERROR: 책의 저자에 특수문자 \"/\" 또는 \"\"을 입력할 수 없습니다.\n"
-
-            # 저자에 "#"이 한 개 이하로 있는지 확인
-            if author.count("#") > 1:
-                error_messages += f"[{author}] ERROR: 저자의 형식은 \"이름\" 또는 \"이름 #식별번호\" 둘 중 하나여야 합니다.\n"
-            
-            if '#' in author:
-                # '#'이 있다면 왼쪽이 저자의 이름이고, 오른쪽이 식별번호
-                author_name, author_id = author.split("#")
-            else:
-                author_name = author
-                author_id = None
-
-            # 저자의 이름이 1글자 이상인지 확인
-            if not author_name.strip():
-                error_messages += f"[{author}] ERROR: 저자의 형식은 \"이름\" 또는 \"이름 #식별번호\" 둘 중 하나여야 합니다.\n"
-
-            # 저자의 이름이 공백인지 확인
-            if not author_name.strip():
-               error_messages += f"[{author}] ERROR: 저자의 형식은 \"이름\" 또는 \"이름 #식별번호\" 둘 중 하나여야 합니다.\n"
-            
-            # 저자의 식별번호가 숫자로만 구성되어 있는지 확인
-            if author_id is not None and not author_id.isdigit():
-                error_messages += f"[{author}] ERROR: 특수문자 \"#\"의 오른쪽에는 식별번호만 허용됩니다.\n"
-        
-            # 저자의 식별번호가 1 이상인지 확인
-            if author_id is not None and int(author_id) < 1:
-                error_messages += f"[{author}] ERROR: 저자의 식별번호는 1 이상이어야 합니다.\n"
-        
-            # # 저자의 식별번호가 존재하는 경우, 실제로 유효한지 확인
-            # if author_id is not None:
-            #     valid_author = self.get_author_by_id(author_id)  # 가정: 이 메서드는 저자 ID로 저자 정보를 조회하는 함수
-            
-            # if author_id is not None and valid_author is None:
-            #     error_messages += f"[{author}] ERROR: {author_id}번 저자는 없습니다.\n"
-            
-            # elif author_id is not None and valid_author.name != author_name.strip():
-            #     error_messages += f"[{author}] ERROR: {author_id}번 저자의 이름은 \"{valid_author.name}\"가 아닙니다.\n"     
-                
-            # # 저자의 이름만 존재하고, 사용 파트가 "수정"인 경우 해당 저자가 존재하는지 확인
-            # if author_id is None and parts_used == "수정":
-            #     valid_author = self.get_author_by_name(author_name)  # 가정: 이 메서드는 저자 이름으로 저자 정보를 조회하는 함수
-            #     if not valid_author:
-            #         error_messages += f"[{author}] ERROR: 입력한 저자의 식별번호가 없습니다.\n"
-                
-            
-        # 저자가 5명 이상인지 확인
-        if len(authors) > 5:
-            error_messages += "\nERROR: 책의 저자는 최대 5명입니다.\n"
-        
-        # 오류 메시지가 있다면 반환
-        if error_messages:
-            return False, error_messages.strip()
-    
-        return True, ""
     
     def check_author_id_validate(self, author_id): 
         if author_id == self.config["cancel"]:
@@ -2088,6 +2006,8 @@ class DataManager(object):
         입력받은 저자 문자열을 검증하고 유효성과 오류 메세지를 반환합니다.
         """
         input_author_list = [author.strip() for author in authors_input.split("&") if author.strip()]
+        total_error_message = ""
+        is_total_valid = True
 
         if not input_author_list:
             return True, None
@@ -2106,20 +2026,34 @@ class DataManager(object):
 
             is_valid, error_message = self.check_string_validate("저자", name)
             if not is_valid:
-                return False, error_message
+                is_total_valid = False
+                total_error_message += f"[{author}] ERROR: {error_message}\n"
 
             if number:
                 is_valid, error_message = self.check_author_id_validate(number)
                 if not is_valid:
-                    return False, error_message
+                    is_total_valid = False
+                    total_error_message += f"[{author}] ERROR: {error_message}\n"
+
+        if not is_total_valid:
+            return False, total_error_message
+        
+        for author in input_author_list:
+            if "#" in author:
+                _, number = author.split("#")
+                number = number.strip()
 
                 author_data = self.search_author_by_id(int(number))
                 if not author_data:
-                    return False, f"{int(number)}번 저자가 존재하지 않습니다."
+                    is_total_valid = False
+                    total_error_message += f"[{author}] ERROR: {int(number)}번 저자가 존재하지 않습니다.\n"
                 elif author_data.name != name:
-                    return False, f"{int(number)}번 저자의 이름은 '{name}'이 아닙니다."
-        
-        return True, None
+                    is_total_valid = False
+                    total_error_message += f"[{author}] ERROR: {int(number)}번 저자의 이름은 '{name}'이 아닙니다.\n"
+        if is_total_valid:
+            return True, None
+        else:
+            return False, total_error_message
         
     
     
@@ -2744,7 +2678,7 @@ class DataManager(object):
         author = input(input_message)
         is_valid, error_message = self.check_author_validate(author)
         if not is_valid:
-            print(f"ERROR: {error_message}")
+            print(f"{error_message}")
             return None
         
         author_list = [a.strip() for a in author.split("&") if a.strip()]
