@@ -1514,18 +1514,6 @@ class DataManager(object):
             return True, ""
         return False, "전화번호는 010-XXXX-XXXX 형식이어야 합니다."
     
-    # def get_author_by_name(self, author_name): # 저자 이름으로 저자 정보 조회
-    #     for author in self.author_table:
-    #         if author.name == author_name:
-    #             return author
-    #     return None
-
-    # def get_author_by_id(self, author_id): # 저자 ID로 저자 정보 조회
-    #     for author in self.author_table:
-    #         if author.author_id == author_id:
-    #             return author
-    #     return None
-    
     def check_author_id_validate(self, author_id): 
         if author_id == self.config["cancel"]:
             return True, ""
@@ -2276,9 +2264,15 @@ class DataManager(object):
                 if author.author_id == author_isbn_data.author_id:
                     author_data = author
                     break
-            
-            if search_book in isbn_data.title or search_book in author_data.name:
-                search_results.append(book)
+
+            # 만약 #로 search_book이 시작하면 해당 작가 식별 번호 가진 책 검색
+            if search_book.startswith("#"):
+                if search_book[1:] == str(author_data.author_id):
+                    search_results.append(book)
+
+            else:
+                if search_book in isbn_data.title or search_book in author_data.name:
+                    search_results.append(book)
             
         if not search_results:
         
