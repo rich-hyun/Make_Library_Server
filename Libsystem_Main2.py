@@ -1860,6 +1860,22 @@ class DataManager(object):
                         book_ids.append(borrow.book_id)
         
         return book_ids
+    
+    def search_borrow_dates_by_book_id(self, book_id):
+        book_dates = []
+        for borrow in self.borrow_table:
+            if borrow.book_id == book_id: # (대출일, user_id, 반납일) 튜플 반환
+                book_dates.append((borrow.borrow_date,borrow.user_id,borrow.return_date))
+        
+        return book_dates
+    
+    def search_return_dates_by_book_id(self, book_id):
+        book_dates=[]
+        for borrow in self.borrow_table:
+            if borrow.book_id == book_id and borrow.actual_return_date is not None: # (반납일, 연체일) 튜플 반환
+                book_dates.append((borrow.actual_return_date,borrow.actual_return_date - borrow.return_date))
+        
+        return book_dates
         
     # 해당 책을 대출한 유저 ID 반환
     def search_borrower_id_by_book_id(self, book_id) -> int:
@@ -2585,7 +2601,75 @@ class DataManager(object):
     
     # ========== 8. 연혁(로그) 조회 ========== #
     def history(self):
-        pass
+        history_book_id = self.input_book_id("연혁(조회)를 할 책의 고유번호를 입력해주세요: ", 1)
+
+        if (history_book_id==None):
+            return False  # 입력 실패 시 반환
+
+        if history_book_id == self.config["cancel"]:
+            print("연혁(조회)를 취소했습니다. 메인 프롬프트로 돌아갑니다.")
+            return False
+        
+        history_book_id = int(history_book_id)
+        
+        # 고유번호에 해당하는 책 존재 여부 확인
+        book_history = self.search_book_by_id(history_book_id)
+        
+        if not book_history:
+            print("ERROR: 해당 고유번호의 책이 존재하지 않습니다.")
+            return False
+        
+        history_isbn = self.search_isbn_data(book_history.isbn)
+        author_ids = self.search_author_ids_by_isbn(history_isbn.isbn)
+        
+        # TODO: 임시로 저자 1명만 해두었습니다 수정 바람
+        if len(author_ids) == 0:
+            author_name = ""
+        else:
+            author_name = self.search_author_by_id(author_ids[0]).name
+        
+        history_publisher = self.search_publisher_by_id(history_isbn.publisher_id)
+        print(f"{history_book_id} / {book_history.isbn} / {history_isbn.title} / {author_name} / {history_publisher.name} / {history_isbn.published_year} / {book_history.register_date}")
+
+        log_list=[]
+        log_list.append((history_isbn.isbn_register_date,1))
+        log_list.append((book_history.register_date,2))
+        if book_history.delete_date:
+            log_list.append((book_history.delete_date,5))
+
+        borrow_loglist=self.search_borrow_dates_by_book_id(history_book_id)
+        for borrow_ll in borrow_loglist:
+            log_list.append((borrow_ll[0],3,borrow_ll[1],borrow_ll[2])) # 대출날짜, 대출, user_id, 반납날짜
+
+        return_loglist=self.search_return_dates_by_book_id(history_book_id)
+        for return_ll in return_loglist:
+            log_list.append((return_ll[0],4,return_ll[1]))  # 실제반납날짜, 반납, 연체날짜 
+
+        for ll in log_list:
+            print(ll[0], end=" ")
+            if ll[1]==1 :
+                print("ISBN 등록")
+
+            elif ll[1]==2 :
+                print("입고")
+
+            elif ll[1]==3 :
+                for user in self.user_table:
+                    if user.user_id == ll[2]:
+                        user_data = user
+                        break
+                print("대출:",user_data.phone_number,user_data.name,"/",ll[3])
+
+            elif ll[1]==4 :
+                print("반납",end=" ")
+                if ll[2]>0:
+                    print(f"({ll[2]}일 연체)",end="")
+                print()
+
+            elif ll[1]==5 :
+                print("삭제")
+                    
+        print("메인 프롬프트로 돌아갑니다.")
     
     # ========= 기타 Utility 함수 ========= #
     # 데이터 개수 검사
