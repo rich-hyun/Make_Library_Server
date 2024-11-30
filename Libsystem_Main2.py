@@ -93,80 +93,58 @@ class MyDate(object):
             return False
         return (self.year, self.month, self.day) >= (other.year, other.month, other.day)
     
-    # 덧셈 연산자 구현 (날짜 더하기)
+    def to_ordinal(self):
+        # 1583년 1월 1일을 기준으로 일수 계산
+        days = 0
+        for y in range(1583, self.year):
+            days += 366 if self.is_leap_year(y) else 365
+
+        days_in_month = [31, 29 if self.is_leap_year(self.year) else 28, 31, 30, 31, 30, 
+                         31, 31, 30, 31, 30, 31]
+        days += sum(days_in_month[:self.month - 1])
+        days += self.day - 1  # 1월 1일을 0으로 시작하기 위해 -1
+        
+        return days
+
+    @classmethod
+    def from_ordinal(cls, days):
+        # 1583년 1월 1일을 기준으로 날짜 생성
+        year = 1583
+        while True:
+            days_in_year = 366 if cls.is_leap_year(year) else 365
+            if days < days_in_year:
+                break
+            days -= days_in_year
+            year += 1
+
+        days_in_month = [31, 29 if cls.is_leap_year(year) else 28, 31, 30, 31, 30, 
+                         31, 31, 30, 31, 30, 31]
+
+        month = 1
+        for dim in days_in_month:
+            if days < dim:
+                break
+            days -= dim
+            month += 1
+
+        day = days + 1  # 1월 1일부터 시작하기 위해 +1
+
+        return cls(year, month, day)
+
     def __add__(self, days):
         if not isinstance(days, int):
             raise TypeError("날짜에 더할 일수는 정수여야 합니다.")
-        
-        day = self.day
-        month = self.month
-        year = self.year
-        
-        while days > 0:
-            days_in_current_month = 29 if (month == 2 and self.is_leap_year(year)) else [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1]
-            
-            if day + days <= days_in_current_month:
-                day += days
-                days = 0
-            else:
-                days -= (days_in_current_month - day + 1)
-                day = 1
-                month += 1
-                if month > 12:
-                    month = 1
-                    year += 1
-        
-        return MyDate(year, month, day)
-
-    # 뺄셈 연산자 구현 (날짜 빼기)
-    def __sub__(self, days):
-        if not isinstance(days, int):
-            raise TypeError("날짜에서 뺄 일수는 정수여야 합니다.")
-        
-        day = self.day
-        month = self.month
-        year = self.year
-        
-        while days > 0:
-            if day > days:
-                day -= days
-                days = 0
-            else:
-                days -= day
-                month -= 1
-                if month < 1:
-                    month = 12
-                    year -= 1
-                day = 29 if (month == 2 and self.is_leap_year(year)) else [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1]
-        
-        return MyDate(year, month, day)
-    
-    def __add__(self, other):
-        if not isinstance(other, MyDate):
-            raise TypeError("더할 날짜는 MyDate 객체여야 합니다.")
-        
-        total_days = (self.year * 365 + self.month * 30 + self.day) + (other.year * 365 + other.month * 30 + other.day)
-        year = total_days // 365
-        total_days %= 365
-        month = total_days // 30
-        day = total_days % 30
-        
-        return MyDate(year, month, day)
+        total_days = self.to_ordinal() + days
+        return MyDate.from_ordinal(total_days)
 
     def __sub__(self, other):
-        if not isinstance(other, MyDate):
-            raise TypeError("뺄 날짜는 MyDate 객체여야 합니다.")
-        
-        total_days_self = self.year * 365 + self.month * 30 + self.day
-        total_days_other = other.year * 365 + other.month * 30 + other.day
-        total_days = total_days_self - total_days_other
-        
-        year = total_days // 365
-        total_days %= 365
-        month = total_days // 30
-        day = total_days % 30
-        
-        return MyDate(year, month, day)
+        if isinstance(other, int):
+            total_days = self.to_ordinal() - other
+            return MyDate.from_ordinal(total_days)
+        elif isinstance(other, MyDate):
+            return self.to_ordinal() - other.to_ordinal()
+        else:
+            raise TypeError("빼기 연산은 정수 또는 MyDate 객체여야 합니다.")
 
 """ ========== 데이터 테이블 구현 ========== """
 # Book
@@ -396,7 +374,7 @@ class DataManager(object):
         # 6. Borrow Data
         with open(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), "w",encoding='utf-8') as f:
             for borrow in self.borrow_table:
-                f.write(f"{borrow.book_id}/{borrow.user_id}/{str(borrow.borrow_date)}/{str(borrow.return_date)}/{str(borrow.actual_return_date)}/{int(borrow.deleted)}\n")
+                f.write(f"{borrow.borrow_id}/{borrow.book_id}/{borrow.user_id}/{str(borrow.borrow_date)}/{str(borrow.return_date)}/{str(borrow.actual_return_date)}/{int(borrow.deleted)}\n")
                 
         # 7. User Data
         with open(opj(self.file_path, "data", "Libsystem_Data_User.txt"), "w",encoding='utf-8') as f:
@@ -929,12 +907,12 @@ class DataManager(object):
         return book_ids
         
     # 해당 책을 대출한 유저 ID 반환
-    def search_borrower_id_by_book_id(self, book_id) -> list[int]:
+    def search_borrower_id_by_book_id(self, book_id) -> int:
         """_summary_
         해당 book id 책을 대출한 유저 ID 반환
         """
         for borrow in self.borrow_table:
-            if borrow.book_id == book_id:
+            if borrow.book_id == book_id and borrow.actual_return_date is None:
                 return borrow.user_id
             
         return None
@@ -1396,19 +1374,36 @@ class DataManager(object):
             print("대출이 취소되었습니다. 메인 프롬프트로 돌아갑니다.")
             return False
         
-        borrower_id = self.search_user_by_phone_number(phone)
+        borrower = self.search_user_by_phone_number(phone)
+        if borrower is None:
+            # 새로운 사용자 생성
+            borrower_id = len(self.user_table)
+            borrower = UserRecord(borrower_id, phone, name, False)
+            self.user_table.append(borrower)
+        else:
+            borrower_id = borrower.user_id
         
         overdue_books = []
         if borrower_id:
             overdue_books = self.search_overdue_penalty_by_user_id(borrower_id)
         
         if overdue_books:
-            print("연체중인 책을 보유하고 있어 대출이 불가능합니다.")
+            print("연체중인 책을 1권 이상 보유하고 있어 대출이 불가능합니다.")
             print("아래 목록은 대출자가 현재 연체중인 책입니다.")
             print(self.get_header(contain_borrow_info=True))
             print()
             for book_id in overdue_books:
                 print(self.print_book(book_id, include_borrow=True))
+            return False
+        
+        # 연체 페널티 확인
+        if self.search_overdue_penalty_by_user_id(borrower_id):
+            penalty_end_date = max(
+                penalty.penalty_end_date
+                for penalty in self.overdue_penalty_table
+                if penalty.user_id == borrower_id and penalty.penalty_start_date <= self.today
+            )
+            print(f"연체 페널티가 진행 중입니다. {penalty_end_date} 이후에 대출이 가능합니다.")
             return False
         
         borrowed_books = self.search_borrowing_book_ids_by_user_id(borrower_id, overdue_only=False)
@@ -1446,7 +1441,7 @@ class DataManager(object):
         
         if self.input_response("위 책을 대출할까요? (Y/N): "):
             borrow_date = self.today
-            due_date = self.today + config["borrow_date"]
+            due_date = self.today + self.config["borrow_date"]
             
             borrow = BorrowRecord(len(self.borrow_table), book_id, borrower_id, borrow_date, due_date, None, False)
             self.borrow_table.append(borrow)
@@ -1477,14 +1472,27 @@ class DataManager(object):
         book_to_return = self.search_book_by_id(rtn_book_id)
         
         if not book_to_return:
-            print()
+            print("ERROR: 해당 고유번호의 책이 존재하지 않습니다.")
             return False
         
         # 대출 여부 확인
-        if not self.search_borrower_id_by_book_id(rtn_book_id):
+        borrow_info = None
+        for borrow in self.borrow_table:
+            if borrow.book_id == rtn_book_id and borrow.actual_return_date is None:
+                borrow_info = borrow
+                break
+
+        if not borrow_info:
             print("ERROR: 현재 대출 중인 책이 아닙니다.")
             return False
-        
+
+        borrower_id = borrow_info.user_id
+        rtn_user = self.search_user_by_id(borrower_id)
+
+        if not rtn_user:
+            print(f"ERROR: 대출자 ID {borrower_id}에 해당하는 사용자가 존재하지 않습니다.")
+            return False
+            
         # 책 정보 및 대출자 정보 출력
         rtn_isbn = self.search_isbn_data(book_to_return.isbn)
         author_ids = self.search_author_ids_by_isbn(rtn_isbn.isbn)
@@ -1509,13 +1517,39 @@ class DataManager(object):
             return False
         
         # 반납 처리
-        for borrow in self.borrow_table:
-            if borrow.borrow_id == borrower_id and borrow.book_id == rtn_book_id:
-                borrow.actual_return_date = self.today
-                break
+        borrow_info.actual_return_date = self.today
             
         # TODO: 연체 패널티 추가 
+        overdue_days = 0
+        if borrow_info.return_date is not None:
+            overdue_days = (self.today - borrow_info.return_date)
+            overdue_days = max(0, overdue_days)
 
+        if overdue_days > 0:
+            penalty_days = int(overdue_days * self.config['overdue_penalty_scale'])  # 연체일에 스케일 적용
+            penalty_start_date = self.today
+            penalty_end_date = self.today + penalty_days
+
+            # 기존 페널티 확인 및 병합
+            existing_penalty = None
+            for penalty in self.overdue_penalty_table:
+                if penalty.user_id == borrower_id and penalty.penalty_end_date >= self.today:
+                    existing_penalty = penalty
+                    break
+
+            if existing_penalty:
+                # 기존 페널티 종료일에 새로운 페널티 일수를 추가하여 연장
+                existing_penalty.penalty_end_date = existing_penalty.penalty_end_date + penalty_days
+                print(f"[페널티 연장] 기존 페널티 종료일이 {existing_penalty.penalty_end_date}로 연장되었습니다.")
+            else:
+                # 새로운 페널티 생성
+                penalty_id = len(self.overdue_penalty_table)
+                self.overdue_penalty_table.append(
+                    OverduePenaltyRecord(
+                        penalty_id, borrower_id, penalty_start_date, penalty_end_date
+                    )
+                )
+                print(f"[새로운 페널티 부여] 페널티 시작: {penalty_start_date}, 종료: {penalty_end_date}")
         print("반납이 완료되었습니다. 메인 프롬프트로 돌아갑니다.")
         self.fetch_data_file()
         return True
