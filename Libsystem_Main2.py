@@ -2372,17 +2372,15 @@ class DataManager(object):
         else:
             borrower_id = borrower.user_id
         
-        overdue_books = []
-        if borrower_id:
-            overdue_books = self.search_overdue_penalty_by_user_id(borrower_id)
+        overdue_books = self.search_borrowing_book_ids_by_user_id(borrower_id, overdue_only=True)
         
         if overdue_books:
             print("연체중인 책을 1권 이상 보유하고 있어 대출이 불가능합니다.")
-            print("아래 목록은 대출자가 현재 연체중인 책입니다.")
-            print(self.get_header(contain_borrow_info=True))
-            print()
-            for book_id in overdue_books:
-                print(self.print_book(book_id, include_borrow=True))
+            #print("아래 목록은 대출자가 현재 연체중인 책입니다.")
+            #print(self.get_header(contain_borrow_info=True))
+            #print()
+            #for book_id in overdue_books:
+            #    print(self.print_book(book_id, include_borrow=True))
             return False
         
         # 연체 페널티 확인
