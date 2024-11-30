@@ -1874,6 +1874,14 @@ class DataManager(object):
                 book_dates.append((borrow.actual_return_date,borrow.actual_return_date - borrow.return_date))
         
         return book_dates
+    
+    def search_edit_dates_by_isbn(self, isbn):
+        book_dates=[]
+        for edit in self.book_edit_log_table:
+            if edit.isbn == isbn:
+                book_dates.append(edit.edit_date)
+        
+        return book_dates
         
     # 해당 책을 대출한 유저 ID 반환
     def search_borrower_id_by_book_id(self, book_id) -> int:
@@ -2251,6 +2259,10 @@ class DataManager(object):
                 isbn_data.title = new_title
                 isbn_data.published_year = new_year
                 break
+
+        new_log_id=len(self.book_edit_log_table)+1
+        self.book_edit_log_table.append(BookEditLogRecord(new_log_id,isbn,today))
+
 
        # 출판사 수정
         publisher_found = False
@@ -2639,7 +2651,13 @@ class DataManager(object):
 
         return_loglist=self.search_return_dates_by_book_id(history_book_id)
         for return_ll in return_loglist:
-            log_list.append((return_ll[0],4,return_ll[1]))  # 실제반납날짜, 반납, 연체날짜 
+            log_list.append((return_ll[0],4,return_ll[1]))  # 실제반납날짜, 반납, 연체날짜
+
+        edit_loglist=self.search_edit_dates_by_isbn(history_isbn.isbn)
+        for edit_ll in edit_loglist:
+            log_list.append((edit_ll,6))
+
+        log_list.sort(key=lambda x: x[0]) 
 
         for ll in log_list:
             print(ll[0], end=" ")
@@ -2664,7 +2682,9 @@ class DataManager(object):
 
             elif ll[1]==5 :
                 print("삭제")
-                    
+            
+            elif ll[1]==6 :
+                print("ISBN 수정")
         print("메인 프롬프트로 돌아갑니다.")
     
     # ========= 기타 Utility 함수 ========= #
