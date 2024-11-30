@@ -2494,7 +2494,7 @@ class DataManager(object):
         while True:
             print("\n원하는 설정에 해당하는 번호를 입력하세요.")
             print("1. 반납 기한(대출 일수)")
-            print("-------------")
+            print("-"*20)
             user_input = self.input_setting_option()
 
             if user_input == self.config["cancel"]:
