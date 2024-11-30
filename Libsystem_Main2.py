@@ -1993,8 +1993,13 @@ class DataManager(object):
                 self.fetch_data_file()
         
     def confirm_delete(self, del_book_id):
-        if self.input_response("삭제하면 되돌릴 수 없습니다. 정말로 삭제하시겠습니까?(Y/N): "):
-            self.book_table = [book for book in self.book_table if book.book_id != del_book_id]
+        if self.input_response("삭제하면 되돌릴 수 없습니다. 정말로 삭제하시겠습니까?(Y/N): "):            
+            for i in range(len(self.book_table)):
+                if self.book_table[i].book_id == del_book_id:
+                    self.book_table[i].deleted = True
+                    self.book_table[i].deleted_date = self.today
+                    break
+            
             print("삭제가 완료되었습니다. 메인프롬프트로 돌아갑니다.")
             return True
         else:
