@@ -1514,18 +1514,6 @@ class DataManager(object):
             return True, ""
         return False, "전화번호는 010-XXXX-XXXX 형식이어야 합니다."
     
-    # def get_author_by_name(self, author_name): # 저자 이름으로 저자 정보 조회
-    #     for author in self.author_table:
-    #         if author.name == author_name:
-    #             return author
-    #     return None
-
-    # def get_author_by_id(self, author_id): # 저자 ID로 저자 정보 조회
-    #     for author in self.author_table:
-    #         if author.author_id == author_id:
-    #             return author
-    #     return None
-    
     def check_author_id_validate(self, author_id): 
         if author_id == self.config["cancel"]:
             return True, ""
@@ -1993,8 +1981,13 @@ class DataManager(object):
                 self.fetch_data_file()
         
     def confirm_delete(self, del_book_id):
-        if self.input_response("삭제하면 되돌릴 수 없습니다. 정말로 삭제하시겠습니까?(Y/N): "):
-            self.book_table = [book for book in self.book_table if book.book_id != del_book_id]
+        if self.input_response("삭제하면 되돌릴 수 없습니다. 정말로 삭제하시겠습니까?(Y/N): "):            
+            for i in range(len(self.book_table)):
+                if self.book_table[i].book_id == del_book_id:
+                    self.book_table[i].deleted = True
+                    self.book_table[i].deleted_date = self.today
+                    break
+            
             print("삭제가 완료되었습니다. 메인프롬프트로 돌아갑니다.")
             return True
         else:
@@ -2171,11 +2164,21 @@ class DataManager(object):
             new_publisher = input("수정할 책의 출판사를 입력해주세요: ").strip()
             if not new_publisher or not self.check_string_validate("출판사", new_publisher):
                 print("ERROR: 입력한 출판사가 유효하지 않습니다.")
-                continue
-            new_publisher_id = self.validate_publisher(new_publisher)
-            if new_publisher_id is not None:
+            else:
+                break
+            
+        # 출판사 수정
+        new_publisher_id = None
+        for publisher in self.publisher_table:
+            if publisher.name == new_publisher:  # 입력된 출판사가 이미 존재하면
+                new_publisher_id = publisher.publisher_id  # 해당 출판사의 ID 반영
+                new_publisher_data = None
                 break
 
+        if new_publisher_id is None:  # 입력된 출판사가 존재하지 않으면
+            new_publisher_id = len(self.publisher_table)
+            new_publisher_data = PublisherRecord(new_publisher_id, new_publisher, False)  # 새 출판사 데이터 추가
+        
         # 4. 출판년도 입력
         new_year = self.input_year("수정할 책의 출판년도를 입력해주세요: ")
         if not new_year or not self.check_year_validate(new_year):
@@ -2192,24 +2195,15 @@ class DataManager(object):
             if isbn_data.isbn == isbn:
                 isbn_data.title = new_title
                 isbn_data.published_year = new_year
+                isbn_data.publisher_id = new_publisher_id
                 break
+            
+        # 출판사가 새로 추가된 경우에 테이블에 추가
+        if new_publisher_data is not None:
+            self.publisher_table.append(new_publisher_data)
 
         new_log_id=len(self.book_edit_log_table)+1
         self.book_edit_log_table.append(BookEditLogRecord(new_log_id,isbn,today))
-
-
-       # 출판사 수정
-        publisher_found = False
-        for publisher in self.publisher_table:
-            if publisher.name == new_publisher:  # 입력된 출판사가 이미 존재하면
-                isbn_data.publisher_id = publisher.publisher_id  # 해당 출판사의 ID�� 반영
-                publisher_found = True
-                break
-
-        if not publisher_found:  # 입력된 출판사가 존재하지 않으면
-            new_publisher_id = len(self.publisher_table)
-            self.publisher_table.append(PublisherRecord(new_publisher_id, new_publisher, False))  # 새 출판사 추가
-            isbn_data.publisher_id = new_publisher_id  # 새 출판사의 ID를 반영
 
         # 저자 수정
         # 기존 저자-ISBN 관계 삭제
@@ -2270,9 +2264,15 @@ class DataManager(object):
                 if author.author_id == author_isbn_data.author_id:
                     author_data = author
                     break
-            
-            if search_book in isbn_data.title or search_book in author_data.name:
-                search_results.append(book)
+
+            # 만약 #로 search_book이 시작하면 해당 작가 식별 번호 가진 책 검색
+            if search_book.startswith("#"):
+                if search_book[1:] == str(author_data.author_id):
+                    search_results.append(book)
+
+            else:
+                if search_book in isbn_data.title or search_book in author_data.name:
+                    search_results.append(book)
             
         if not search_results:
         
