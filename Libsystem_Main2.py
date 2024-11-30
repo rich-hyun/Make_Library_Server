@@ -1633,9 +1633,10 @@ class DataManager(object):
         return True, ""
 
     def check_overdue_delete(self, book_id):
-        for book in self.book_data:
-            if book.book_id == book_id and book.return_date:
-                return True
+        for book in self.book_table:
+            for borrow in self.borrow_table:
+                if borrow.book_id == book_id and borrow.actual_return_date is None:
+                    return True
         return False
 
     # def check_record_validate(self, book: BookRecord) -> tuple[bool, str]:
@@ -2744,7 +2745,7 @@ def main_prompt(bookData: DataManager) -> None:
         
         try:
             slc = int(input())
-            assert 0 < slc < 9, "원하는 동작에 해당하는 번호(숫자)만 입력해주세요."
+            assert 0 < slc < 10, "원하는 동작에 해당하는 번호(숫자)만 입력해주세요."
         except ValueError as e:
             print("원하는 동작에 해당하는 번호(숫자)만 입력해주세요.")
             continue
