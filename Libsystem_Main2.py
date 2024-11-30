@@ -1195,41 +1195,64 @@ class DataManager(object):
             if new_authors == cancel_value:
                 print("수정을 중단하며 메인 프롬프트로 돌아갑니다.")
                 return False
-            if not new_authors:  # 공백 입력에 대해 처리
-                print("저자를 공백으로 입력하셨습니다. 공백 입력은 허용됩니다.")
+
+            # "&"로 구분하여 입력 분리 및 공백 제거
+            author_list = [author.strip() for author in new_authors.split("&") if author.strip()]
+            if not author_list:
+                print("저자가 없는 책으로 처리됩니다.")
                 valid_authors = []
                 break
 
-            # 저자 파싱 및 유효성 검사
-            author_list = new_authors.split("&")
+            if len(author_list) > 5:
+                print("ERROR: 저자 입력이 5명을 초과합니다. 다시 입력해주세요.")
+                continue
+
             valid_authors = []
             errors = []
-            unique_authors = set()  # 중복 확인을 위한 set
+            unresolved_authors = []
+
             for author in author_list:
-                author = author.strip()
-                if "#" not in author:
-                    errors.append(f"[{author}] ERROR: 입력한 저자의 식별번호가 없습니다.")
-                    continue
-                name, _, number = author.partition("#")
-                if not name.strip() or not number.isdigit():
-                    errors.append(f"[{author}] ERROR: 입력한 저자의 이름 또는 식별번호가 올바르지 않습니다.")
-                    continue
-                # 숫자 ID로 검색
-                author_record = self.search_author_by_id(int(number))
-                if not author_record or author_record.name != name.strip():
-                    errors.append(f"[{author}] ERROR: 입력한 저자가 존재하지 않거나 이름과 식별번호가 일치하지 않습니다.")
-                    continue
-        
-                author_key = (name.strip(), int(number))
-                if author_key not in unique_authors:
-                    unique_authors.add(author_key)
-                    valid_authors.append(author_key)
+                if "#" in author:  # 이름과 식별번호 형식
+                    name, _, number = author.partition("#")
+                    name = name.strip()
+                    if not name or not number.isdigit():
+                        errors.append(f"[{author}] ERROR: 입력 형식이 잘못되었습니다.")
+                        continue
 
-            # 최대 5명 제한
-            if len(valid_authors) > 5:
-                errors.append("ERROR: 책의 저자는 최대 5명입니다.")
+                    author_record = self.search_author_by_id(int(number))
+                    if not author_record or author_record.name != name:
+                        errors.append(f"[{author}] ERROR: 존재하지 않는 저자입니다.")
+                    else:
+                        valid_authors.append((name, int(number)))
+                else:  # 이름만 입력된 경우
+                    unresolved_authors.append(author)
 
-            # 에러가 있으면 출력하고 재입력 요구
+            # 보조 프롬프트로 미해결 저자 처리
+            for unresolved in unresolved_authors:
+                matching_authors = [
+                    author for author in self.author_table if author.name == unresolved
+                ]
+                if not matching_authors:
+                    print(f"[{unresolved}] 해당 이름의 저자가 없습니다. 새로 추가합니다.")
+                    new_author_id = len(self.author_table) + 1
+                    self.author_table.append(AuthorRecord(new_author_id, unresolved, False))
+                    valid_authors.append((unresolved, new_author_id))
+                elif len(matching_authors) == 1:
+                    valid_authors.append((unresolved, matching_authors[0].author_id))
+                else:
+                    print(f"저자 '{unresolved}'에 대한 후보가 여러 명 존재합니다.")
+                    for idx, author in enumerate(matching_authors):
+                        print(f"{idx + 1}. {author.name} #{author.author_id}")
+                    try:
+                        choice = int(input("해당 저자의 번호를 입력해주세요: ")) - 1
+                        if 0 <= choice < len(matching_authors):
+                            selected_author = matching_authors[choice]
+                            valid_authors.append((selected_author.name, selected_author.author_id))
+                        else:
+                            errors.append(f"[{unresolved}] ERROR: 잘못된 선택입니다.")
+                    except ValueError:
+                        errors.append(f"[{unresolved}] ERROR: 입력값이 유효하지 않습니다.")
+
             if errors:
                 print("\n".join(errors))
                 print("모든 저자의 이름과 식별번호를 다시 입력해주세요.")
