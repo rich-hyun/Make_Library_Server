@@ -329,7 +329,7 @@ class DataManager(object):
                  pass
             
         
-        # 무결성 검사(데이터가 올바르지 않을경우 파일명 변경(Libsystem_Data_{테이블명}-yyyyMMdd_hhmmss.bak) 후 새 Libsystem_Data_Author.txt 파일 생성)
+         # 무결성 검사(데이터가 올바르지 않을경우 파일명 변경(Libsystem_Data_{테이블명}-yyyyMMdd_hhmmss.bak) 후 새 Libsystem_Data_Author.txt 파일 생성)
         # yyyyMMdd-hhmmss는 컴퓨터 운영체제 시스템 시간을 기준으로 함
         if not self.check_data_author_files(self.file_path):
             now = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -2009,6 +2009,10 @@ class DataManager(object):
             return False, "저자 입력이 5명을 초과합니다."
         
         for author in input_author_list:
+            if author.count("#") > 1:
+                is_total_valid = False
+                total_error_message += f"{author} ERROR: 저자의 형식은 '이름' 또는 '이름 #식별번호' 둘 중 하나여야 합니다.\n"
+                continue
             if "#" in author:
                 name, number = author.split("#")
                 name = name.strip()
