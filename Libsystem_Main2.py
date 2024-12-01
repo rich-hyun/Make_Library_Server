@@ -628,6 +628,17 @@ class DataManager(object):
                 add_error(line_num, "삭제 날짜가 날짜 형식이 아닙니다.")
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 삭제 날짜가 날짜 형식이 아닙니다.")
             
+            # ISBN 참조 무결성 검사
+            isbn_found = False
+            for isbn_record in self.isbn_table:
+                if isbn_record.isbn == int(isbn):
+                    isbn_found = True
+                    break
+                
+            if not isbn_found:
+                add_error(line_num, "참조하는 ISBN이 ISBN 데이터에 없습니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 참조하는 ISBN이 ISBN 데이터에 없습니다.")
+            
         return (True, "")
     
     def check_data_isbn_files(self,file_path: str) -> tuple[bool, str]:
@@ -712,6 +723,17 @@ class DataManager(object):
             if not MyDate.from_str(isbn_register_date):
                 add_error(line_num, "ISBN 등록 날짜가 날짜 형식이 아닙니다.")
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - ISBN 등록 날짜가 날짜 형식이 아닙니다.")
+            
+            # 참조 검사: Publisher ID가 출판사 테이블에 있는지 확인
+            publisher_found = False
+            for publisher in self.publisher_table:
+                if publisher.publisher_id == int(publisher_id):
+                    publisher_found = True
+                    break
+                
+            if not publisher_found:
+                add_error(line_num, "참조하는 출판사 고유번호가 출판사 데이터에 없습니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 참조하는 출판사 고유번호가 출판사 데이터에 없습니다.")
             
         return (True, "")
 
@@ -801,6 +823,27 @@ class DataManager(object):
                 add_error(line_num, "구분자가 1개가 아닙니다")
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 구분자가 1개가 아닙니다")
 
+            # ISBN 참조 무결성 검사
+            isbn_found = False
+            for isbn_record in self.isbn_table:
+                if isbn_record.isbn == int(line.strip().split("/")[0]):
+                    isbn_found = True
+                    break
+                
+            if not isbn_found:
+                add_error(line_num, "참조하는 ISBN이 ISBN 데이터에 없습니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 참조하는 ISBN이 ISBN 데이터에 없습니다.")
+            
+            # 저자 ID 참조 무결성 검사
+            author_id_found = False
+            for author_record in self.author_table:
+                if author_record.author_id == int(line.strip().split("/")[1]):
+                    author_id_found = True
+                    break
+            
+            if not author_id_found:
+                add_error(line_num, "참조하는 저자 식별번호가 저자 데이터에 없습니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 참조하는 저자 식별번호가 저자 데이터에 없습니다.")
             
         line_num = 0
 
@@ -876,6 +919,17 @@ class DataManager(object):
                 add_error(line_num, "필수항목 중 비어있는 항목이 있습니다.")
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 필수항목 중 비어있는 항목이 있습니다.")
             
+            # ISBN 참조 무결성 검사
+            isbn_found = False
+            for isbn_record in self.isbn_table:
+                if isbn_record.isbn == int(isbn):
+                    isbn_found = True
+                    break
+                
+            if not isbn_found:
+                add_error(line_num, "참조하는 ISBN이 ISBN 데이터에 없습니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 참조하는 ISBN이 ISBN 데이터에 없습니다.")
+            
         line_num = 0
 
         # 로그 ID 검사
@@ -934,6 +988,28 @@ class DataManager(object):
             if len(line.strip().split("/")) != 7:
                 add_error(line_num, "구분자가 6개가 아닙니다")
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 구분자가 6개가 아닙니다")
+            
+            # book_id 참조 무결성 검사
+            book_id_found = False
+            for book_record in self.book_table:
+                if book_record.book_id == int(line.strip().split("/")[1]):
+                    book_id_found = True
+                    break
+                
+            if not book_id_found:
+                add_error(line_num, "참조하는 책 고유번호가 책 데이터에 없습니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 참조하는 책 고유번호가 책 데이터에 없습니다.")
+            
+            # user_id 참조 무결성 검사
+            user_id_found = False
+            for user_record in self.user_table:
+                if user_record.user_id == int(line.strip().split("/")[2]):
+                    user_id_found = True
+                    break
+                
+            if not user_id_found:
+                add_error(line_num, "참조하는 사용자 고유번호가 사용자 데이터에 없습니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 참조하는 사용자 고유번호가 사용자 데이터에 없습니다.")
             
         line_num = 0
 
@@ -1221,6 +1297,17 @@ class DataManager(object):
             if MyDate.from_str(panalty_end_date) < MyDate.from_str(panalty_start_date):
                 add_error(line_num, "패널티 종료 날짜가 패널티 시작 날짜 이전입니다.")
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 패널티 종료 날짜가 패널티 시작 날짜 이전입니다.")
+            
+            # 사용자 고유번호 참조 무결성 검사
+            user_id_found = False
+            for user_record in self.user_table:
+                if user_record.user_id == int(user_id):
+                    user_id_found = True
+                    break
+                
+            if not user_id_found:
+                add_error(line_num, "참조하는 사용자 고유번호가 사용자 데이터에 없습니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 참조하는 사용자 고유번호가 사용자 데이터에 없습니다.")
             
         return (True, "")
     
