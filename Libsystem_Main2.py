@@ -1915,10 +1915,14 @@ class DataManager(object):
                 for author in book_info[1]:
                     if not isinstance(author, AuthorRecord):
                         self.author_table.append(AuthorRecord(len(self.author_table) + 1, author, False))
+                        self.isbn_author_table.append(IsbnAuthorRecord(isbn, self.author_table[-1].author_id))
+                    else:
+                        self.isbn_author_table.append(IsbnAuthorRecord(isbn, author.author_id))
+
                 self.isbn_table.append(new_isbn)
                 self.book_table.append(new_book)    
                 
-                self.write_data_files()
+                self.fetch_data_file()
                 return True
             else:
                 print("추가를 중단하며 메인 프롬프트로 돌아갑니다.")
