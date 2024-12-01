@@ -1905,6 +1905,9 @@ class DataManager(object):
                     else:
                         author_string += f"{author_name} & "
             
+            print(self.get_header())
+            print()
+
             print(f"{book_id}/{new_isbn.isbn}/{new_isbn.title}/{author_string}/{publisher.name}/{new_isbn.published_year}/{new_isbn.isbn_register_date}")
             print()
             
