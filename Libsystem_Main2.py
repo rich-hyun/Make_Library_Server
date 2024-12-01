@@ -1517,17 +1517,18 @@ class DataManager(object):
     def check_author_id_validate(self, author_id): 
         if author_id == self.config["cancel"]:
             return True, ""
-        # 1. 입력값이 있는지 확인
-        if len(author_id) == 0:
-            return False, "1글자 이상 입력해주세요."
         
-        # 2. 입력값이 공백으로만 구성되지 않았는지 확인
-        if author_id.isspace():
+        # 1. 입력값이 공백으로만 구성되지 않았는지 확인
+        if author_id.strip() == "":
             return False, "저자의 식별번호는 공백일 수 없습니다."
         
-        # 3. 저자의 식별번호가 숫자로만 구성되어 있는지 확인
+        # 2. 저자의 식별번호가 숫자로만 구성되어 있는지 확인
         if not author_id.isdigit():
             return False, "저자의 식별번호는 숫자여야 합니다."
+        
+        # 3. 저자의 식별번호가 0으로 시작하는 지 확인
+        if author_id.startswith("0"):
+            return False, "저자의 식별번호는 0으로 시작할 수 없습니다."
         
         # 4. 저자의 식별번호가 1 이상인지 확인
         if int(author_id) < 1:
@@ -1894,10 +1895,15 @@ class DataManager(object):
                 author_string = "-"
             else:
                 for i, author in enumerate(book_info[1]):
-                    if i == len(book_info[1]) - 1:
-                        author_string += author
+                    if isinstance(author, AuthorRecord):
+                        author_name = author.name
                     else:
-                        author_string += f"{author} & "
+                        author_name = author
+
+                    if i == len(book_info[1]) - 1:
+                        author_string += author_name
+                    else:
+                        author_string += f"{author_name} & "
             
             print(f"{book_id}/{new_isbn.isbn}/{new_isbn.title}/{author_string}/{publisher.name}/{new_isbn.published_year}/{new_isbn.isbn_register_date}")
             print()
@@ -2006,13 +2012,17 @@ class DataManager(object):
             return True, None
         
         if len(input_author_list) > 5:
-            return False, "저자 입력이 5명을 초과합니다."
+            return False, "ERROR: 책의 저자는 최대 5명입니다."
         
         for author in input_author_list:
             if author.count("#") > 1:
                 is_total_valid = False
-                total_error_message += f"{author} ERROR: 저자의 형식은 '이름' 또는 '이름 #식별번호' 둘 중 하나여야 합니다.\n"
-                continue
+                total_error_message += f"[{author}] ERROR: 저자의 형식은 '이름' 또는 '이름 #식별번호' 둘 중 하나여야 합니다.\n"
+
+        if not is_total_valid:
+            return False, total_error_message
+        
+        for author in input_author_list:
             if "#" in author:
                 name, number = author.split("#")
                 name = name.strip()
@@ -2021,12 +2031,12 @@ class DataManager(object):
                 name = author.strip()
                 number = None
 
-            is_valid, error_message = self.check_string_validate("저자", name)
+            is_valid, error_message = self.check_string_validate("저자의 이름", name)
             if not is_valid:
                 is_total_valid = False
                 total_error_message += f"[{author}] ERROR: {error_message}\n"
 
-            if number:
+            if number is not None:
                 is_valid, error_message = self.check_author_id_validate(number)
                 if not is_valid:
                     is_total_valid = False
@@ -2734,6 +2744,8 @@ class DataManager(object):
                         if not found:
                             print("잘못된 입력입니다. 다시 입력해주세요.")
                             continue
+                        else:
+                            break
             else:
                 author_data = self.search_author_by_id(number)
                 return_authors.append(author_data)
