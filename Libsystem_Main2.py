@@ -282,7 +282,7 @@ class DataManager(object):
         # 무결성 검사(데이터가 올바르지 않을경우 파일명 변경(Libsystem_Data_{테이블명}-yyyyMMdd_hhmmss.bak) 후 새 Libsystem_Data_Book.txt 파일 생성)
         # yyyyMMdd-hhmmss는 컴퓨터 운영체제 시스템 시간을 기준으로 함
         if not self.check_data_book_files(self.file_path):
-            now = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            now = datetime.now().strftime("%Y%m%d_%H%M%S")
             os.rename(opj(self.file_path, "data", "Libsystem_Data_Book.txt"), opj(self.file_path, "data", f"Libsystem_Data_Book-{now}.bak"))
             with open(opj(self.file_path, "data", "Libsystem_Data_Book.txt"), "w", encoding='utf-8') as f:
                 f.write("0\n")
