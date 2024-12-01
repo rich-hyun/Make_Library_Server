@@ -491,53 +491,58 @@ class DataManager(object):
 
     # ========== 데이터 파일 메모리 -> 파일 동기화 (fetch) ========== #
     def fetch_data_file(self) -> bool:
-        # 1. Book Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_Book.txt"), "w", encoding='utf-8') as f:
-            f.write(f"{len(self.book_table)}\n")
-            for book in self.book_table:
-                f.write(f"{book.book_id}/{str(book.isbn).zfill(2)}/{str(book.register_date)}/{int(book.deleted)}/{"" if book.delete_date is None else str(book.delete_date)}\n")
-                
-        # 2. ISBN Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt"), "w", encoding='utf-8') as f:
-            for isbn in self.isbn_table:
-                f.write(f"{str(isbn.isbn).zfill(2)}/{isbn.title}/{isbn.publisher_id}/{isbn.published_year}/{str(isbn.isbn_register_date)}\n")
-                
-        # 3. Author Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_Author.txt"), "w", encoding='utf-8') as f:
-            for author in self.author_table:
-                f.write(f"{author.author_id}/{author.name}/{int(author.deleted)}\n")
-                
-        # 4. ISBN - Author Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_IsbnAuthor.txt"), "w", encoding='utf-8') as f:
-            for isbn_author in self.isbn_author_table:
-                f.write(f"{str(isbn_author.isbn).zfill(2)}/{isbn_author.author_id}\n")
-                
-        # 5. Book Edit Log Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), "w", encoding='utf-8') as f:
-            for log in self.book_edit_log_table:
-                f.write(f"{log.log_id}/{str(log.isbn).zfill(2)}/{str(log.edit_date)}\n")
-                
-        # 6. Borrow Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), "w", encoding='utf-8') as f:
-            for borrow in self.borrow_table:
-                f.write(f"{borrow.borrow_id}/{borrow.book_id}/{borrow.user_id}/{str(borrow.borrow_date)}/{str(borrow.return_date)}/{"" if borrow.actual_return_date is None else str(borrow.actual_return_date)}/{int(borrow.deleted)}\n")
-                
-        # 7. User Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_User.txt"), "w", encoding='utf-8') as f:
-            for user in self.user_table:
-                f.write(f"{user.user_id}/{user.phone_number}/{user.name}/{int(user.deleted)}\n")
-                
-        # 8. Publisher Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt"), "w", encoding='utf-8') as f:
-            for publisher in self.publisher_table:
-                f.write(f"{publisher.publisher_id}/{publisher.name}/{int(publisher.deleted)}\n")
-                
-        # 9. Overdue Penalty Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_OverduePenalty.txt"), "w", encoding='utf-8') as f:
-            for penalty in self.overdue_penalty_table:
-                f.write(f"{penalty.penalty_id}/{penalty.user_id}/{str(penalty.penalty_start_date)}/{str(penalty.penalty_end_date)}\n")
-                
-        return True
+        try:
+            # 1. Book Data
+            with open(opj(self.file_path, "data", "Libsystem_Data_Book.txt"), "w", encoding='utf-8') as f:
+                f.write(f"{len(self.book_table)}\n")
+                for book in self.book_table:
+                    f.write(f"{book.book_id}/{str(book.isbn).zfill(2)}/{str(book.register_date)}/{int(book.deleted)}/{"" if book.delete_date is None else str(book.delete_date)}\n")
+                    
+            # 2. ISBN Data
+            with open(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt"), "w", encoding='utf-8') as f:
+                for isbn in self.isbn_table:
+                    f.write(f"{str(isbn.isbn).zfill(2)}/{isbn.title}/{isbn.publisher_id}/{isbn.published_year}/{str(isbn.isbn_register_date)}\n")
+                    
+            # 3. Author Data
+            with open(opj(self.file_path, "data", "Libsystem_Data_Author.txt"), "w", encoding='utf-8') as f:
+                for author in self.author_table:
+                    f.write(f"{author.author_id}/{author.name}/{int(author.deleted)}\n")
+                    
+            # 4. ISBN - Author Data
+            with open(opj(self.file_path, "data", "Libsystem_Data_IsbnAuthor.txt"), "w", encoding='utf-8') as f:
+                for isbn_author in self.isbn_author_table:
+                    f.write(f"{str(isbn_author.isbn).zfill(2)}/{isbn_author.author_id}\n")
+                    
+            # 5. Book Edit Log Data
+            with open(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), "w", encoding='utf-8') as f:
+                for log in self.book_edit_log_table:
+                    f.write(f"{log.log_id}/{str(log.isbn).zfill(2)}/{str(log.edit_date)}\n")
+                    
+            # 6. Borrow Data
+            with open(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), "w", encoding='utf-8') as f:
+                for borrow in self.borrow_table:
+                    f.write(f"{borrow.borrow_id}/{borrow.book_id}/{borrow.user_id}/{str(borrow.borrow_date)}/{str(borrow.return_date)}/{"" if borrow.actual_return_date is None else str(borrow.actual_return_date)}/{int(borrow.deleted)}\n")
+                    
+            # 7. User Data
+            with open(opj(self.file_path, "data", "Libsystem_Data_User.txt"), "w", encoding='utf-8') as f:
+                for user in self.user_table:
+                    f.write(f"{user.user_id}/{user.phone_number}/{user.name}/{int(user.deleted)}\n")
+                    
+            # 8. Publisher Data
+            with open(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt"), "w", encoding='utf-8') as f:
+                for publisher in self.publisher_table:
+                    f.write(f"{publisher.publisher_id}/{publisher.name}/{int(publisher.deleted)}\n")
+                    
+            # 9. Overdue Penalty Data
+            with open(opj(self.file_path, "data", "Libsystem_Data_OverduePenalty.txt"), "w", encoding='utf-8') as f:
+                for penalty in self.overdue_penalty_table:
+                    f.write(f"{penalty.penalty_id}/{penalty.user_id}/{str(penalty.penalty_start_date)}/{str(penalty.penalty_end_date)}\n")
+                    
+            return True
+        
+        except Exception as e:
+            print("ERROR: 데이터 파일 저장에 실패했습니다.")
+            return False
     
     # ========== 데이터 파일 무결성 검사 ========== #
     # 오류 발생 시 오류 발생한 줄과 오류 메세지 출력
