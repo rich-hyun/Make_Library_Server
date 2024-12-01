@@ -31,7 +31,7 @@ class MyDate(object):
             
             assert 1582 < year, "년도는 1582보다 큰 정수여야 합니다."
             assert 1 <= month <= 12, "월은 1과 12사이의 정수여야 합니다."
-            assert self.validate_day(year, month, day), "���도와 월에 대해 일이 올바른 범위를 벗어났습니다."
+            assert self.validate_day(year, month, day), "년도와 월에 대해 일이 올바른 범위를 벗어났습니다."
             
             return MyDate(year, month, day)
             
@@ -1481,7 +1481,7 @@ class DataManager(object):
             
             year, month, day = map(int, date_str.split("-"))
             
-            # 연도가 1583 이��� 9999 이하인지 확인
+            # 연도가 1583 이상 9999 이하인지 확인
             if not (1583 <= year <= 9999):
                 return False, "날짜는 1583년부터 9999년 사이여야 합니다."
             
@@ -2417,7 +2417,7 @@ class DataManager(object):
         
         rtn_book_id = int(rtn_book_id)
         
-        # 고유번��에 해당하는 책 존재 여부 확인
+        # 고유번호에 해당하는 책 존재 여부 확인
         book_to_return = self.search_book_by_id(rtn_book_id)
         
         if not book_to_return:
