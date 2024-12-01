@@ -2,6 +2,7 @@ import os
 from datetime import datetime
 import re
 import json
+import shutil
 
 opj = os.path.join
 
@@ -266,7 +267,51 @@ class DataManager(object):
 
         if verbose: print("="*10, "Start Reading Data Files", "="*10)
         
-        # 1. Book Data
+        # ---------- 1. Publisher Data ----------
+         # 파일이 존재하지 않으면 생성
+        if not os.path.exists(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt")):
+            with open(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt"), "w", encoding='utf-8') as f:
+                pass
+        
+        # 무결성 검사(데이터가 올바르지 않을경우 파일명 변경(Libsystem_Data_{테이블명}-yyyyMMdd_hhmmss.bak) 후 새 Libsystem_Data_Publisher.txt 파일 생성)
+        # yyyyMMdd-hhmmss는 컴퓨터 운영체제 시스템 시간을 기준으로 함
+        passed, message = self.check_data_publisher_files(self.file_path)
+        
+        if not passed:
+            now = datetime.now().strftime("%Y%m%d_%H%M%S")
+            shutil.copy(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt"), opj(self.file_path, "data", f"Libsystem_Data_Publisher-{now}.bak"))
+            return (False, message)
+
+        with open(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt"), "r",encoding='utf-8') as f:
+            for line in f:
+                publisher_id, name, deleted = line.strip().split(sep)
+                self.publisher_table.append(PublisherRecord(int(publisher_id), name, bool(int((deleted)))))
+
+        if verbose: print(f"{len(self.publisher_table)} Publisher Data Loaded")
+        
+        # ---------- 2. ISBN Data ----------
+        # 파일이 존재하지 않으면 생성(아무 데이터 없음)
+        if not os.path.exists(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt")):
+            with open(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt"), "w", encoding='utf-8') as f:
+                pass
+        
+        # 무결성 검사(데이터가 올바르지 않을경우 파일명 변경(Libsystem_Data_{테이블명}-yyyyMMdd_hhmmss.bak) 후 새 Libsystem_Data_Isbn.txt 파일 생성)
+        # yyyyMMdd-hhmmss는 컴퓨터 운영체제 시스템 시간을 기준으로 함
+        passed, message = self.check_data_isbn_files(self.file_path)
+        
+        if not passed:
+            now = datetime.now().strftime("%Y%m%d_%H%M%S")
+            shutil.copy(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt"), opj(self.file_path, "data", f"Libsystem_Data_Isbn-{now}.bak"))
+            return (False, message)
+
+        with open(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt"), "r",encoding='utf-8') as f:
+            for line in f:
+                isbn, title, publisher_id, published_year, isbn_register_date = line.strip().split(sep)
+                self.isbn_table.append(ISBNRecord(int(isbn), title, int(publisher_id), int(published_year), MyDate.from_str(isbn_register_date)))
+                
+        if verbose: print(f"{len(self.isbn_table)} ISBN Data Loaded")
+        
+        # ---------- 3. Book Data ----------
          # 파일이 존재하지 않으면 생성
         if not os.path.exists(opj(self.file_path, "data", "Libsystem_Data_Book.txt")):
             with open(opj(self.file_path, "data", "Libsystem_Data_Book.txt"), "w", encoding='utf-8') as f:
@@ -300,30 +345,31 @@ class DataManager(object):
         if verbose:      
             print(f"{len(self.book_table)} Book Data Loaded")
             print(f"max_book_id: {self.static_id}")
-                
-        # 2. ISBN Data
-        # 파일이 존재하지 않으면 생성(아무 데이터 없음)
-        if not os.path.exists(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt")):
-            with open(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt"), "w", encoding='utf-8') as f:
-                pass
         
-        # 무결성 검사(데이터가 올바르지 않을경우 파일명 변경(Libsystem_Data_{테이블명}-yyyyMMdd_hhmmss.bak) 후 새 Libsystem_Data_Isbn.txt 파일 생성)
+        # ---------- 4. Book Edit Log Data ----------
+        # 파일이 존재하지 않으면 생성
+        if not os.path.exists(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt")):
+            with open(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), "w", encoding='utf-8') as f:
+                pass
+            
+        
+        # 무결성 검사(데이터가 올바르지 않을경우 파일명 변경(Libsystem_Data_{테이블명}-yyyyMMdd_hhmmss.bak) 후 새 Libsystem_Data_BookEditLog.txt 파일 생성)
         # yyyyMMdd-hhmmss는 컴퓨터 운영체제 시스템 시간을 기준으로 함
-        passed, message = self.check_data_isbn_files(self.file_path)
+        passed, message = self.check_data_book_edit_log_files(self.file_path)
         
         if not passed:
             now = datetime.now().strftime("%Y%m%d_%H%M%S")
-            shutil.copy(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt"), opj(self.file_path, "data", f"Libsystem_Data_Isbn-{now}.bak"))
+            shutil.copy(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), opj(self.file_path, "data", f"Libsystem_Data_BookEditLog-{now}.bak"))
             return (False, message)
 
-        with open(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt"), "r",encoding='utf-8') as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), "r",encoding='utf-8') as f:
             for line in f:
-                isbn, title, publisher_id, published_year, isbn_register_date = line.strip().split(sep)
-                self.isbn_table.append(ISBNRecord(int(isbn), title, int(publisher_id), int(published_year), MyDate.from_str(isbn_register_date)))
+                log_id, isbn, edit_date = line.strip().split(sep)
+                self.book_edit_log_table.append(BookEditLogRecord(int(log_id), int(isbn), MyDate.from_str(edit_date)))
                 
-        if verbose: print(f"{len(self.isbn_table)} ISBN Data Loaded")
-                
-        # 3. Author Data
+        if verbose: print(f"{len(self.book_edit_log_table)} Book Edit Log Data Loaded") 
+        
+        # ---------- 5. Author Data ----------
 
         # 파일이 존재하지 않으면 생성(아무 데이터 없음)
         if not os.path.exists(opj(self.file_path, "data", "Libsystem_Data_Author.txt")):
@@ -346,8 +392,8 @@ class DataManager(object):
                 self.author_table.append(AuthorRecord(int(author_id), name, bool(int(deleted))))
                 
         if verbose: print(f"{len(self.author_table)} Author Data Loaded")
-                
-        # 4. ISBN - Author Data
+        
+        # ---------- 6. ISBN - Author Data ----------
         # 파일이 존재하지 않으면 생성
         if not os.path.exists(opj(self.file_path, "data", "Libsystem_Data_IsbnAuthor.txt")):
             with open(opj(self.file_path, "data", "Libsystem_Data_IsbnAuthor.txt"), "w", encoding='utf-8') as f:
@@ -369,54 +415,8 @@ class DataManager(object):
                 self.isbn_author_table.append(IsbnAuthorRecord(int(isbn), int(author_id)))
                 
         if verbose: print(f"{len(self.isbn_author_table)} ISBN - Author Data Loaded")
-                
-        # 5. Book Edit Log Data
-        # 파일이 존재하지 않으면 생성
-        if not os.path.exists(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt")):
-            with open(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), "w", encoding='utf-8') as f:
-                pass
-            
-        
-        # 무결성 검사(데이터가 올바르지 않을경우 파일명 변경(Libsystem_Data_{테이블명}-yyyyMMdd_hhmmss.bak) 후 새 Libsystem_Data_BookEditLog.txt 파일 생성)
-        # yyyyMMdd-hhmmss는 컴퓨터 운영체제 시스템 시간을 기준으로 함
-        passed, message = self.check_data_book_edit_log_files(self.file_path)
-        
-        if not passed:
-            now = datetime.now().strftime("%Y%m%d_%H%M%S")
-            shutil.copy(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), opj(self.file_path, "data", f"Libsystem_Data_BookEditLog-{now}.bak"))
-            return (False, message)
 
-        with open(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), "r",encoding='utf-8') as f:
-            for line in f:
-                log_id, isbn, edit_date = line.strip().split(sep)
-                self.book_edit_log_table.append(BookEditLogRecord(int(log_id), int(isbn), MyDate.from_str(edit_date)))
-                
-        if verbose: print(f"{len(self.book_edit_log_table)} Book Edit Log Data Loaded")
-                
-        # 6. Borrow Data
-        # 파일이 존재하지 않으면 생성
-        if not os.path.exists(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt")):
-            with open(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), "w", encoding='utf-8') as f:
-                pass
-            
-        
-        # 무결성 검사(데이터가 올바르지 않을경우 파일명 변경(Libsystem_Data_{테이블명}-yyyyMMdd_hhmmss.bak) 후 새 Libsystem_Data_Borrow.txt 파일 생성)
-        # yyyyMMdd-hhmmss는 컴퓨터 운영체제 시스템 시간을 기준으로 함
-        passed, message = self.check_data_borrow_files(self.file_path)
-        
-        if not passed:
-            now = datetime.now().strftime("%Y%m%d_%H%M%S")
-            shutil.copy(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), opj(self.file_path, "data", f"Libsystem_Data_Borrow-{now}.bak"))
-            return (False, message)
-
-        with open(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), "r",encoding='utf-8') as f:
-            for line in f:
-                borrow_id, book_id, user_id, borrow_date, return_date, actual_return_date, deleted = line.strip().split(sep)
-                self.borrow_table.append(BorrowRecord(int(borrow_id), int(book_id), int(user_id), MyDate.from_str(borrow_date), MyDate.from_str(return_date), MyDate.from_str(actual_return_date), bool(int(deleted))))
-                
-        if verbose: print(f"{len(self.borrow_table)} Borrow Data Loaded")            
-    
-        # 7. User Data
+        # ---------- 7. User Data ----------
         # 파일이 존재하지 않으면 생성
         if not os.path.exists(opj(self.file_path, "data", "Libsystem_Data_User.txt")):
             with open(opj(self.file_path, "data", "Libsystem_Data_User.txt"), "w", encoding='utf-8') as f:
@@ -439,30 +439,30 @@ class DataManager(object):
         
         if verbose: print(f"{len(self.user_table)} User Data Loaded")
         
-        # 8. Publisher Data
-         # 파일이 존재하지 않으면 생성
-        if not os.path.exists(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt")):
-            with open(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt"), "w", encoding='utf-8') as f:
+        # ---------- 8. Borrow Data ----------
+        # 파일이 존재하지 않으면 생성
+        if not os.path.exists(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt")):
+            with open(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), "w", encoding='utf-8') as f:
                 pass
-           
+            
         
-        # 무결성 검사(데이터가 올바르지 않을경우 파일명 변경(Libsystem_Data_{테이블명}-yyyyMMdd_hhmmss.bak) 후 새 Libsystem_Data_Publisher.txt 파일 생성)
+        # 무결성 검사(데이터가 올바르지 않을경우 파일명 변경(Libsystem_Data_{테이블명}-yyyyMMdd_hhmmss.bak) 후 새 Libsystem_Data_Borrow.txt 파일 생성)
         # yyyyMMdd-hhmmss는 컴퓨터 운영체제 시스템 시간을 기준으로 함
-        passed, message = self.check_data_publisher_files(self.file_path)
+        passed, message = self.check_data_borrow_files(self.file_path)
         
         if not passed:
             now = datetime.now().strftime("%Y%m%d_%H%M%S")
-            shutil.copy(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt"), opj(self.file_path, "data", f"Libsystem_Data_Publisher-{now}.bak"))
+            shutil.copy(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), opj(self.file_path, "data", f"Libsystem_Data_Borrow-{now}.bak"))
             return (False, message)
 
-        with open(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt"), "r",encoding='utf-8') as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), "r",encoding='utf-8') as f:
             for line in f:
-                publisher_id, name, deleted = line.strip().split(sep)
-                self.publisher_table.append(PublisherRecord(int(publisher_id), name, bool(int((deleted)))))
-
-        if verbose: print(f"{len(self.publisher_table)} Publisher Data Loaded")
-
-        # 9. Overdue Penalty Data
+                borrow_id, book_id, user_id, borrow_date, return_date, actual_return_date, deleted = line.strip().split(sep)
+                self.borrow_table.append(BorrowRecord(int(borrow_id), int(book_id), int(user_id), MyDate.from_str(borrow_date), MyDate.from_str(return_date), MyDate.from_str(actual_return_date), bool(int(deleted))))
+                
+        if verbose: print(f"{len(self.borrow_table)} Borrow Data Loaded") 
+        
+        # ---------- 9. Overdue Penalty Data ----------
         # 파일이 존재하지 않으면 생성
         if not os.path.exists(opj(self.file_path, "data", "Libsystem_Data_OverduePenalty.txt")):
             with open(opj(self.file_path, "data", "Libsystem_Data_OverduePenalty.txt"), "w", encoding='utf-8') as f:
@@ -483,9 +483,8 @@ class DataManager(object):
                 penalty_id, user_id, penalty_start_date, penalty_end_date = line.strip().split(sep)
                 self.overdue_penalty_table.append(OverduePenaltyRecord(int(penalty_id), int(user_id), MyDate.from_str(penalty_start_date), MyDate.from_str(penalty_end_date)))
 
-        if verbose: 
-            print(f"{len(self.overdue_penalty_table)} Overdue Penalty Data Loaded")
-            print("="*10, "End Reading Data Files", "="*10)
+        if verbose: print(f"{len(self.overdue_penalty_table)} Overdue Penalty Data Loaded")
+        if verbose: print("="*10, "End Reading Data Files", "="*10)
             
         return (True, "")
 
@@ -1438,7 +1437,7 @@ class DataManager(object):
         # 5. 고유번호가 0에서 99 사이인지 확인
         book_id_int = int(book_id)
         if book_id_int < 0 or book_id_int > self.config['max_static_id']:
-            return False, f"고유번호는 0에서 {config['max_static_id']} 사이여야 합니다."
+            return False, f"고유번호는 0에서 {self.config['max_static_id']} 사이여야 합니다."
         
         if flag == 0 and self.search_book_by_id(book_id_int):
             return False, "중복된 고유번호가 존재합니다."
@@ -2242,7 +2241,7 @@ class DataManager(object):
             self.publisher_table.append(new_publisher_data)
 
         new_log_id=len(self.book_edit_log_table)+1
-        self.book_edit_log_table.append(BookEditLogRecord(new_log_id,isbn,today))
+        self.book_edit_log_table.append(BookEditLogRecord(new_log_id,isbn, self.today))
 
         # 저자 수정
         # 기존 저자-ISBN 관계 삭제
@@ -2270,7 +2269,7 @@ class DataManager(object):
             return False
         
         if len(search_book) == 0:
-            bookData.print_book_all()
+            self.print_book_all()
             return True
         
         is_valid, error_message = self.check_string_validate("제목 또는 저자", search_book)
@@ -2278,7 +2277,7 @@ class DataManager(object):
             print(f"ERROR: {error_message}")
             return False
         
-        bookData.search_content_book(search_book)
+        self.search_content_book(search_book)
     
     def search_content_book(self, search_book):
         search_results = []
