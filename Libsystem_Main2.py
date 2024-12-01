@@ -495,8 +495,8 @@ class DataManager(object):
             with open(opj(self.file_path, "data", "Libsystem_Data_Book.txt"), "w", encoding='utf-8') as f:
                 f.write(f"{len(self.book_table)}\n")
                 for book in self.book_table:
-                    f.write(f"{book.book_id}/{str(book.isbn).zfill(2)}/{str(book.register_date)}/{int(book.deleted)}/{"" if book.delete_date is None else str(book.delete_date)}\n")
-                    
+                    f.write(f"{book.book_id}/{str(book.isbn).zfill(2)}/{book.register_date}/{int(book.deleted)}/{'' if book.delete_date is None else book.delete_date}\n")
+
             # 2. ISBN Data
             with open(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt"), "w", encoding='utf-8') as f:
                 for isbn in self.isbn_table:
@@ -520,7 +520,8 @@ class DataManager(object):
             # 6. Borrow Data
             with open(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), "w", encoding='utf-8') as f:
                 for borrow in self.borrow_table:
-                    f.write(f"{borrow.borrow_id}/{borrow.book_id}/{borrow.user_id}/{str(borrow.borrow_date)}/{str(borrow.return_date)}/{"" if borrow.actual_return_date is None else str(borrow.actual_return_date)}/{int(borrow.deleted)}\n")
+                    f.write(f"{borrow.borrow_id}/{borrow.book_id}/{borrow.user_id}/{borrow.borrow_date}/{borrow.return_date}/{'' if borrow.actual_return_date is None else borrow.actual_return_date}/{int(borrow.deleted)}\n")
+
                     
             # 7. User Data
             with open(opj(self.file_path, "data", "Libsystem_Data_User.txt"), "w", encoding='utf-8') as f:
