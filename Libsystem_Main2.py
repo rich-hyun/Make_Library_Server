@@ -2383,28 +2383,38 @@ class DataManager(object):
             for isbn in self.isbn_table:
                 if isbn.isbn == book.isbn:
                     isbn_data = isbn
-                    break
+                    
                 
             # find author isbn relationship
             author_isbn_data = None
             for isbn_author in self.isbn_author_table:
                 if isbn_author.isbn == isbn_data.isbn:
                     author_isbn_data = isbn_author
-                    break
+                    
                 
             author_data = None
             for author in self.author_table:
                 if author.author_id == author_isbn_data.author_id:
                     author_data = author
-                    break
+                    
 
             # 만약 #로 search_book이 시작하면 해당 작가 식별 번호 가진 책 검색
             if search_book.startswith("#"):
-                if search_book[1:] == str(author_data.author_id):
+                # 제목에 포함되는지 확인 (첫 글자 # 포함)
+                if search_book in isbn_data.title:
                     search_results.append(book)
+                else:
+                    # # 문자 제외한 나머지 부분을 저자 식별번호와 완전 일치 비교
+                    author_id_str = search_book[1:].strip()
+                    if author_id_str == str(author_data.author_id):
+                        search_results.append(book)
 
             else:
-                if search_book in isbn_data.title or search_book in author_data.name:
+                # 제목에 포함되는지 확인
+                if search_book in isbn_data.title:
+                    search_results.append(book)
+                # 저자 이름에 포함되는지 확인 (중간에 #이 있어도 이름으로 비교)
+                elif search_book in author_data.name:
                     search_results.append(book)
             
         if not search_results:
