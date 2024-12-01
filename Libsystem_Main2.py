@@ -22,7 +22,7 @@ class MyDate(object):
         self.day = day
 
     def __str__(self):
-        return f"{self.year}-{self.month}-{self.day}"
+        return f"{self.year}-{str(self.month).zfill(2)}-{str(self.day).zfill(2)}"
 
     @classmethod
     def from_str(self, text: str) -> object:
