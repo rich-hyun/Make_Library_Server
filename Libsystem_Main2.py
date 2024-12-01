@@ -22,7 +22,7 @@ class MyDate(object):
         self.day = day
 
     def __str__(self):
-        return f"{self.year}-{self.month}-{self.day}"
+        return f"{self.year}-{str(self.month).zfill(2)}-{str(self.day).zfill(2)}"
 
     @classmethod
     def from_str(self, text: str) -> object:
@@ -31,7 +31,7 @@ class MyDate(object):
             
             assert 1582 < year, "년도는 1582보다 큰 정수여야 합니다."
             assert 1 <= month <= 12, "월은 1과 12사이의 정수여야 합니다."
-            assert self.validate_day(year, month, day), "���도와 월에 대해 일이 올바른 범위를 벗어났습니다."
+            assert self.validate_day(year, month, day), "년도와 월에 대해 일이 올바른 범위를 벗어났습니다."
             
             return MyDate(year, month, day)
             
@@ -282,7 +282,7 @@ class DataManager(object):
         # 무결성 검사(데이터가 올바르지 않을경우 파일명 변경(Libsystem_Data_{테이블명}-yyyyMMdd_hhmmss.bak) 후 새 Libsystem_Data_Book.txt 파일 생성)
         # yyyyMMdd-hhmmss는 컴퓨터 운영체제 시스템 시간을 기준으로 함
         if not self.check_data_book_files(self.file_path):
-            now = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            now = datetime.now().strftime("%Y%m%d_%H%M%S")
             os.rename(opj(self.file_path, "data", "Libsystem_Data_Book.txt"), opj(self.file_path, "data", f"Libsystem_Data_Book-{now}.bak"))
             with open(opj(self.file_path, "data", "Libsystem_Data_Book.txt"), "w", encoding='utf-8') as f:
                 f.write("0\n")
@@ -329,7 +329,7 @@ class DataManager(object):
                  pass
             
         
-        # 무결성 검사(데이터가 올바르지 않을경우 파일명 변경(Libsystem_Data_{테이블명}-yyyyMMdd_hhmmss.bak) 후 새 Libsystem_Data_Author.txt 파일 생성)
+         # 무결성 검사(데이터가 올바르지 않을경우 파일명 변경(Libsystem_Data_{테이블명}-yyyyMMdd_hhmmss.bak) 후 새 Libsystem_Data_Author.txt 파일 생성)
         # yyyyMMdd-hhmmss는 컴퓨터 운영체제 시스템 시간을 기준으로 함
         if not self.check_data_author_files(self.file_path):
             now = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -477,19 +477,19 @@ class DataManager(object):
         if verbose: 
             print(f"{len(self.overdue_penalty_table)} Overdue Penalty Data Loaded")
             print("="*10, "End Reading Data Files", "="*10)
-    
+
     # ========== 데이터 파일 메모리 -> 파일 동기화 (fetch) ========== #
     def fetch_data_file(self) -> bool:
         # 1. Book Data
         with open(opj(self.file_path, "data", "Libsystem_Data_Book.txt"), "w", encoding='utf-8') as f:
             f.write(f"{len(self.book_table)}\n")
             for book in self.book_table:
-                f.write(f"{book.book_id}/{book.isbn}/{str(book.register_date)}/{int(book.deleted)}/{str(book.delete_date)}\n")
+                f.write(f"{book.book_id}/{str(book.isbn).zfill(2)}/{str(book.register_date)}/{int(book.deleted)}/{"" if book.delete_date is None else str(book.delete_date)}\n")
                 
         # 2. ISBN Data
         with open(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt"), "w", encoding='utf-8') as f:
             for isbn in self.isbn_table:
-                f.write(f"{isbn.isbn}/{isbn.title}/{isbn.publisher_id}/{isbn.published_year}/{str(isbn.isbn_register_date)}\n")
+                f.write(f"{str(isbn.isbn).zfill(2)}/{isbn.title}/{isbn.publisher_id}/{isbn.published_year}/{str(isbn.isbn_register_date)}\n")
                 
         # 3. Author Data
         with open(opj(self.file_path, "data", "Libsystem_Data_Author.txt"), "w", encoding='utf-8') as f:
@@ -499,17 +499,17 @@ class DataManager(object):
         # 4. ISBN - Author Data
         with open(opj(self.file_path, "data", "Libsystem_Data_IsbnAuthor.txt"), "w", encoding='utf-8') as f:
             for isbn_author in self.isbn_author_table:
-                f.write(f"{isbn_author.isbn}/{isbn_author.author_id}\n")
+                f.write(f"{str(isbn_author.isbn).zfill(2)}/{isbn_author.author_id}\n")
                 
         # 5. Book Edit Log Data
         with open(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), "w", encoding='utf-8') as f:
             for log in self.book_edit_log_table:
-                f.write(f"{log.log_id}/{log.isbn}/{str(log.edit_date)}\n")
+                f.write(f"{log.log_id}/{str(log.isbn).zfill(2)}/{str(log.edit_date)}\n")
                 
         # 6. Borrow Data
         with open(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), "w", encoding='utf-8') as f:
             for borrow in self.borrow_table:
-                f.write(f"{borrow.borrow_id}/{borrow.book_id}/{borrow.user_id}/{str(borrow.borrow_date)}/{str(borrow.return_date)}/{str(borrow.actual_return_date)}/{int(borrow.deleted)}\n")
+                f.write(f"{borrow.borrow_id}/{borrow.book_id}/{borrow.user_id}/{str(borrow.borrow_date)}/{str(borrow.return_date)}/{"" if borrow.actual_return_date is None else str(borrow.actual_return_date)}/{int(borrow.deleted)}\n")
                 
         # 7. User Data
         with open(opj(self.file_path, "data", "Libsystem_Data_User.txt"), "w", encoding='utf-8') as f:
@@ -1481,7 +1481,7 @@ class DataManager(object):
             
             year, month, day = map(int, date_str.split("-"))
             
-            # 연도가 1583 이��� 9999 이하인지 확인
+            # 연도가 1583 이상 9999 이하인지 확인
             if not (1583 <= year <= 9999):
                 return False, "날짜는 1583년부터 9999년 사이여야 합니다."
             
@@ -1504,15 +1504,6 @@ class DataManager(object):
         if len(isbn) != 2 or not isbn.isdigit():
             return False, "ISBN은 두 자리 숫자여야 합니다."
         return True, ""
-    
-    def check_author_id_validate(self, author_id):
-        if not author_id.isdigit():
-            return False, "저자 식별번호는 숫자여야 합니다."
-        
-        if author_id.startswith('0'):
-            return False, "저자 식별번호는 0으로 시작할 수 없습니다."
-            
-        return True, ""
 
     def check_phone_number_validate(self, phone_number):
         if phone_number == self.config["cancel"]:
@@ -1523,105 +1514,21 @@ class DataManager(object):
             return True, ""
         return False, "전화번호는 010-XXXX-XXXX 형식이어야 합니다."
     
-    # def get_author_by_name(self, author_name): # 저자 이름으로 저자 정보 조회
-    #     for author in self.author_table:
-    #         if author.name == author_name:
-    #             return author
-    #     return None
-
-    # def get_author_by_id(self, author_id): # 저자 ID로 저자 정보 조회
-    #     for author in self.author_table:
-    #         if author.author_id == author_id:
-    #             return author
-    #     return None
-
-    def check_author_validate(self, parts_used,value):
-        valid_author = None
-        error_messages = ""
-        
-        # 입력값이 뒤로가기 문자와 일치하는지 확인
-        if value == self.config["cancel"]:
-            return True, ""
-        
-        authors = [author.strip() for author in value.split("&") if author.strip()]
-
-        # authors에 등록된 저자가 0명일 경우 True 반환
-        if len(authors) == 0:
-            return True, ""
-        
-        for author in authors:
-            # "/","\"가 포함되어 있는지 확인
-            if "/" in author or "\\" in author:
-                error_messages += f"[{author}] ERROR: 책의 저자에 특수문자 \"/\" 또는 \"\"을 입력할 수 없습니다.\n"
-
-            # 저자에 "#"이 한 개 이하로 있는지 확인
-            if author.count("#") > 1:
-                error_messages += f"[{author}] ERROR: 저자의 형식은 \"이름\" 또는 \"이름 #식별번호\" 둘 중 하나여야 합니다.\n"
-            
-            if '#' in author:
-                # '#'이 있다면 왼쪽이 저자의 이름이고, 오른쪽이 식별번호
-                author_name, author_id = author.split("#")
-            else:
-                author_name = author
-                author_id = None
-
-            # 저자의 이름이 1글자 이상인지 확인
-            if not author_name.strip():
-                error_messages += f"[{author}] ERROR: 저자의 형식은 \"이름\" 또는 \"이름 #식별번호\" 둘 중 하나여야 합니다.\n"
-
-            # 저자의 이름이 공백인지 확인
-            if not author_name.strip():
-               error_messages += f"[{author}] ERROR: 저자의 형식은 \"이름\" 또는 \"이름 #식별번호\" 둘 중 하나여야 합니다.\n"
-            
-            # 저자의 식별번호가 숫자로만 구성되어 있는지 확인
-            if author_id is not None and not author_id.isdigit():
-                error_messages += f"[{author}] ERROR: 특수문자 \"#\"의 오른쪽에는 식별번호만 허용됩니다.\n"
-        
-            # 저자의 식별번호가 1 이상인지 확인
-            if author_id is not None and int(author_id) < 1:
-                error_messages += f"[{author}] ERROR: 저자의 식별번호는 1 이상이어야 합니다.\n"
-        
-            # # 저자의 식별번호가 존재하는 경우, 실제로 유효한지 확인
-            # if author_id is not None:
-            #     valid_author = self.get_author_by_id(author_id)  # 가정: 이 메서드는 저자 ID로 저자 정보를 조회하는 함수
-            
-            # if author_id is not None and valid_author is None:
-            #     error_messages += f"[{author}] ERROR: {author_id}번 저자는 없습니다.\n"
-            
-            # elif author_id is not None and valid_author.name != author_name.strip():
-            #     error_messages += f"[{author}] ERROR: {author_id}번 저자의 이름은 \"{valid_author.name}\"가 아닙니다.\n"     
-                
-            # # 저자의 이름만 존재하고, 사용 파트가 "수정"인 경우 해당 저자가 존재하는지 확인
-            # if author_id is None and parts_used == "수정":
-            #     valid_author = self.get_author_by_name(author_name)  # 가정: 이 메서드는 저자 이름으로 저자 정보를 조회하는 함수
-            #     if not valid_author:
-            #         error_messages += f"[{author}] ERROR: 입력한 저자의 식별번호가 없습니다.\n"
-                
-            
-        # 저자가 5명 이상인지 확인
-        if len(authors) > 5:
-            error_messages += "\nERROR: 책의 저자는 최대 5명입니다.\n"
-        
-        # 오류 메시지가 있다면 반환
-        if error_messages:
-            return False, error_messages.strip()
-    
-        return True, ""
-    
     def check_author_id_validate(self, author_id): 
         if author_id == self.config["cancel"]:
             return True, ""
-        # 1. 입력값이 있는지 확인
-        if len(author_id) == 0:
-            return False, "1글자 이상 입력해주세요."
         
-        # 2. 입력값이 공백으로만 구성되지 않았는지 확인
-        if author_id.isspace():
+        # 1. 입력값이 공백으로만 구성되지 않았는지 확인
+        if author_id.strip() == "":
             return False, "저자의 식별번호는 공백일 수 없습니다."
         
-        # 3. 저자의 식별번호가 숫자로만 구성되어 있는지 확인
+        # 2. 저자의 식별번호가 숫자로만 구성되어 있는지 확인
         if not author_id.isdigit():
             return False, "저자의 식별번호는 숫자여야 합니다."
+        
+        # 3. 저자의 식별번호가 0으로 시작하는 지 확인
+        if author_id.startswith("0"):
+            return False, "저자의 식별번호는 0으로 시작할 수 없습니다."
         
         # 4. 저자의 식별번호가 1 이상인지 확인
         if int(author_id) < 1:
@@ -1988,11 +1895,19 @@ class DataManager(object):
                 author_string = "-"
             else:
                 for i, author in enumerate(book_info[1]):
-                    if i == len(book_info[1]) - 1:
-                        author_string += author
+                    if isinstance(author, AuthorRecord):
+                        author_name = author.name
                     else:
-                        author_string += f"{author} & "
+                        author_name = author
+
+                    if i == len(book_info[1]) - 1:
+                        author_string += author_name
+                    else:
+                        author_string += f"{author_name} & "
             
+            print(self.get_header())
+            print()
+
             print(f"{book_id}/{new_isbn.isbn}/{new_isbn.title}/{author_string}/{publisher.name}/{new_isbn.published_year}/{new_isbn.isbn_register_date}")
             print()
             
@@ -2003,10 +1918,14 @@ class DataManager(object):
                 for author in book_info[1]:
                     if not isinstance(author, AuthorRecord):
                         self.author_table.append(AuthorRecord(len(self.author_table) + 1, author, False))
+                        self.isbn_author_table.append(IsbnAuthorRecord(isbn, self.author_table[-1].author_id))
+                    else:
+                        self.isbn_author_table.append(IsbnAuthorRecord(isbn, author.author_id))
+
                 self.isbn_table.append(new_isbn)
                 self.book_table.append(new_book)    
                 
-                self.write_data_files()
+                self.fetch_data_file()
                 return True
             else:
                 print("추가를 중단하며 메인 프롬프트로 돌아갑니다.")
@@ -2075,8 +1994,13 @@ class DataManager(object):
                 self.fetch_data_file()
         
     def confirm_delete(self, del_book_id):
-        if self.input_response("삭제하면 되돌릴 수 없습니다. 정말로 삭제하시겠습니까?(Y/N): "):
-            self.book_table = [book for book in self.book_table if book.book_id != del_book_id]
+        if self.input_response("삭제하면 되돌릴 수 없습니다. 정말로 삭제하시겠습니까?(Y/N): "):            
+            for i in range(len(self.book_table)):
+                if self.book_table[i].book_id == del_book_id:
+                    self.book_table[i].deleted = True
+                    self.book_table[i].deleted_date = self.today
+                    break
+            
             print("삭제가 완료되었습니다. 메인프롬프트로 돌아갑니다.")
             return True
         else:
@@ -2088,12 +2012,22 @@ class DataManager(object):
         입력받은 저자 문자열을 검증하고 유효성과 오류 메세지를 반환합니다.
         """
         input_author_list = [author.strip() for author in authors_input.split("&") if author.strip()]
+        total_error_message = ""
+        is_total_valid = True
 
         if not input_author_list:
             return True, None
         
         if len(input_author_list) > 5:
-            return False, "저자 입력이 5명을 초과합니다."
+            return False, "ERROR: 책의 저자는 최대 5명입니다."
+        
+        for author in input_author_list:
+            if author.count("#") > 1:
+                is_total_valid = False
+                total_error_message += f"[{author}] ERROR: 저자의 형식은 '이름' 또는 '이름 #식별번호' 둘 중 하나여야 합니다.\n"
+
+        if not is_total_valid:
+            return False, total_error_message
         
         for author in input_author_list:
             if "#" in author:
@@ -2104,22 +2038,36 @@ class DataManager(object):
                 name = author.strip()
                 number = None
 
-            is_valid, error_message = self.check_string_validate("저자", name)
+            is_valid, error_message = self.check_string_validate("저자의 이름", name)
             if not is_valid:
-                return False, error_message
+                is_total_valid = False
+                total_error_message += f"[{author}] ERROR: {error_message}\n"
 
-            if number:
+            if number is not None:
                 is_valid, error_message = self.check_author_id_validate(number)
                 if not is_valid:
-                    return False, error_message
+                    is_total_valid = False
+                    total_error_message += f"[{author}] ERROR: {error_message}\n"
+
+        if not is_total_valid:
+            return False, total_error_message
+        
+        for author in input_author_list:
+            if "#" in author:
+                _, number = author.split("#")
+                number = number.strip()
 
                 author_data = self.search_author_by_id(int(number))
                 if not author_data:
-                    return False, f"{int(number)}번 저자가 존재하지 않습니다."
+                    is_total_valid = False
+                    total_error_message += f"[{author}] ERROR: {int(number)}번 저자가 존재하지 않습니다.\n"
                 elif author_data.name != name:
-                    return False, f"{int(number)}번 저자의 이름은 '{name}'이 아닙니다."
-        
-        return True, None
+                    is_total_valid = False
+                    total_error_message += f"[{author}] ERROR: {int(number)}번 저자의 이름은 '{name}'이 아닙니다.\n"
+        if is_total_valid:
+            return True, None
+        else:
+            return False, total_error_message
         
     
     
@@ -2162,86 +2110,32 @@ class DataManager(object):
         if not new_title or not self.check_string_validate("제목", new_title):
             return False
 
-        # 2. 책 저자 입력
-        while True:
-            new_authors = input("수정할 책의 저자를 입력해주세요 (이름 #번호 & ...): ").strip()
-            if new_authors == cancel_value:
-                print("수정을 중단하며 메인 프롬프트로 돌아갑니다.")
-                return False
-
-            # "&"로 구분하여 입력 분리 및 공백 제거
-            author_list = [author.strip() for author in new_authors.split("&") if author.strip()]
-            if not author_list:
-                print("저자가 없는 책으로 처리됩니다.")
-                valid_authors = []
-                break
-
-            if len(author_list) > 5:
-                print("ERROR: 저자 입력이 5명을 초과합니다. 다시 입력해주세요.")
-                continue
-
-            valid_authors = []
-            errors = []
-            unresolved_authors = []
-
-            for author in author_list:
-                if "#" in author:  # 이름과 식별번호 형식
-                    name, _, number = author.partition("#")
-                    name = name.strip()
-                    if not name or not number.isdigit():
-                        errors.append(f"[{author}] ERROR: 입력 형식이 잘못되었습니다.")
-                        continue
-
-                    author_record = self.search_author_by_id(int(number))
-                    if not author_record or author_record.name != name:
-                        errors.append(f"[{author}] ERROR: 존재하지 않는 저자입니다.")
-                    else:
-                        valid_authors.append((name, int(number)))
-                else:  # 이름만 입력된 경우
-                    unresolved_authors.append(author)
-
-            # 보조 프롬프트로 미해결 저자 처리
-            for unresolved in unresolved_authors:
-                matching_authors = [
-                    author for author in self.author_table if author.name == unresolved
-                ]
-                if not matching_authors:
-                    print(f"[{unresolved}] 해당 이름의 저자가 없습니다. 새로 추가합니다.")
-                    new_author_id = len(self.author_table) + 1
-                    self.author_table.append(AuthorRecord(new_author_id, unresolved, False))
-                    valid_authors.append((unresolved, new_author_id))
-                elif len(matching_authors) == 1:
-                    valid_authors.append((unresolved, matching_authors[0].author_id))
-                else:
-                    print(f"저자 '{unresolved}'에 대한 후보가 여러 명 존재합니다.")
-                    for idx, author in enumerate(matching_authors):
-                        print(f"{idx + 1}. {author.name} #{author.author_id}")
-                    try:
-                        choice = int(input("해당 저자의 번호를 입력해주세요: ")) - 1
-                        if 0 <= choice < len(matching_authors):
-                            selected_author = matching_authors[choice]
-                            valid_authors.append((selected_author.name, selected_author.author_id))
-                        else:
-                            errors.append(f"[{unresolved}] ERROR: 잘못된 선택입니다.")
-                    except ValueError:
-                        errors.append(f"[{unresolved}] ERROR: 입력값이 유효하지 않습니다.")
-
-            if errors:
-                print("\n".join(errors))
-                print("모든 저자의 이름과 식별번호를 다시 입력해주세요.")
-            else:
-                break
+         # 2. 책 저자 입력 (add_book과 동일한 로직 호출)
+        valid_authors = self.handle_author_input(cancel_value)
+        if valid_authors is None:  # 입력 취소 시
+            print("수정을 중단하며 메인 프롬프트로 돌아갑니다.")
+            return False
 
         # 3. 출판사 입력
         while True:
             new_publisher = input("수정할 책의 출판사를 입력해주세요: ").strip()
             if not new_publisher or not self.check_string_validate("출판사", new_publisher):
                 print("ERROR: 입력한 출판사가 유효하지 않습니다.")
-                continue
-            new_publisher_id = self.validate_publisher(new_publisher)
-            if new_publisher_id is not None:
+            else:
+                break
+            
+        # 출판사 수정
+        new_publisher_id = None
+        for publisher in self.publisher_table:
+            if publisher.name == new_publisher:  # 입력된 출판사가 이미 존재하면
+                new_publisher_id = publisher.publisher_id  # 해당 출판사의 ID 반영
+                new_publisher_data = None
                 break
 
+        if new_publisher_id is None:  # 입력된 출판사가 존재하지 않으면
+            new_publisher_id = len(self.publisher_table)
+            new_publisher_data = PublisherRecord(new_publisher_id, new_publisher, False)  # 새 출판사 데이터 추가
+        
         # 4. 출판년도 입력
         new_year = self.input_year("수정할 책의 출판년도를 입력해주세요: ")
         if not new_year or not self.check_year_validate(new_year):
@@ -2258,24 +2152,15 @@ class DataManager(object):
             if isbn_data.isbn == isbn:
                 isbn_data.title = new_title
                 isbn_data.published_year = new_year
+                isbn_data.publisher_id = new_publisher_id
                 break
+            
+        # 출판사가 새로 추가된 경우에 테이블에 추가
+        if new_publisher_data is not None:
+            self.publisher_table.append(new_publisher_data)
 
         new_log_id=len(self.book_edit_log_table)+1
         self.book_edit_log_table.append(BookEditLogRecord(new_log_id,isbn,today))
-
-
-       # 출판사 수정
-        publisher_found = False
-        for publisher in self.publisher_table:
-            if publisher.name == new_publisher:  # 입력된 출판사가 이미 존재하면
-                isbn_data.publisher_id = publisher.publisher_id  # 해당 출판사의 ID�� 반영
-                publisher_found = True
-                break
-
-        if not publisher_found:  # 입력된 출판사가 존재하지 않으면
-            new_publisher_id = len(self.publisher_table)
-            self.publisher_table.append(PublisherRecord(new_publisher_id, new_publisher, False))  # 새 출판사 추가
-            isbn_data.publisher_id = new_publisher_id  # 새 출판사의 ID를 반영
 
         # 저자 수정
         # 기존 저자-ISBN 관계 삭제
@@ -2287,6 +2172,77 @@ class DataManager(object):
         print("수정이 완료되었습니다.")
         self.fetch_data_file()
         return True
+    def handle_author_input(self, cancel_value):
+        """저자 입력 처리 공통 메서드"""
+        while True:
+            authors_input = input("수정할 책의 저자를 입력해주세요: ").strip()
+            if authors_input == cancel_value:
+                return None  # 입력 취소 시 None 반환
+
+            if not authors_input:
+                confirm = input("저자가 없는 책으로 처리하시겠습니까? (Y/N): ").strip().lower()
+                if confirm == 'y':
+                    return []  # 빈 리스트 반환
+                else:
+                    continue  # 다시 입력 받기
+
+            # 입력된 저자 이름 목록을 분리
+            author_list = [author.strip() for author in authors_input.split("&") if author.strip()]
+            if len(author_list) > 5:
+                print("ERROR: 저자 입력이 5명을 초과합니다. 다시 입력해주세요.")
+                continue
+
+            valid_authors = set()  # 중복 제거를 위한 집합 사용
+            errors = []
+
+            for author_entry in author_list:
+                if "#" in author_entry:  # #이 포함된 경우 처리
+                    try:
+                        name, author_id = author_entry.rsplit("#", 1)
+                        name = name.strip()
+                        author_id = int(author_id.strip())
+                        valid_authors.add((name, author_id))  # 중복 자동 제거
+                        continue  # 다음 저자로 넘어감
+                    except ValueError:
+                        print(f"ERROR: '{author_entry}'에서 식별번호 형식이 잘못되었습니다. 다시 입력해주세요.")
+                        continue
+
+                while True:  # 각 저자에 대해 반복적으로 질문
+                    matching_authors = self.search_author_by_name(author_entry)
+                    if not matching_authors:  # 동일 이름의 저자가 없으면 새로 추가
+                        print(f"[{author_entry}] 해당 이름의 저자가 없습니다. 새로 추가합니다.")
+                        new_author_id = len(self.author_table) + 1
+                        self.author_table.append(AuthorRecord(new_author_id, author_entry, False))
+                        valid_authors.add((author_entry, new_author_id))
+                        break
+                    else:
+                        print(f"이미 등록되어 있는 저자가 {len(matching_authors)}명이 있습니다.")
+                        for idx, match in enumerate(matching_authors):
+                            print(f"{idx + 1}. {match.name} #{match.author_id}")
+                        print("0. (새 동명이인 추가)")
+
+                        try:
+                            choice = int(input("해당 저자의 번호를 입력해주세요: "))
+                            if choice == 0:  # 새 동명이인 추가
+                                new_author_id = len(self.author_table) + 1
+                                self.author_table.append(AuthorRecord(new_author_id, author_entry, False))
+                                valid_authors.add((author_entry, new_author_id))
+                                break
+                            elif 1 <= choice <= len(matching_authors):  # 선택된 저자를 추가
+                                selected_author = matching_authors[choice - 1]
+                                valid_authors.add((selected_author.name, selected_author.author_id))
+                                break
+                            else:
+                                print("ERROR: 잘못된 선택입니다. 다시 입력해주세요.")
+                        except ValueError:
+                            print("ERROR: 입력값이 유효하지 않습니다. 다시 입력해주세요.")
+                            continue
+
+            if errors:
+                print("\n".join(errors))
+                print("모든 저자의 이름과 식별번호를 다시 입력해주세요.")
+            else:
+                return list(valid_authors)  # 집합을 리스트로 변환하여 반환
 
 
     
@@ -2336,9 +2292,15 @@ class DataManager(object):
                 if author.author_id == author_isbn_data.author_id:
                     author_data = author
                     break
-            
-            if search_book in isbn_data.title or search_book in author_data.name:
-                search_results.append(book)
+
+            # 만약 #로 search_book이 시작하면 해당 작가 식별 번호 가진 책 검색
+            if search_book.startswith("#"):
+                if search_book[1:] == str(author_data.author_id):
+                    search_results.append(book)
+
+            else:
+                if search_book in isbn_data.title or search_book in author_data.name:
+                    search_results.append(book)
             
         if not search_results:
         
@@ -2465,7 +2427,7 @@ class DataManager(object):
         
         rtn_book_id = int(rtn_book_id)
         
-        # 고유번��에 해당하는 책 존재 여부 확인
+        # 고유번호에 해당하는 책 존재 여부 확인
         book_to_return = self.search_book_by_id(rtn_book_id)
         
         if not book_to_return:
@@ -2744,7 +2706,7 @@ class DataManager(object):
         author = input(input_message)
         is_valid, error_message = self.check_author_validate(author)
         if not is_valid:
-            print(f"ERROR: {error_message}")
+            print(f"{error_message}")
             return None
         
         author_list = [a.strip() for a in author.split("&") if a.strip()]
@@ -2796,6 +2758,8 @@ class DataManager(object):
                         if not found:
                             print("잘못된 입력입니다. 다시 입력해주세요.")
                             continue
+                        else:
+                            break
             else:
                 author_data = self.search_author_by_id(number)
                 return_authors.append(author_data)
