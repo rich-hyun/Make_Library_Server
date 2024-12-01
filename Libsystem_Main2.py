@@ -2,6 +2,7 @@ import os
 from datetime import datetime
 import re
 import json
+import shutil
 
 opj = os.path.join
 
@@ -262,11 +263,55 @@ class DataManager(object):
         self.today = today
         
     # 데이터 파일 읽기
-    def read_data_files(self, sep: str="/", verbose=True):
+    def read_data_files(self, sep: str="/", verbose=True) -> tuple[bool, str]:
 
         if verbose: print("="*10, "Start Reading Data Files", "="*10)
         
-        # 1. Book Data
+        # ---------- 1. Publisher Data ----------
+         # 파일이 존재하지 않으면 생성
+        if not os.path.exists(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt")):
+            with open(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt"), "w", encoding='utf-8') as f:
+                pass
+        
+        # 무결성 검사(데이터가 올바르지 않을경우 파일명 변경(Libsystem_Data_{테이블명}-yyyyMMdd_hhmmss.bak) 후 새 Libsystem_Data_Publisher.txt 파일 생성)
+        # yyyyMMdd-hhmmss는 컴퓨터 운영체제 시스템 시간을 기준으로 함
+        passed, message = self.check_data_publisher_files(self.file_path)
+        
+        if not passed:
+            now = datetime.now().strftime("%Y%m%d_%H%M%S")
+            shutil.copy(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt"), opj(self.file_path, "data", f"Libsystem_Data_Publisher-{now}.bak"))
+            return (False, message)
+
+        with open(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt"), "r",encoding='utf-8') as f:
+            for line in f:
+                publisher_id, name, deleted = line.strip().split(sep)
+                self.publisher_table.append(PublisherRecord(int(publisher_id), name, bool(int((deleted)))))
+
+        if verbose: print(f"{len(self.publisher_table)} Publisher Data Loaded")
+        
+        # ---------- 2. ISBN Data ----------
+        # 파일이 존재하지 않으면 생성(아무 데이터 없음)
+        if not os.path.exists(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt")):
+            with open(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt"), "w", encoding='utf-8') as f:
+                pass
+        
+        # 무결성 검사(데이터가 올바르지 않을경우 파일명 변경(Libsystem_Data_{테이블명}-yyyyMMdd_hhmmss.bak) 후 새 Libsystem_Data_Isbn.txt 파일 생성)
+        # yyyyMMdd-hhmmss는 컴퓨터 운영체제 시스템 시간을 기준으로 함
+        passed, message = self.check_data_isbn_files(self.file_path)
+        
+        if not passed:
+            now = datetime.now().strftime("%Y%m%d_%H%M%S")
+            shutil.copy(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt"), opj(self.file_path, "data", f"Libsystem_Data_Isbn-{now}.bak"))
+            return (False, message)
+
+        with open(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt"), "r",encoding='utf-8') as f:
+            for line in f:
+                isbn, title, publisher_id, published_year, isbn_register_date = line.strip().split(sep)
+                self.isbn_table.append(ISBNRecord(int(isbn), title, int(publisher_id), int(published_year), MyDate.from_str(isbn_register_date)))
+                
+        if verbose: print(f"{len(self.isbn_table)} ISBN Data Loaded")
+        
+        # ---------- 3. Book Data ----------
          # 파일이 존재하지 않으면 생성
         if not os.path.exists(opj(self.file_path, "data", "Libsystem_Data_Book.txt")):
             with open(opj(self.file_path, "data", "Libsystem_Data_Book.txt"), "w", encoding='utf-8') as f:
@@ -281,11 +326,12 @@ class DataManager(object):
         
         # 무결성 검사(데이터가 올바르지 않을경우 파일명 변경(Libsystem_Data_{테이블명}-yyyyMMdd_hhmmss.bak) 후 새 Libsystem_Data_Book.txt 파일 생성)
         # yyyyMMdd-hhmmss는 컴퓨터 운영체제 시스템 시간을 기준으로 함
-        if not self.check_data_book_files(self.file_path):
+        passed, message = self.check_data_book_files(self.file_path)
+        
+        if not passed:
             now = datetime.now().strftime("%Y%m%d_%H%M%S")
-            os.rename(opj(self.file_path, "data", "Libsystem_Data_Book.txt"), opj(self.file_path, "data", f"Libsystem_Data_Book-{now}.bak"))
-            with open(opj(self.file_path, "data", "Libsystem_Data_Book.txt"), "w", encoding='utf-8') as f:
-                f.write("0\n")
+            shutil.copy(opj(self.file_path, "data", "Libsystem_Data_Book.txt"), opj(self.file_path, "data", f"Libsystem_Data_Book-{now}.bak"))
+            return (False, message)
 
         with open(opj(self.file_path, "data", "Libsystem_Data_Book.txt"), "r",encoding='utf-8') as f:
             lines = f.readlines()
@@ -299,29 +345,31 @@ class DataManager(object):
         if verbose:      
             print(f"{len(self.book_table)} Book Data Loaded")
             print(f"max_book_id: {self.static_id}")
-                
-        # 2. ISBN Data
-        # 파일이 존재하지 않으면 생성(아무 데이터 없음)
-        if not os.path.exists(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt")):
-            with open(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt"), "w", encoding='utf-8') as f:
-                pass
         
-        # 무결성 검사(데이터가 올바르지 않을경우 파일명 변경(Libsystem_Data_{테이블명}-yyyyMMdd_hhmmss.bak) 후 새 Libsystem_Data_Isbn.txt 파일 생성)
-        # yyyyMMdd-hhmmss는 컴퓨터 운영체제 시스템 시간을 기준으로 함
-        if not self.check_data_isbn_files(self.file_path):
-            now = datetime.now().strftime("%Y%m%d_%H%M%S")
-            os.rename(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt"), opj(self.file_path, "data", f"Libsystem_Data_Isbn-{now}.bak"))
-            with open(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt"), "w", encoding='utf-8') as f:
+        # ---------- 4. Book Edit Log Data ----------
+        # 파일이 존재하지 않으면 생성
+        if not os.path.exists(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt")):
+            with open(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), "w", encoding='utf-8') as f:
                 pass
+            
+        
+        # 무결성 검사(데이터가 올바르지 않을경우 파일명 변경(Libsystem_Data_{테이블명}-yyyyMMdd_hhmmss.bak) 후 새 Libsystem_Data_BookEditLog.txt 파일 생성)
+        # yyyyMMdd-hhmmss는 컴퓨터 운영체제 시스템 시간을 기준으로 함
+        passed, message = self.check_data_book_edit_log_files(self.file_path)
+        
+        if not passed:
+            now = datetime.now().strftime("%Y%m%d_%H%M%S")
+            shutil.copy(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), opj(self.file_path, "data", f"Libsystem_Data_BookEditLog-{now}.bak"))
+            return (False, message)
 
-        with open(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt"), "r",encoding='utf-8') as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), "r",encoding='utf-8') as f:
             for line in f:
-                isbn, title, publisher_id, published_year, isbn_register_date = line.strip().split(sep)
-                self.isbn_table.append(ISBNRecord(int(isbn), title, int(publisher_id), int(published_year), MyDate.from_str(isbn_register_date)))
+                log_id, isbn, edit_date = line.strip().split(sep)
+                self.book_edit_log_table.append(BookEditLogRecord(int(log_id), int(isbn), MyDate.from_str(edit_date)))
                 
-        if verbose: print(f"{len(self.isbn_table)} ISBN Data Loaded")
-                
-        # 3. Author Data
+        if verbose: print(f"{len(self.book_edit_log_table)} Book Edit Log Data Loaded") 
+        
+        # ---------- 5. Author Data ----------
 
         # 파일이 존재하지 않으면 생성(아무 데이터 없음)
         if not os.path.exists(opj(self.file_path, "data", "Libsystem_Data_Author.txt")):
@@ -331,11 +379,12 @@ class DataManager(object):
         
          # 무결성 검사(데이터가 올바르지 않을경우 파일명 변경(Libsystem_Data_{테이블명}-yyyyMMdd_hhmmss.bak) 후 새 Libsystem_Data_Author.txt 파일 생성)
         # yyyyMMdd-hhmmss는 컴퓨터 운영체제 시스템 시간을 기준으로 함
-        if not self.check_data_author_files(self.file_path):
+        passed, message = self.check_data_author_files(self.file_path)
+        
+        if not passed:
             now = datetime.now().strftime("%Y%m%d_%H%M%S")
-            os.rename(opj(self.file_path, "data", "Libsystem_Data_Author.txt"), opj(self.file_path, "data", f"Libsystem_Data_Author-{now}.bak"))
-            with open(opj(self.file_path, "data", "Libsystem_Data_Author.txt"), "w", encoding='utf-8') as f:
-                 pass
+            shutil.copy(opj(self.file_path, "data", "Libsystem_Data_Author.txt"), opj(self.file_path, "data", f"Libsystem_Data_Author-{now}.bak"))
+            return (False, message)
             
         with open(opj(self.file_path, "data", "Libsystem_Data_Author.txt"), "r",encoding='utf-8') as f:
             for line in f:
@@ -343,8 +392,8 @@ class DataManager(object):
                 self.author_table.append(AuthorRecord(int(author_id), name, bool(int(deleted))))
                 
         if verbose: print(f"{len(self.author_table)} Author Data Loaded")
-                
-        # 4. ISBN - Author Data
+        
+        # ---------- 6. ISBN - Author Data ----------
         # 파일이 존재하지 않으면 생성
         if not os.path.exists(opj(self.file_path, "data", "Libsystem_Data_IsbnAuthor.txt")):
             with open(opj(self.file_path, "data", "Libsystem_Data_IsbnAuthor.txt"), "w", encoding='utf-8') as f:
@@ -353,11 +402,12 @@ class DataManager(object):
         
         # 무결성 검사(데이터가 올바르지 않을경우 파일명 변경(Libsystem_Data_{테이블명}-yyyyMMdd_hhmmss.bak) 후 새 Libsystem_Data_IsbnAuthor.txt 파일 생성)
         # yyyyMMdd-hhmmss는 컴퓨터 운영체제 시스템 시간을 기준으로 함
-        if not self.check_data_isbn_author_files(self.file_path):
+        passed, message = self.check_data_isbn_author_files(self.file_path)
+        
+        if not passed:
             now = datetime.now().strftime("%Y%m%d_%H%M%S")
-            os.rename(opj(self.file_path, "data", "Libsystem_Data_IsbnAuthor.txt"), opj(self.file_path, "data", f"Libsystem_Data_IsbnAuthor-{now}.bak"))
-            with open(opj(self.file_path, "data", "Libsystem_Data_IsbnAuthor.txt"), "w",encoding='utf-8') as f:
-                 pass
+            shutil.copy(opj(self.file_path, "data", "Libsystem_Data_IsbnAuthor.txt"), opj(self.file_path, "data", f"Libsystem_Data_IsbnAuthor-{now}.bak"))
+            return (False, message)
 
         with open(opj(self.file_path, "data", "Libsystem_Data_IsbnAuthor.txt"), "r",encoding='utf-8') as f:
             for line in f:
@@ -365,52 +415,8 @@ class DataManager(object):
                 self.isbn_author_table.append(IsbnAuthorRecord(int(isbn), int(author_id)))
                 
         if verbose: print(f"{len(self.isbn_author_table)} ISBN - Author Data Loaded")
-                
-        # 5. Book Edit Log Data
-        # 파일이 존재하지 않으면 생성
-        if not os.path.exists(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt")):
-            with open(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), "w", encoding='utf-8') as f:
-                pass
-            
-        
-        # 무결성 검사(데이터가 올바르지 않을경우 파일명 변경(Libsystem_Data_{테이블명}-yyyyMMdd_hhmmss.bak) 후 새 Libsystem_Data_BookEditLog.txt 파일 생성)
-        # yyyyMMdd-hhmmss는 컴퓨터 운영체제 시스템 시간을 기준으로 함
-        if not self.check_data_book_edit_log_files(self.file_path):
-            now = datetime.now().strftime("%Y%m%d_%H%M%S")
-            os.rename(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), opj(self.file_path, "data", f"Libsystem_Data_BookEditLog-{now}.bak"))
-            with open(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), "w", encoding='utf-8') as f:
-                pass
 
-        with open(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), "r",encoding='utf-8') as f:
-            for line in f:
-                log_id, isbn, edit_date = line.strip().split(sep)
-                self.book_edit_log_table.append(BookEditLogRecord(int(log_id), int(isbn), MyDate.from_str(edit_date)))
-                
-        if verbose: print(f"{len(self.book_edit_log_table)} Book Edit Log Data Loaded")
-                
-        # 6. Borrow Data
-        # 파일이 존재하지 않으면 생성
-        if not os.path.exists(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt")):
-            with open(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), "w", encoding='utf-8') as f:
-                pass
-            
-        
-        # 무결성 검사(데이터가 올바르지 않을경우 파일명 변경(Libsystem_Data_{테이블명}-yyyyMMdd_hhmmss.bak) 후 새 Libsystem_Data_Borrow.txt 파일 생성)
-        # yyyyMMdd-hhmmss는 컴퓨터 운영체제 시스템 시간을 기준으로 함
-        if not self.check_data_borrow_files(self.file_path):
-            now = datetime.now().strftime("%Y%m%d_%H%M%S")
-            os.rename(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), opj(self.file_path, "data", f"Libsystem_Data_Borrow-{now}.bak"))
-            with open(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), "w", encoding='utf-8') as f:
-                pass
-
-        with open(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), "r",encoding='utf-8') as f:
-            for line in f:
-                borrow_id, book_id, user_id, borrow_date, return_date, actual_return_date, deleted = line.strip().split(sep)
-                self.borrow_table.append(BorrowRecord(int(borrow_id), int(book_id), int(user_id), MyDate.from_str(borrow_date), MyDate.from_str(return_date), MyDate.from_str(actual_return_date), bool(int(deleted))))
-                
-        if verbose: print(f"{len(self.borrow_table)} Borrow Data Loaded")            
-    
-        # 7. User Data
+        # ---------- 7. User Data ----------
         # 파일이 존재하지 않으면 생성
         if not os.path.exists(opj(self.file_path, "data", "Libsystem_Data_User.txt")):
             with open(opj(self.file_path, "data", "Libsystem_Data_User.txt"), "w", encoding='utf-8') as f:
@@ -419,11 +425,12 @@ class DataManager(object):
         
         # 무결성 검사(데이터가 올바르지 않을경우 파일명 변경(Libsystem_Data_{테이블명}-yyyyMMdd_hhmmss.bak) 후 새 Libsystem_Data_User.txt 파일 생성)
         # yyyyMMdd-hhmmss는 컴퓨터 운영체제 시스템 시간을 기준으로 함
-        if not self.check_data_user_files(self.file_path):
+        passed, message = self.check_data_user_files(self.file_path)
+        
+        if not passed:
             now = datetime.now().strftime("%Y%m%d_%H%M%S")
-            os.rename(opj(self.file_path, "data", "Libsystem_Data_User.txt"), opj(self.file_path, "data", f"Libsystem_Data_User-{now}.bak"))
-            with open(opj(self.file_path, "data", "Libsystem_Data_User.txt"), "w", encoding='utf-8') as f:
-                pass
+            shutil.copy(opj(self.file_path, "data", "Libsystem_Data_User.txt"), opj(self.file_path, "data", f"Libsystem_Data_User-{now}.bak"))
+            return (False, message)
 
         with open(opj(self.file_path, "data", "Libsystem_Data_User.txt"), "r",encoding='utf-8') as f:
             for line in f:
@@ -432,29 +439,30 @@ class DataManager(object):
         
         if verbose: print(f"{len(self.user_table)} User Data Loaded")
         
-        # 8. Publisher Data
-         # 파일이 존재하지 않으면 생성
-        if not os.path.exists(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt")):
-            with open(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt"), "w", encoding='utf-8') as f:
+        # ---------- 8. Borrow Data ----------
+        # 파일이 존재하지 않으면 생성
+        if not os.path.exists(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt")):
+            with open(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), "w", encoding='utf-8') as f:
                 pass
-           
+            
         
-        # 무결성 검사(데이터가 올바르지 않을경우 파일명 변경(Libsystem_Data_{테이블명}-yyyyMMdd_hhmmss.bak) 후 새 Libsystem_Data_Publisher.txt 파일 생성)
+        # 무결성 검사(데이터가 올바르지 않을경우 파일명 변경(Libsystem_Data_{테이블명}-yyyyMMdd_hhmmss.bak) 후 새 Libsystem_Data_Borrow.txt 파일 생성)
         # yyyyMMdd-hhmmss는 컴퓨터 운영체제 시스템 시간을 기준으로 함
-        if not self.check_data_publisher_files(self.file_path):
+        passed, message = self.check_data_borrow_files(self.file_path)
+        
+        if not passed:
             now = datetime.now().strftime("%Y%m%d_%H%M%S")
-            os.rename(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt"), opj(self.file_path, "data", f"Libsystem_Data_Publisher-{now}.bak"))
-            with open(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt"), "w", encoding='utf-8') as f:
-                pass
+            shutil.copy(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), opj(self.file_path, "data", f"Libsystem_Data_Borrow-{now}.bak"))
+            return (False, message)
 
-        with open(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt"), "r",encoding='utf-8') as f:
+        with open(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), "r",encoding='utf-8') as f:
             for line in f:
-                publisher_id, name, deleted = line.strip().split(sep)
-                self.publisher_table.append(PublisherRecord(int(publisher_id), name, bool(int((deleted)))))
-
-        if verbose: print(f"{len(self.publisher_table)} Publisher Data Loaded")
-
-        # 9. Overdue Penalty Data
+                borrow_id, book_id, user_id, borrow_date, return_date, actual_return_date, deleted = line.strip().split(sep)
+                self.borrow_table.append(BorrowRecord(int(borrow_id), int(book_id), int(user_id), MyDate.from_str(borrow_date), MyDate.from_str(return_date), MyDate.from_str(actual_return_date), bool(int(deleted))))
+                
+        if verbose: print(f"{len(self.borrow_table)} Borrow Data Loaded") 
+        
+        # ---------- 9. Overdue Penalty Data ----------
         # 파일이 존재하지 않으면 생성
         if not os.path.exists(opj(self.file_path, "data", "Libsystem_Data_OverduePenalty.txt")):
             with open(opj(self.file_path, "data", "Libsystem_Data_OverduePenalty.txt"), "w", encoding='utf-8') as f:
@@ -463,74 +471,81 @@ class DataManager(object):
         
         # 무결성 검사(데이터가 올바르지 않을경우 파일명 변경(Libsystem_Data_{테이블명}-yyyyMMdd_hhmmss.bak) 후 새 Libsystem_Data_OverduePenalty.txt 파일 생성)
         # yyyyMMdd-hhmmss는 컴퓨터 운영체제 시스템 시간을 기준으로 함
-        if not self.check_data_overdue_penalty_files(self.file_path):
+        passed, message = self.check_data_overdue_penalty_files(self.file_path)
+        
+        if not passed:
             now = datetime.now().strftime("%Y%m%d_%H%M%S")
-            os.rename(opj(self.file_path, "data", "Libsystem_Data_OverduePenalty.txt"), opj(self.file_path, "data", f"Libsystem_Data_OverduePenalty-{now}.bak"))
-            with open(opj(self.file_path, "data", "Libsystem_Data_OverduePenalty.txt"), "w", encoding='utf-8') as f:
-                pass
+            shutil.copy(opj(self.file_path, "data", "Libsystem_Data_OverduePenalty.txt"), opj(self.file_path, "data", f"Libsystem_Data_OverduePenalty-{now}.bak"))
+            return (False, message)
 
         with open(opj(self.file_path, "data", "Libsystem_Data_OverduePenalty.txt"), "r",encoding='utf-8') as f:
             for line in f:
                 penalty_id, user_id, penalty_start_date, penalty_end_date = line.strip().split(sep)
                 self.overdue_penalty_table.append(OverduePenaltyRecord(int(penalty_id), int(user_id), MyDate.from_str(penalty_start_date), MyDate.from_str(penalty_end_date)))
 
-        if verbose: 
-            print(f"{len(self.overdue_penalty_table)} Overdue Penalty Data Loaded")
-            print("="*10, "End Reading Data Files", "="*10)
+        if verbose: print(f"{len(self.overdue_penalty_table)} Overdue Penalty Data Loaded")
+        if verbose: print("="*10, "End Reading Data Files", "="*10)
+            
+        return (True, "")
 
     # ========== 데이터 파일 메모리 -> 파일 동기화 (fetch) ========== #
     def fetch_data_file(self) -> bool:
-        # 1. Book Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_Book.txt"), "w", encoding='utf-8') as f:
-            f.write(f"{len(self.book_table)}\n")
-            for book in self.book_table:
-                f.write(f"{book.book_id}/{str(book.isbn).zfill(2)}/{str(book.register_date)}/{int(book.deleted)}/{"" if book.delete_date is None else str(book.delete_date)}\n")
-                
-        # 2. ISBN Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt"), "w", encoding='utf-8') as f:
-            for isbn in self.isbn_table:
-                f.write(f"{str(isbn.isbn).zfill(2)}/{isbn.title}/{isbn.publisher_id}/{isbn.published_year}/{str(isbn.isbn_register_date)}\n")
-                
-        # 3. Author Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_Author.txt"), "w", encoding='utf-8') as f:
-            for author in self.author_table:
-                f.write(f"{author.author_id}/{author.name}/{int(author.deleted)}\n")
-                
-        # 4. ISBN - Author Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_IsbnAuthor.txt"), "w", encoding='utf-8') as f:
-            for isbn_author in self.isbn_author_table:
-                f.write(f"{str(isbn_author.isbn).zfill(2)}/{isbn_author.author_id}\n")
-                
-        # 5. Book Edit Log Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), "w", encoding='utf-8') as f:
-            for log in self.book_edit_log_table:
-                f.write(f"{log.log_id}/{str(log.isbn).zfill(2)}/{str(log.edit_date)}\n")
-                
-        # 6. Borrow Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), "w", encoding='utf-8') as f:
-            for borrow in self.borrow_table:
-                f.write(f"{borrow.borrow_id}/{borrow.book_id}/{borrow.user_id}/{str(borrow.borrow_date)}/{str(borrow.return_date)}/{"" if borrow.actual_return_date is None else str(borrow.actual_return_date)}/{int(borrow.deleted)}\n")
-                
-        # 7. User Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_User.txt"), "w", encoding='utf-8') as f:
-            for user in self.user_table:
-                f.write(f"{user.user_id}/{user.phone_number}/{user.name}/{int(user.deleted)}\n")
-                
-        # 8. Publisher Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt"), "w", encoding='utf-8') as f:
-            for publisher in self.publisher_table:
-                f.write(f"{publisher.publisher_id}/{publisher.name}/{int(publisher.deleted)}\n")
-                
-        # 9. Overdue Penalty Data
-        with open(opj(self.file_path, "data", "Libsystem_Data_OverduePenalty.txt"), "w", encoding='utf-8') as f:
-            for penalty in self.overdue_penalty_table:
-                f.write(f"{penalty.penalty_id}/{penalty.user_id}/{str(penalty.penalty_start_date)}/{str(penalty.penalty_end_date)}\n")
-                
-        return True
+        try:
+            # 1. Book Data
+            with open(opj(self.file_path, "data", "Libsystem_Data_Book.txt"), "w", encoding='utf-8') as f:
+                f.write(f"{len(self.book_table)}\n")
+                for book in self.book_table:
+                    f.write(f"{book.book_id}/{str(book.isbn).zfill(2)}/{str(book.register_date)}/{int(book.deleted)}/{"" if book.delete_date is None else str(book.delete_date)}\n")
+                    
+            # 2. ISBN Data
+            with open(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt"), "w", encoding='utf-8') as f:
+                for isbn in self.isbn_table:
+                    f.write(f"{str(isbn.isbn).zfill(2)}/{isbn.title}/{isbn.publisher_id}/{isbn.published_year}/{str(isbn.isbn_register_date)}\n")
+                    
+            # 3. Author Data
+            with open(opj(self.file_path, "data", "Libsystem_Data_Author.txt"), "w", encoding='utf-8') as f:
+                for author in self.author_table:
+                    f.write(f"{author.author_id}/{author.name}/{int(author.deleted)}\n")
+                    
+            # 4. ISBN - Author Data
+            with open(opj(self.file_path, "data", "Libsystem_Data_IsbnAuthor.txt"), "w", encoding='utf-8') as f:
+                for isbn_author in self.isbn_author_table:
+                    f.write(f"{str(isbn_author.isbn).zfill(2)}/{isbn_author.author_id}\n")
+                    
+            # 5. Book Edit Log Data
+            with open(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), "w", encoding='utf-8') as f:
+                for log in self.book_edit_log_table:
+                    f.write(f"{log.log_id}/{str(log.isbn).zfill(2)}/{str(log.edit_date)}\n")
+                    
+            # 6. Borrow Data
+            with open(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), "w", encoding='utf-8') as f:
+                for borrow in self.borrow_table:
+                    f.write(f"{borrow.borrow_id}/{borrow.book_id}/{borrow.user_id}/{str(borrow.borrow_date)}/{str(borrow.return_date)}/{"" if borrow.actual_return_date is None else str(borrow.actual_return_date)}/{int(borrow.deleted)}\n")
+                    
+            # 7. User Data
+            with open(opj(self.file_path, "data", "Libsystem_Data_User.txt"), "w", encoding='utf-8') as f:
+                for user in self.user_table:
+                    f.write(f"{user.user_id}/{user.phone_number}/{user.name}/{int(user.deleted)}\n")
+                    
+            # 8. Publisher Data
+            with open(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt"), "w", encoding='utf-8') as f:
+                for publisher in self.publisher_table:
+                    f.write(f"{publisher.publisher_id}/{publisher.name}/{int(publisher.deleted)}\n")
+                    
+            # 9. Overdue Penalty Data
+            with open(opj(self.file_path, "data", "Libsystem_Data_OverduePenalty.txt"), "w", encoding='utf-8') as f:
+                for penalty in self.overdue_penalty_table:
+                    f.write(f"{penalty.penalty_id}/{penalty.user_id}/{str(penalty.penalty_start_date)}/{str(penalty.penalty_end_date)}\n")
+                    
+            return True
+        
+        except Exception as e:
+            print("ERROR: 데이터 파일 저장에 실패했습니다.")
+            return False
     
     # ========== 데이터 파일 무결성 검사 ========== #
     # 오류 발생 시 오류 발생한 줄과 오류 메세지 출력
-    def check_data_book_files(self,file_path: str):
+    def check_data_book_files(self,file_path: str) -> tuple[bool, str]:
         # 오류 발생한 줄과 오류 메세지 파일의 마지막 줄에 추가
         line_num = 1
         def add_error(line_num, error_message):
@@ -544,23 +559,23 @@ class DataManager(object):
         # 첫 줄이 숫자인지 확인
         if not first_line.isdigit():
             add_error(line_num, "첫 줄이 숫자가 아닙니다.")
-            return False
+            return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 첫 줄이 숫자가 아닙니다.")
         
         # 범위 검사
         first_line = int(first_line)
         if  first_line < 0 or first_line > 99:
             add_error(line_num, "첫 줄이 0에서 99 사이의 정수가 아닙니다.")
-            return False
+            return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 첫 줄이 0에서 99 사이의 정수가 아닙니다.")
         
         # 구분자가 4개인지 확인
         for line in lines[1:]:
             line_num += 1
             line = line.strip()
             if line_num == 2 and line == "":
-                return True
+                return (True, "")
             if len(line.strip().split("/")) != 5:
                 add_error(line_num, "구분자가 4개가 아닙니다")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 구분자가 4개가 아닙니다")
             
         line_num = 1
             
@@ -570,7 +585,7 @@ class DataManager(object):
             book_id, isbn, register_date, deleted, delete_date = line.strip().split("/")
             if book_id == "" or isbn == "" or register_date == "" or deleted == "":
                 add_error(line_num, "모든 레코드의 앞 4개 항목이 비어있습니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 모든 레코드의 앞 4개 항목이 비어있습니다.")
         
         line_num = 1
             
@@ -581,41 +596,52 @@ class DataManager(object):
             # 고유번호가 숫자인지 확인
             if not book_id.isdigit():
                 add_error(line_num, "고유번호가 숫자가 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 고유번호가 숫자가 아닙니다.")
             
             # 고유번호가 0에서 첫 줄의 값 사이의 정수인지 확인
             if int(book_id) < 0 or int(book_id) > first_line:
                 add_error(line_num, "고유번호가 0에서 첫 줄의 값 사이의 정수가 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 고유번호가 0에서 첫 줄의 값 사이의 정수가 아닙니다.")
             
             # 고유번호 중복 검사
             if lines[1:].count(book_id) > 1:
                 add_error(line_num, "고유번호가 중복됩니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 고유번호가 중복됩니다.")
             
             # ISBN 검사(길이가 2이며, 정수로 변환 가능한지)
             if len(isbn) != 2 or not isbn.isdigit():
                 add_error(line_num, "ISBN이 2자리 숫자가 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - ISBN이 2자리 숫자가 아닙니다.")
             
             # 등록 날짜 검사
             if not MyDate.from_str(register_date):
                 add_error(line_num, "등록 날짜가 날짜 형식이 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 등록 날짜가 날짜 형식이 아닙니다.")
             
             # 삭제 여부 검사
             if deleted not in ["0", "1"]:
                 add_error(line_num, "삭제 여부가 0 또는 1이 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 삭제 여부가 0 또는 1이 아닙니다.")
             
             # 삭제 날짜 검사(날짜 검사 및 삭제 여부가 1일 때만 검사)
             if deleted == "1" and not MyDate.from_str(delete_date):
                 add_error(line_num, "삭제 날짜가 날짜 형식이 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 삭제 날짜가 날짜 형식이 아닙니다.")
             
-        return True
+            # ISBN 참조 무결성 검사
+            isbn_found = False
+            for isbn_record in self.isbn_table:
+                if isbn_record.isbn == int(isbn):
+                    isbn_found = True
+                    break
+                
+            if not isbn_found:
+                add_error(line_num, "참조하는 ISBN이 ISBN 데이터에 없습니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 참조하는 ISBN이 ISBN 데이터에 없습니다.")
+            
+        return (True, "")
     
-    def check_data_isbn_files(self,file_path: str):
+    def check_data_isbn_files(self,file_path: str) -> tuple[bool, str]:
         # 오류 발생한 줄과 오류 메세지 파일의 마지막 줄에 추가
         def add_error(line_num, error_message):
             with open(opj(file_path, "data", "Libsystem_Data_Isbn.txt"), "a", encoding='utf-8') as f:
@@ -631,11 +657,11 @@ class DataManager(object):
             line_num += 1
             line = line.strip()
             if line_num ==1 and line == "":
-                return True
+                return (True, "")
             
             if len(line.strip().split("/")) != 5:
                 add_error(line_num, "구분자가 4개가 아닙니다")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 구분자가 4개가 아닙니다")
             
         line_num = 0
             
@@ -645,7 +671,7 @@ class DataManager(object):
             isbn, title, publisher_id, published_year, isbn_register_date = line.strip().split("/")
             if isbn == "" or title == "" or publisher_id == "" or published_year == "" or isbn_register_date == "":
                 add_error(line_num, "모든 레코드의 앞 5개 항목이 비어있습니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 모든 레코드의 앞 5개 항목이 비어있습니다.")
         
         line_num = 0
             
@@ -656,51 +682,62 @@ class DataManager(object):
             # ISBN이 숫자인지 확인
             if not isbn.isdigit():
                 add_error(line_num, "ISBN이 숫자가 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - ISBN이 숫자가 아닙니다.")
             
             # ISBN이 0에서 99 사이의 정수인지 확인
             if int(isbn) < 0 or int(isbn) > 99:
                 add_error(line_num, "ISBN이 0에서 99 사이의 정수가 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - ISBN이 0에서 99 사이의 정수가 아닙니다.")
             
             # ISBN 중복 검사
             if lines.count(isbn) > 1:
                 add_error(line_num, "ISBN이 중복됩니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - ISBN이 중복됩니다.")
             
             # 출판사 ID 검사
             if not publisher_id.isdigit():
                 add_error(line_num, "출판사 ID가 숫자가 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 출판사 ID가 숫자가 아닙니다.")
             
             # 출판사 ID 범위
             if int(publisher_id) < 0:
                 add_error(line_num, "출판사 ID가 0 이상이 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 출판사 ID가 0 이상이 아닙니다.")
             
             # 책 제목에 '/'나 '\'가 포함되어 있는지 확인
             if "/" in title or "\\" in title:
                 add_error(line_num, "책 제목에 '/'나 '\\'가 포함되어 있습니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 책 제목에 '/'나 '\\'가 포함되어 있습니다.")
             
             # 출판년도 검사
             if not published_year.isdigit():
                 add_error(line_num, "출판년도가 숫자가 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 출판년도가 숫자가 아닙니다.")
             
             # 출판년도가 1583에서 9999 사이의 정수인지 확인
             if int(published_year) < 1583 or int(published_year) > 9999:
                 add_error(line_num, "출판년도가 1583에서 9999 사이의 정수가 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 출판년도가 1583에서 9999 사이의 정수가 아닙니다.")
             
             # ISBN 등록 날짜 검사
             if not MyDate.from_str(isbn_register_date):
                 add_error(line_num, "ISBN 등록 날짜가 날짜 형식이 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - ISBN 등록 날짜가 날짜 형식이 아닙니다.")
             
-        return True
+            # 참조 검사: Publisher ID가 출판사 테이블에 있는지 확인
+            publisher_found = False
+            for publisher in self.publisher_table:
+                if publisher.publisher_id == int(publisher_id):
+                    publisher_found = True
+                    break
+                
+            if not publisher_found:
+                add_error(line_num, "참조하는 출판사 고유번호가 출판사 데이터에 없습니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 참조하는 출판사 고유번호가 출판사 데이터에 없습니다.")
+            
+        return (True, "")
 
-    def check_data_author_files(self,file_path: str):
+    def check_data_author_files(self,file_path: str) -> tuple[bool, str]:
         # 오류 발생한 줄과 오류 메세지 파일의 마지막 줄에 추가
         def add_error(line_num, error_message):
             with open(opj(file_path, "data", "Libsystem_Data_Author.txt"), "a",encoding='utf-8') as f:
@@ -716,10 +753,10 @@ class DataManager(object):
             line_num += 1
             line = line.strip()
             if line_num ==1 and line == "":
-                return True
+                return (True, "")
             if len(line.strip().split("/")) != 3:
                 add_error(line_num, "구분자가 2개가 아닙니다")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 구분자가 2개가 아닙니다")
             
         line_num = 0
 
@@ -729,7 +766,7 @@ class DataManager(object):
             author_id, name, deleted = line.strip().split("/")
             if author_id == "" or name == "" or deleted == "":
                 add_error(line_num, "필수항목 중 비어있는 항목이 있습니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 필수항목 중 비어있는 항목이 있습니다.")
             
         line_num = 0
 
@@ -740,17 +777,17 @@ class DataManager(object):
             # 저자 ID가 숫자인지 확인
             if not author_id.isdigit():
                 add_error(line_num, "저자 ID가 숫자가 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 저자 ID가 숫자가 아닙니다.")
             
             # 저자 ID 범위
             if int(author_id) < 1:
                 add_error(line_num, "저자 ID가 1 이상이 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 저자 ID가 1 이상이 아닙니다.")
             
             # 저자 ID 중복 검사
             if lines.count(author_id) > 1:
                 add_error(line_num, "저자 ID가 중복됩니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 저자 ID가 중복됩니다.")
             
             # 저자 이름에 '/'나 '\'가 포함되어 있는지 확인
             if "/" in name or "\\" in name:
@@ -759,12 +796,12 @@ class DataManager(object):
             # 삭제 여부 검사
             if deleted not in ["0", "1"]:
                 add_error(line_num, "삭제 여부가 0 또는 1이 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 삭제 여부가 0 또는 1이 아닙니다.")
             
-        return True
+        return (True, "")
 
 
-    def check_data_isbn_author_files(self,file_path: str):
+    def check_data_isbn_author_files(self,file_path: str) -> tuple[bool, str]:
         # 오류 발생한 줄과 오류 메세지 파일의 마지막 줄에 추가
         def add_error(line_num, error_message):
             with open(opj(file_path, "data", "Libsystem_Data_IsbnAuthor.txt"), "a", encoding='utf-8') as f:
@@ -780,12 +817,33 @@ class DataManager(object):
             line_num += 1
             line = line.strip()
             if line_num ==1 and line == "":
-                return True
+                return (True, "")
             
             if len(line.strip().split("/")) != 2:
                 add_error(line_num, "구분자가 1개가 아닙니다")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 구분자가 1개가 아닙니다")
 
+            # ISBN 참조 무결성 검사
+            isbn_found = False
+            for isbn_record in self.isbn_table:
+                if isbn_record.isbn == int(line.strip().split("/")[0]):
+                    isbn_found = True
+                    break
+                
+            if not isbn_found:
+                add_error(line_num, "참조하는 ISBN이 ISBN 데이터에 없습니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 참조하는 ISBN이 ISBN 데이터에 없습니다.")
+            
+            # 저자 ID 참조 무결성 검사
+            author_id_found = False
+            for author_record in self.author_table:
+                if author_record.author_id == int(line.strip().split("/")[1]):
+                    author_id_found = True
+                    break
+            
+            if not author_id_found:
+                add_error(line_num, "참조하는 저자 식별번호가 저자 데이터에 없습니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 참조하는 저자 식별번호가 저자 데이터에 없습니다.")
             
         line_num = 0
 
@@ -795,7 +853,7 @@ class DataManager(object):
             isbn, author_id = line.strip().split("/")
             if isbn == "" or author_id == "":
                 add_error(line_num, "필수항목 중 비어있는 항목이 있습니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 필수항목 중 비어있는 항목이 있습니다.")
             
         line_num = 0
 
@@ -806,31 +864,31 @@ class DataManager(object):
             # ISBN이 숫자인지 확인
             if not isbn.isdigit():
                 add_error(line_num, "ISBN이 숫자가 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - ISBN이 숫자가 아닙니다.")
             
             # ISBN이 0에서 99 사이의 정수인지 확인
             if int(isbn) < 0 or int(isbn) > 99:
                 add_error(line_num, "ISBN이 0에서 99 사이의 정수가 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - ISBN이 0에서 99 사이의 정수가 아닙니다.")
             
             # ISBN 중복 검사
             if lines.count(isbn) > 1:
                 add_error(line_num, "ISBN이 중복됩니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - ISBN이 중복됩니다.")
             
             # 저자 ID 검사
             if not author_id.isdigit():
                 add_error(line_num, "저자 ID가 숫자가 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 저자 ID가 숫자가 아닙니다.")
             
             # 저자 ID 범위
             if int(author_id) < 1:
                 add_error(line_num, "저자 ID가 1 이상이 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 저자 ID가 1 이상이 아닙니다.")
             
-        return True
+        return (True, "")
 
-    def check_data_book_edit_log_files(self,file_path: str):
+    def check_data_book_edit_log_files(self,file_path: str) -> tuple[bool, str]:
         # 오류 발생한 줄과 오류 메세지 파일의 마지막 줄에 추가
         def add_error(line_num, error_message):
             with open(opj(file_path, "data", "Libsystem_Data_BookEditLog.txt"), "a", encoding='utf-8') as f:
@@ -846,10 +904,10 @@ class DataManager(object):
             line_num += 1
             line = line.strip()
             if line_num ==1 and line == "":
-                return True
+                return (True, "")
             if len(line.strip().split("/")) != 3:
                 add_error(line_num, "구분자가 2개가 아닙니다")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 구분자가 2개가 아닙니다")
             
         line_num = 0
 
@@ -859,7 +917,18 @@ class DataManager(object):
             log_id, isbn, edit_date = line.strip().split("/")
             if log_id == "" or isbn == "" or edit_date == "":
                 add_error(line_num, "필수항목 중 비어있는 항목이 있습니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 필수항목 중 비어있는 항목이 있습니다.")
+            
+            # ISBN 참조 무결성 검사
+            isbn_found = False
+            for isbn_record in self.isbn_table:
+                if isbn_record.isbn == int(isbn):
+                    isbn_found = True
+                    break
+                
+            if not isbn_found:
+                add_error(line_num, "참조하는 ISBN이 ISBN 데이터에 없습니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 참조하는 ISBN이 ISBN 데이터에 없습니다.")
             
         line_num = 0
 
@@ -870,36 +939,36 @@ class DataManager(object):
             # 로그 ID가 숫자인지 확인
             if not log_id.isdigit():
                 add_error(line_num, "로그 ID가 숫자가 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 로그 ID가 숫자가 아닙니다.")
             
             # 로그 ID 중복 검사
             if lines.count(log_id) > 1:
                 add_error(line_num, "로그 ID가 중복됩니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 로그 ID가 중복됩니다.")
             
             # 로그 ID가 0 이상인지 확인
             if int(log_id) < 0:
                 add_error(line_num, "로그 ID가 0 이상이 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 로그 ID가 0 이상이 아닙니다.")
             
             # ISBN 검사
             if not isbn.isdigit():
                 add_error(line_num, "ISBN이 숫자가 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - ISBN이 숫자가 아닙니다.")
             
             #ISBN 범위
             if int(isbn) < 0 or int(isbn) > 99:
                 add_error(line_num, "ISBN이 0에서 99 사이의 정수가 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - ISBN이 0에서 99 사이의 정수가 아닙니다.")
             
             # 로그 날짜 검사
             if not MyDate.from_str(edit_date):
                 add_error(line_num, "로그 날짜가 날짜 형식이 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 로그 날짜가 날짜 형식이 아닙니다.")
             
-        return True
+        return (True, "")
 
-    def check_data_borrow_files(self,file_path: str):
+    def check_data_borrow_files(self,file_path: str) -> tuple[bool, str]:
         # 오류 발생한 줄과 오류 메세지 파일의 마지막 줄에 추가
         def add_error(line_num, error_message):
             with open(opj(file_path, "data", "Libsystem_Data_Borrow.txt"), "a", encoding='utf-8') as f:
@@ -915,10 +984,32 @@ class DataManager(object):
             line_num += 1
             line = line.strip()
             if line_num ==1 and line == "":
-                return True
+                return (True, "")
             if len(line.strip().split("/")) != 7:
                 add_error(line_num, "구분자가 6개가 아닙니다")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 구분자가 6개가 아닙니다")
+            
+            # book_id 참조 무결성 검사
+            book_id_found = False
+            for book_record in self.book_table:
+                if book_record.book_id == int(line.strip().split("/")[1]):
+                    book_id_found = True
+                    break
+                
+            if not book_id_found:
+                add_error(line_num, "참조하는 책 고유번호가 책 데이터에 없습니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 참조하는 책 고유번호가 책 데이터에 없습니다.")
+            
+            # user_id 참조 무결성 검사
+            user_id_found = False
+            for user_record in self.user_table:
+                if user_record.user_id == int(line.strip().split("/")[2]):
+                    user_id_found = True
+                    break
+                
+            if not user_id_found:
+                add_error(line_num, "참조하는 사용자 고유번호가 사용자 데이터에 없습니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 참조하는 사용자 고유번호가 사용자 데이터에 없습니다.")
             
         line_num = 0
 
@@ -928,7 +1019,7 @@ class DataManager(object):
             borrow_id,book_id, user_id, borrow_date, return_date, actual_return_date, deleted = line.strip().split("/")
             if borrow_id=="" or book_id == "" or user_id == "" or borrow_date == "" or return_date == "" or deleted == "":
                 add_error(line_num, "필수항목 중 비어있는 항목이 있습니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 필수항목 중 비어있는 항목이 있습니다.")
             
         line_num = 0
 
@@ -938,76 +1029,76 @@ class DataManager(object):
             # 대출 ID가 숫자인지 확인
             if not borrow_id.isdigit():
                 add_error(line_num, "대출 ID가 숫자가 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 대출 ID가 숫자가 아닙니다.")
             
             # 대출 ID가 0 이상인지 확인
             if int(borrow_id) < 0:
                 add_error(line_num, "대출 ID가 0 이상이 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 대출 ID가 0 이상이 아닙니다.")
             
             # 대출 ID 중복 검사
             if lines.count(borrow_id) > 1:
                 add_error(line_num, "대출 ID가 중복됩니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 대출 ID가 중복됩니다.")
              
             # 책 ID가 숫자인지 확인
             if not book_id.isdigit():
                 add_error(line_num, "책 ID가 숫자가 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 책 ID가 숫자가 아닙니다.")
             
             # 책 ID가 0 이상인지 확인
             if int(book_id) < 0:
                 add_error(line_num, "책 ID가 0 이상이 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 책 ID가 0 이상이 아닙니다.")
             
             # 책 ID 중복 검사
             if lines.count(book_id) > 1:
                 add_error(line_num, "책 ID가 중복됩니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 책 ID가 중복됩니다.")
             
             # 사용자 ID 검사
             if not user_id.isdigit():
                 add_error(line_num, "사용자 ID가 숫자가 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 사용자 ID가 숫자가 아닙니다.")
             
             # 사용자 ID가 0 이상인지 확인
             if int(user_id) < 0:
                 add_error(line_num, "사용자 ID가 0 이상이 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 사용자 ID가 0 이상이 아닙니다.")
             
             # 대출 날짜 검사
             if not MyDate.from_str(borrow_date):
                 add_error(line_num, "대출 날짜가 날짜 형식이 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 대출 날짜가 날짜 형식이 아닙니다.")
             
             # 반납 날짜 검사
             if not MyDate.from_str(return_date):
                 add_error(line_num, "반납 날짜가 날짜 형식이 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 반납 날짜가 날짜 형식이 아닙니다.")
             
             # 실제 반납 날짜 검사(실제 반납 존재 시)
             if actual_return_date != "" and not MyDate.from_str(actual_return_date):
                 add_error(line_num, "실제 반납 날짜가 날짜 형식이 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 실제 반납 날짜가 날짜 형식이 아닙니다.")
             
             # 실제 반납 날짜가 대출 날짜 이후인지 확인(실제 반납 존재 시)
             if actual_return_date != "" and MyDate.from_str(actual_return_date) < MyDate.from_str(borrow_date):
                 add_error(line_num, "실제 반납 날짜가 대출 날짜 이전입니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 실제 반납 날짜가 대출 날짜 이전입니다.")
             
             # 반납 날짜가 대출 날짜 이후인지 확인
             if MyDate.from_str(return_date) < MyDate.from_str(borrow_date):
                 add_error(line_num, "반납 날짜가 대출 날짜 이전입니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 반납 날짜가 대출 날짜 이전입니다.")
             
             # 삭제 여부 검사
             if deleted not in ["0", "1"]:
                 add_error(line_num, "삭제 여부가 0 또는 1이 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 삭제 여부가 0 또는 1이 아닙니다.")
             
-        return True
+        return (True, "")
 
-    def check_data_user_files(self,file_path: str):
+    def check_data_user_files(self,file_path: str) -> tuple[bool, str]:
         # 오류 발생한 줄과 오류 메세지 파일의 마지막 줄에 추가
         def add_error(line_num, error_message):
             with open(opj(file_path, "data", "Libsystem_Data_User.txt"), "a", encoding='utf-8') as f:
@@ -1023,10 +1114,10 @@ class DataManager(object):
             line_num += 1
             line = line.strip()
             if line_num ==1 and line == "":
-                return True
+                return (True, "")
             if len(line.strip().split("/")) != 4:
                 add_error(line_num, "구분자가 3개가 아닙니다")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 구분자가 3개가 아닙니다")
             
         line_num = 0
 
@@ -1036,7 +1127,7 @@ class DataManager(object):
             user_id, phone_number, name, deleted = line.strip().split("/")
             if user_id == "" or phone_number == "" or name == "" or deleted == "":
                 add_error(line_num, "필수항목 중 비어있는 항목이 있습니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 필수항목 중 비어있는 항목이 있습니다.")
             
         line_num = 0
 
@@ -1047,36 +1138,36 @@ class DataManager(object):
             # 사용자 ID가 숫자인지 확인
             if not user_id.isdigit():
                 add_error(line_num, "사용자 ID가 숫자가 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 사용자 ID가 숫자가 아닙니다.")
             
             # 사용자 ID가 0 이상인지 확인
             if int(user_id) < 0:
                 add_error(line_num, "사용자 ID가 0 이상이 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 사용자 ID가 0 이상이 아닙니다.")
             
             # 사용자 ID 중복 검사
             if lines.count(user_id) > 1:
                 add_error(line_num, "사용자 ID가 중복됩니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 사용자 ID가 중복됩니다.")
             
             # 전화번호 검사
             if not self.check_phone_number_validate(phone_number):
                 add_error(line_num, "전화번호가 숫자가 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 전화번호가 숫자가 아닙니다.")
             
             # 이름에 '/'나 '\'가 포함되어 있는지 확인
             if "/" in name or "\\" in name:
                 add_error(line_num, "이름에 '/'나 '\\'가 포함되어 있습니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 이름에 '/'나 '\\'가 포함되어 있습니다.")
             
             # 삭제 여부 검사
             if deleted not in ["0", "1"]:
                 add_error(line_num, "삭제 여부가 0 또는 1이 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 삭제 여부가 0 또는 1이 아닙니다.")
             
-        return True
+        return (True, "")
 
-    def check_data_publisher_files(self,file_path: str):
+    def check_data_publisher_files(self,file_path: str) -> tuple[bool, str]:
         # 오류 발생한 줄과 오류 메세지 파일의 마지막 줄에 추가
         def add_error(line_num, error_message):
             with open(opj(file_path, "data", "Libsystem_Data_Publisher.txt"), "a", encoding='utf-8') as f:
@@ -1092,10 +1183,10 @@ class DataManager(object):
             line_num += 1
             line = line.strip()
             if line_num ==1 and line == "":
-                return True
+                return (True, "")
             if len(line.strip().split("/")) != 3:
                 add_error(line_num, "구분자가 2개가 아닙니다")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 구분자가 2개가 아닙니다")
             
         line_num = 0
 
@@ -1105,7 +1196,7 @@ class DataManager(object):
             publisher_id, name, deleted = line.strip().split("/")
             if publisher_id == "" or name == "" or deleted == "":
                 add_error(line_num, "필수항목 중 비어있는 항목이 있습니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 필수항목 중 비어있는 항목이 있습니다.")
             
         line_num = 0
 
@@ -1116,31 +1207,31 @@ class DataManager(object):
             # 출판사 ID가 숫자인지 확인
             if not publisher_id.isdigit():
                 add_error(line_num, "출판사 ID가 숫자가 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 출판사 ID가 숫자가 아닙니다.")
             
             # 출판사 ID가 0 이상인지 확인
             if int(publisher_id) < 0:
                 add_error(line_num, "출판사 ID가 0 이상이 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 출판사 ID가 0 이상이 아닙니다.")
             
             # 출판사 ID 중복 검사
             if lines.count(publisher_id) > 1:
                 add_error(line_num, "출판사 ID가 중복됩니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 출판사 ID가 중복됩니다.")
             
             # 이름에 '/'나 '\'가 포함되어 있는지 확인
             if "/" in name or "\\" in name:
                 add_error(line_num, "출판사 이름에 '/'나 '\\'가 포함되어 있습니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 출판사 이름에 '/'나 '\\'가 포함되어 있습니다.")
             
             # 삭제 여부 검사
             if deleted not in ["0", "1"]:
                 add_error(line_num, "삭제 여부가 0 또는 1이 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 삭제 여부가 0 또는 1이 아닙니다.")
             
-        return True
+        return (True, "")
     
-    def check_data_overdue_penalty_files(self,file_path: str):
+    def check_data_overdue_penalty_files(self,file_path: str) -> tuple[bool, str]:
         # 오류 발생한 줄과 오류 메세지 파일의 마지막 줄에 추가
         def add_error(line_num, error_message):
             with open(opj(file_path, "data", "Libsystem_Data_OverduePenalty.txt"), "a", encoding='utf-8') as f:
@@ -1156,58 +1247,69 @@ class DataManager(object):
             line_num += 1
             line = line.strip()
             if line_num ==1 and line == "":
-                return True
+                return (True, "")
             # 구분자가 3개인지 확인
             if len(line.strip().split("/")) != 4:
                 add_error(line_num, "구분자가 3개가 아닙니다")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 구분자가 3개가 아닙니다")
 
             panalty_id, user_id, panalty_start_date, panalty_end_date = line.strip().split("/")
             if panalty_id == "" or user_id == "" or panalty_start_date == "" or panalty_end_date == "":
                 add_error(line_num, "필수항목 중 비어있는 항목이 있습니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 필수항목 중 비어있는 항목이 있습니다.")
             
             # 패널티 ID가 숫자인지 확인
             if not panalty_id.isdigit():
                 add_error(line_num, "패널티 ID가 숫자가 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 패널티 ID가 숫자가 아닙니다.")
             
             # 패널티 ID가 0 이상인지 확인
             if int(panalty_id) < 0:
                 add_error(line_num, "패널티 ID가 0 이상이 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 패널티 ID가 0 이상이 아닙니다.")
             
             # 패널티 ID 중복 검사
             if lines.count(panalty_id) > 1:
                 add_error(line_num, "패널티 ID가 중복됩니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 패널티 ID가 중복됩니다.")
             
             # 사용자 ID가 숫자인지 확인
             if not user_id.isdigit():
                 add_error(line_num, "사용자 ID가 숫자가 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 사용자 ID가 숫자가 아닙니다.")
             
             # 사용자 ID가 0 이상인지 확인
             if int(user_id) < 0:
                 add_error(line_num, "사용자 ID가 0 이상이 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 사용자 ID가 0 이상이 아닙니다.")
             
             # 패널티 시작 날짜 검사
             if not MyDate.from_str(panalty_start_date):
                 add_error(line_num, "패널티 시작 날짜가 날짜 형식이 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 패널티 시작 날짜가 날짜 형식이 아닙니다.")
             
             # 패널티 종료 날짜 검사
             if not MyDate.from_str(panalty_end_date):
                 add_error(line_num, "패널티 종료 날짜가 날짜 형식이 아닙니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 패널티 종료 날짜가 날짜 형식이 아닙니다.")
             
             # 패널티 종료 날짜가 패널티 시작 날짜 이후인지 확인
             if MyDate.from_str(panalty_end_date) < MyDate.from_str(panalty_start_date):
                 add_error(line_num, "패널티 종료 날짜가 패널티 시작 날짜 이전입니다.")
-                return False
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 패널티 종료 날짜가 패널티 시작 날짜 이전입니다.")
             
-        return True
+            # 사용자 고유번호 참조 무결성 검사
+            user_id_found = False
+            for user_record in self.user_table:
+                if user_record.user_id == int(user_id):
+                    user_id_found = True
+                    break
+                
+            if not user_id_found:
+                add_error(line_num, "참조하는 사용자 고유번호가 사용자 데이터에 없습니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 참조하는 사용자 고유번호가 사용자 데이터에 없습니다.")
+            
+        return (True, "")
     
     # =========== 책 레코드를 문자열로 반환 ========== #
     def print_book(self, book_id: int, include_borrow: bool=False):        
@@ -1305,7 +1407,7 @@ class DataManager(object):
         for book in self.book_table:
             print(self.print_book(book.book_id, include_borrow=True))
 
-    def load_configuration(self) -> dict:
+    def load_configuration(self) -> None:
         config_dict = dict()
         
         try:
@@ -1341,6 +1443,8 @@ class DataManager(object):
         if "cancel" not in self.config:
             print("ERROR: 'cancel' 키가 설정에 없습니다. 기본값 'X'를 추가합니다.")
             self.config["cancel"] = "X"
+            
+    
     def create_default_configuration(self):
         # 기본 설정값
         default_config = {
@@ -1420,7 +1524,7 @@ class DataManager(object):
         # 5. 고유번호가 0에서 99 사이인지 확인
         book_id_int = int(book_id)
         if book_id_int < 0 or book_id_int > self.config['max_static_id']:
-            return False, f"고유번호는 0에서 {config['max_static_id']} 사이여야 합니다."
+            return False, f"고유번호는 0에서 {self.config['max_static_id']} 사이여야 합니다."
         
         if flag == 0 and self.search_book_by_id(book_id_int):
             return False, "중복된 고유번호가 존재합니다."
@@ -2160,7 +2264,7 @@ class DataManager(object):
             self.publisher_table.append(new_publisher_data)
 
         new_log_id=len(self.book_edit_log_table)+1
-        self.book_edit_log_table.append(BookEditLogRecord(new_log_id,isbn,today))
+        self.book_edit_log_table.append(BookEditLogRecord(new_log_id,isbn, self.today))
 
         # 저자 수정
         # 기존 저자-ISBN 관계 삭제
@@ -2259,7 +2363,7 @@ class DataManager(object):
             return False
         
         if len(search_book) == 0:
-            bookData.print_book_all()
+            self.print_book_all()
             return True
         
         is_valid, error_message = self.check_string_validate("제목 또는 저자", search_book)
@@ -2267,7 +2371,7 @@ class DataManager(object):
             print(f"ERROR: {error_message}")
             return False
         
-        bookData.search_content_book(search_book)
+        self.search_content_book(search_book)
     
     def search_content_book(self, search_book):
         search_results = []
@@ -2981,7 +3085,7 @@ def get_user_home_path() -> str:
 
 
 """ ========== main ========== """
-if __name__ == "__main__":
+def main() -> None:
     # try:
     #     dir_path = get_user_home_path()
         
@@ -3001,17 +3105,25 @@ if __name__ == "__main__":
     bookData = DataManager(file_path=dir_path)
     
     # config 불러오기
-    config = bookData.load_configuration()
+    bookData.load_configuration()
     
     # 데이터 파일 읽기
-    bookData.read_data_files()
+    done, message = bookData.read_data_files()
+    
+    if not done:
+        print("ERROR:", message)
+        print("프로그램을 종료합니다.")
+        return
     
     # 현재 날짜 입력
     today = input_date(bookData)
     bookData.set_today(today)
-
-    # 디버깅용 함수 주석 처리
-    print(DataManager.get_header())
-    print(bookData.print_book(1, include_borrow=True))
     
     main_prompt(bookData=bookData)
+    
+    # 파일 저장 후 종료
+    bookData.fetch_data_file()
+
+
+if __name__ == "__main__":
+    main()
