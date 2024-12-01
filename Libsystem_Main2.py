@@ -477,19 +477,19 @@ class DataManager(object):
         if verbose: 
             print(f"{len(self.overdue_penalty_table)} Overdue Penalty Data Loaded")
             print("="*10, "End Reading Data Files", "="*10)
-    
+
     # ========== 데이터 파일 메모리 -> 파일 동기화 (fetch) ========== #
     def fetch_data_file(self) -> bool:
         # 1. Book Data
         with open(opj(self.file_path, "data", "Libsystem_Data_Book.txt"), "w", encoding='utf-8') as f:
             f.write(f"{len(self.book_table)}\n")
             for book in self.book_table:
-                f.write(f"{book.book_id}/{book.isbn}/{str(book.register_date)}/{int(book.deleted)}/{str(book.delete_date)}\n")
+                f.write(f"{book.book_id}/{str(book.isbn).zfill(2)}/{str(book.register_date)}/{int(book.deleted)}/{"" if book.delete_date is None else str(book.delete_date)}\n")
                 
         # 2. ISBN Data
         with open(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt"), "w", encoding='utf-8') as f:
             for isbn in self.isbn_table:
-                f.write(f"{isbn.isbn}/{isbn.title}/{isbn.publisher_id}/{isbn.published_year}/{str(isbn.isbn_register_date)}\n")
+                f.write(f"{str(isbn.isbn).zfill(2)}/{isbn.title}/{isbn.publisher_id}/{isbn.published_year}/{str(isbn.isbn_register_date)}\n")
                 
         # 3. Author Data
         with open(opj(self.file_path, "data", "Libsystem_Data_Author.txt"), "w", encoding='utf-8') as f:
@@ -499,17 +499,17 @@ class DataManager(object):
         # 4. ISBN - Author Data
         with open(opj(self.file_path, "data", "Libsystem_Data_IsbnAuthor.txt"), "w", encoding='utf-8') as f:
             for isbn_author in self.isbn_author_table:
-                f.write(f"{isbn_author.isbn}/{isbn_author.author_id}\n")
+                f.write(f"{str(isbn_author.isbn).zfill(2)}/{isbn_author.author_id}\n")
                 
         # 5. Book Edit Log Data
         with open(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), "w", encoding='utf-8') as f:
             for log in self.book_edit_log_table:
-                f.write(f"{log.log_id}/{log.isbn}/{str(log.edit_date)}\n")
+                f.write(f"{log.log_id}/{str(log.isbn).zfill(2)}/{str(log.edit_date)}\n")
                 
         # 6. Borrow Data
         with open(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), "w", encoding='utf-8') as f:
             for borrow in self.borrow_table:
-                f.write(f"{borrow.borrow_id}/{borrow.book_id}/{borrow.user_id}/{str(borrow.borrow_date)}/{str(borrow.return_date)}/{str(borrow.actual_return_date)}/{int(borrow.deleted)}\n")
+                f.write(f"{borrow.borrow_id}/{borrow.book_id}/{borrow.user_id}/{str(borrow.borrow_date)}/{str(borrow.return_date)}/{"" if borrow.actual_return_date is None else str(borrow.actual_return_date)}/{int(borrow.deleted)}\n")
                 
         # 7. User Data
         with open(opj(self.file_path, "data", "Libsystem_Data_User.txt"), "w", encoding='utf-8') as f:
