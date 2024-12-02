@@ -1217,14 +1217,10 @@ class DataManager(object):
             line_num += 1
             publisher_id, name, deleted = line.strip().split("/")
             # 출판사 ID가 숫자인지 확인
+              # 출판사 ID 검사
             if not publisher_id.isdigit():
-                add_error(line_num, "출판사 ID가 숫자가 아닙니다.")
-                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 출판사 ID가 숫자가 아닙니다.")
-            
-            # 출판사 ID가 0 이상인지 확인
-            if int(publisher_id) < 0:
-                add_error(line_num, "출판사 ID가 0 이상이 아닙니다.")
-                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 출판사 ID가 0 이상이 아닙니다.")
+                add_error(line_num, "출판사 ID가 0 이상의 숫자가 아닙니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 출판사 ID가 0 이상의 숫자가 아닙니다.")
             
             # 출판사 ID 중복 검사
             if lines.count(publisher_id) > 1:
