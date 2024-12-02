@@ -3143,14 +3143,13 @@ def main() -> None:
     dir_path = "./"
     
     # print("[DEBUG] HOME 경로:", dir_path)
-    # bookData = BookData(file_path=opj(dir_path, "Libsystem_data.txt"))
     bookData = DataManager(file_path=dir_path)
     
     # config 불러오기
     bookData.load_configuration()
     
     # 데이터 파일 읽기
-    done, message = bookData.read_data_files()
+    done, message = bookData.read_data_files(verbose=False)
     
     if not done:
         print("ERROR:", message)
