@@ -597,17 +597,13 @@ class DataManager(object):
             line_num += 1
             book_id, isbn, register_date, deleted, delete_date = line.strip().split("/")
             # 고유번호가 숫자인지 확인
-            if not book_id.isdigit():
-                add_error(line_num, "고유번호가 숫자가 아닙니다.")
-                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 고유번호가 숫자가 아닙니다.")
-            
-            # 고유번호가 0에서 첫 줄의 값 사이의 정수인지 확인
-            if int(book_id) < 0 or int(book_id) > first_line:
+            if not book_id.isdigit() or int(book_id) > first_line:
                 add_error(line_num, "고유번호가 0에서 첫 줄의 값 사이의 정수가 아닙니다.")
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 고유번호가 0에서 첫 줄의 값 사이의 정수가 아닙니다.")
             
             # 고유번호 중복 검사
-            if lines[1:].count(book_id) > 1:
+            book_ids = [line.strip().split("/")[0] for line in lines]
+            if book_ids.count(book_id) > 1:
                 add_error(line_num, "고유번호가 중복됩니다.")
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 고유번호가 중복됩니다.")
             
@@ -685,17 +681,13 @@ class DataManager(object):
             line_num += 1
             isbn, title, publisher_id, published_year, isbn_register_date = line.strip().split("/")
             # ISBN이 숫자인지 확인
-            if not isbn.isdigit():
-                add_error(line_num, "ISBN이 숫자가 아닙니다.")
-                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - ISBN이 숫자가 아닙니다.")
-            
-            # ISBN이 0에서 99 사이의 정수인지 확인
-            if int(isbn) < 0 or int(isbn) > 99:
+            if not isbn.isdigit() or int(isbn) > 99:
                 add_error(line_num, "ISBN이 0에서 99 사이의 정수가 아닙니다.")
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - ISBN이 0에서 99 사이의 정수가 아닙니다.")
             
             # ISBN 중복 검사
-            if lines.count(isbn) > 1:
+            isbns = [line.strip().split("/")[0] for line in lines]
+            if isbns.count(isbn) > 1:
                 add_error(line_num, "ISBN이 중복됩니다.")
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - ISBN이 중복됩니다.")
             
@@ -777,17 +769,15 @@ class DataManager(object):
             line_num += 1
             author_id, name, deleted = line.strip().split("/")
             # 저자 ID가 숫자인지 확인
-            if not author_id.isdigit():
-                add_error(line_num, "저자 ID가 숫자가 아닙니다.")
-                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 저자 ID가 숫자가 아닙니다.")
+            if not author_id.isdigit() or author_id == "0":
+                add_error(line_num, "저자 ID가 1 이상의 숫자가 아닙니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 저자 ID가 1 이상의 숫자가 아닙니다.")
             
-            # 저자 ID 범위
-            if int(author_id) < 1:
-                add_error(line_num, "저자 ID가 1 이상이 아닙니다.")
-                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 저자 ID가 1 이상이 아닙니다.")
+            
             
             # 저자 ID 중복 검사
-            if lines.count(author_id) > 1:
+            author_ids = [line.strip().split("/")[0] for line in lines]
+            if author_ids.count(author_id) > 1:
                 add_error(line_num, "저자 ID가 중복됩니다.")
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 저자 ID가 중복됩니다.")
             
@@ -866,29 +856,21 @@ class DataManager(object):
             line_num += 1
             isbn, author_id = line.strip().split("/")
             # ISBN이 숫자인지 확인
-            if not isbn.isdigit():
-                add_error(line_num, "ISBN이 숫자가 아닙니다.")
-                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - ISBN이 숫자가 아닙니다.")
+            if not isbn.isdigit() or int(isbn) > 99:
+                add_error(line_num, "ISBN이 0에서 99 사이의 숫자가 아닙니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - ISBN이 0에서 99 사이의 숫자가 아닙니다.")
             
-            # ISBN이 0에서 99 사이의 정수인지 확인
-            if int(isbn) < 0 or int(isbn) > 99:
-                add_error(line_num, "ISBN이 0에서 99 사이의 정수가 아닙니다.")
-                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - ISBN이 0에서 99 사이의 정수가 아닙니다.")
             
             # ISBN 중복 검사
-            if lines.count(isbn) > 1:
+            isbn_ids = [line.strip().split("/")[0] for line in lines]
+            if isbn_ids.count(isbn) > 1:
                 add_error(line_num, "ISBN이 중복됩니다.")
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - ISBN이 중복됩니다.")
             
             # 저자 ID 검사
-            if not author_id.isdigit():
-                add_error(line_num, "저자 ID가 숫자가 아닙니다.")
-                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 저자 ID가 숫자가 아닙니다.")
-            
-            # 저자 ID 범위
-            if int(author_id) < 1:
-                add_error(line_num, "저자 ID가 1 이상이 아닙니다.")
-                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 저자 ID가 1 이상이 아닙니다.")
+            if not author_id.isdigit() or int(author_id) < 1:
+                add_error(line_num, "저자 ID가 1 이상의 숫자가 아닙니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 저자 ID가 1 이상의 숫자가 아닙니다.")
             
         return (True, "")
 
@@ -944,26 +926,17 @@ class DataManager(object):
             log_id, isbn, edit_date = line.strip().split("/")
             # 로그 ID가 숫자인지 확인
             if not log_id.isdigit():
-                add_error(line_num, "로그 ID가 숫자가 아닙니다.")
-                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 로그 ID가 숫자가 아닙니다.")
+                add_error(line_num, "로그 ID가 0 이상의 숫자가 아닙니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 로그 ID가 0 이상의 숫자가 아닙니다.")
             
             # 로그 ID 중복 검사
-            if lines.count(log_id) > 1:
+            log_ids = [line.strip().split("/")[0] for line in lines]
+            if log_ids.count(log_id) > 1:
                 add_error(line_num, "로그 ID가 중복됩니다.")
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 로그 ID가 중복됩니다.")
             
-            # 로그 ID가 0 이상인지 확인
-            if int(log_id) < 0:
-                add_error(line_num, "로그 ID가 0 이상이 아닙니다.")
-                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 로그 ID가 0 이상이 아닙니다.")
-            
             # ISBN 검사
-            if not isbn.isdigit():
-                add_error(line_num, "ISBN이 숫자가 아닙니다.")
-                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - ISBN이 숫자가 아닙니다.")
-            
-            #ISBN 범위
-            if int(isbn) < 0 or int(isbn) > 99:
+            if not isbn.isdigit() or int(isbn) > 99:
                 add_error(line_num, "ISBN이 0에서 99 사이의 정수가 아닙니다.")
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - ISBN이 0에서 99 사이의 정수가 아닙니다.")
             
@@ -1036,43 +1009,30 @@ class DataManager(object):
             borrow_id,book_id, user_id, borrow_date, return_date, actual_return_date, deleted = line.strip().split("/")
             # 대출 ID가 숫자인지 확인
             if not borrow_id.isdigit():
-                add_error(line_num, "대출 ID가 숫자가 아닙니다.")
-                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 대출 ID가 숫자가 아닙니다.")
-            
-            # 대출 ID가 0 이상인지 확인
-            if int(borrow_id) < 0:
-                add_error(line_num, "대출 ID가 0 이상이 아닙니다.")
-                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 대출 ID가 0 이상이 아닙니다.")
+                add_error(line_num, "대출 ID가 0 이상의 숫자가 아닙니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 대출 ID가 0 이상의 숫자가 아닙니다.")
             
             # 대출 ID 중복 검사
-            if lines.count(borrow_id) > 1:
+            borrow_ids = [line.strip().split("/")[0] for line in lines]
+            if borrow_ids.count(borrow_id) > 1:
                 add_error(line_num, "대출 ID가 중복됩니다.")
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 대출 ID가 중복됩니다.")
              
             # 책 ID가 숫자인지 확인
             if not book_id.isdigit():
-                add_error(line_num, "책 ID가 숫자가 아닙니다.")
-                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 책 ID가 숫자가 아닙니다.")
-            
-            # 책 ID가 0 이상인지 확인
-            if int(book_id) < 0:
-                add_error(line_num, "책 ID가 0 이상이 아닙니다.")
-                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 책 ID가 0 이상이 아닙니다.")
+                add_error(line_num, "책 ID가 0 이상의 숫자가 아닙니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 책 ID가 0 이상의 숫자가 아닙니다.")
             
             # 책 ID 중복 검사
-            if lines.count(book_id) > 1:
+            book_ids = [line.strip().split("/")[1] for line in lines]
+            if book_ids.count(book_id) > 1:
                 add_error(line_num, "책 ID가 중복됩니다.")
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 책 ID가 중복됩니다.")
             
             # 사용자 ID 검사
             if not user_id.isdigit():
-                add_error(line_num, "사용자 ID가 숫자가 아닙니다.")
-                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 사용자 ID가 숫자가 아닙니다.")
-            
-            # 사용자 ID가 0 이상인지 확인
-            if int(user_id) < 0:
-                add_error(line_num, "사용자 ID가 0 이상이 아닙니다.")
-                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 사용자 ID가 0 이상이 아닙니다.")
+                add_error(line_num, "사용자 ID가 0 이상의 숫자가 아닙니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 사용자 ID가 0 이상의 숫자가 아닙니다.")
             
             # 대출 날짜 검사
             if not MyDate.from_str(borrow_date):
@@ -1147,16 +1107,12 @@ class DataManager(object):
             user_id, phone_number, name, deleted = line.strip().split("/")
             # 사용자 ID가 숫자인지 확인
             if not user_id.isdigit():
-                add_error(line_num, "사용자 ID가 숫자가 아닙니다.")
-                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 사용자 ID가 숫자가 아닙니다.")
-            
-            # 사용자 ID가 0 이상인지 확인
-            if int(user_id) < 0:
-                add_error(line_num, "사용자 ID가 0 이상이 아닙니다.")
-                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 사용자 ID가 0 이상이 아닙니다.")
+                add_error(line_num, "사용자 ID가 0 이상의 숫자가 아닙니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 사용자 ID가 0 이상의 숫자가 아닙니다.")
             
             # 사용자 ID 중복 검사
-            if lines.count(user_id) > 1:
+            user_ids = [line.strip().split("/")[0] for line in lines]
+            if user_ids.count(user_id) > 1:
                 add_error(line_num, "사용자 ID가 중복됩니다.")
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 사용자 ID가 중복됩니다.")
             
@@ -1223,7 +1179,8 @@ class DataManager(object):
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 출판사 ID가 0 이상의 숫자가 아닙니다.")
             
             # 출판사 ID 중복 검사
-            if lines.count(publisher_id) > 1:
+            publisher_ids = [line.strip().split("/")[0] for line in lines]
+            if publisher_ids.count(publisher_id) > 1:
                 add_error(line_num, "출판사 ID가 중복됩니다.")
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 출판사 ID가 중복됩니다.")
             
@@ -1270,28 +1227,19 @@ class DataManager(object):
             
             # 패널티 ID가 숫자인지 확인
             if not panalty_id.isdigit():
-                add_error(line_num, "패널티 ID가 숫자가 아닙니다.")
-                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 패널티 ID가 숫자가 아닙니다.")
-            
-            # 패널티 ID가 0 이상인지 확인
-            if int(panalty_id) < 0:
-                add_error(line_num, "패널티 ID가 0 이상이 아닙니다.")
-                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 패널티 ID가 0 이상이 아닙니다.")
+                add_error(line_num, "패널티 ID가 0 이상의 숫자가 아닙니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 패널티 ID가 0 이상의 숫자가 아닙니다.")
             
             # 패널티 ID 중복 검사
-            if lines.count(panalty_id) > 1:
+            panalty_ids = [line.strip().split("/")[0] for line in lines]
+            if panalty_ids.count(panalty_id) > 1:
                 add_error(line_num, "패널티 ID가 중복됩니다.")
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 패널티 ID가 중복됩니다.")
             
             # 사용자 ID가 숫자인지 확인
             if not user_id.isdigit():
-                add_error(line_num, "사용자 ID가 숫자가 아닙니다.")
-                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 사용자 ID가 숫자가 아닙니다.")
-            
-            # 사용자 ID가 0 이상인지 확인
-            if int(user_id) < 0:
-                add_error(line_num, "사용자 ID가 0 이상이 아닙니다.")
-                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 사용자 ID가 0 이상이 아닙니다.")
+                add_error(line_num, "사용자 ID가 0 이상의 숫자가 아닙니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 사용자 ID가 0 이상의 숫자가 아닙니다.")
             
             # 패널티 시작 날짜 검사
             if not MyDate.from_str(panalty_start_date):
