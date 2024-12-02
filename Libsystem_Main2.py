@@ -560,15 +560,12 @@ class DataManager(object):
         first_line = lines[0].strip()
         
         # 첫 줄이 숫자인지 확인
-        if not first_line.isdigit():
-            add_error(line_num, "첫 줄이 숫자가 아닙니다.")
-            return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 첫 줄이 숫자가 아닙니다.")
-        
-        # 범위 검사
-        first_line = int(first_line)
-        if  first_line < 0 or first_line > 99:
+        if not first_line.isdigit() or int(first_line) > 99:
             add_error(line_num, "첫 줄이 0에서 99 사이의 정수가 아닙니다.")
             return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 첫 줄이 0에서 99 사이의 정수가 아닙니다.")
+        
+
+        first_line = int(first_line)
         
         # 구분자가 4개인지 확인
         for line in lines[1:]:
