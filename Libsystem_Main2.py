@@ -594,7 +594,7 @@ class DataManager(object):
             line_num += 1
             book_id, isbn, register_date, deleted, delete_date = line.strip().split("/")
             # 고유번호가 숫자인지 확인
-            if not book_id.isdigit() or int(book_id) > first_line:
+            if not book_id.isdigit() or int(book_id) >= first_line:
                 add_error(line_num, "고유번호가 0에서 첫 줄의 값 사이의 정수가 아닙니다.")
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 고유번호가 0에서 첫 줄의 값 사이의 정수가 아닙니다.")
             
