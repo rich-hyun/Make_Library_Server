@@ -267,6 +267,11 @@ class DataManager(object):
 
         if verbose: print("="*10, "Start Reading Data Files", "="*10)
         
+        # 경로에 "data" 폴더가 없으면 생성
+        data_folder_path = opj(self.file_path, "data")
+        if not os.path.exists(data_folder_path):
+            os.makedirs(data_folder_path)
+        
         # ---------- 1. Publisher Data ----------
          # 파일이 존재하지 않으면 생성
         if not os.path.exists(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt")):
