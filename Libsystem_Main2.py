@@ -865,13 +865,6 @@ class DataManager(object):
                 add_error(line_num, "ISBN이 0에서 99 사이의 숫자가 아닙니다.")
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - ISBN이 0에서 99 사이의 숫자가 아닙니다.")
             
-            
-            # ISBN 중복 검사
-            isbn_ids = [line.strip().split("/")[0] for line in lines]
-            if isbn_ids.count(isbn) > 1:
-                add_error(line_num, "ISBN이 중복됩니다.")
-                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - ISBN이 중복됩니다.")
-            
             # 저자 ID 검사
             if not author_id.isdigit() or int(author_id) < 1:
                 add_error(line_num, "저자 ID가 1 이상의 숫자가 아닙니다.")
