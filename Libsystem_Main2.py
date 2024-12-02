@@ -278,8 +278,8 @@ class DataManager(object):
         passed, message = self.check_data_publisher_files(self.file_path)
         
         if not passed:
-            now = datetime.now().strftime("%Y%m%d_%H%M%S")
-            shutil.copy(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt"), opj(self.file_path, "data", f"Libsystem_Data_Publisher-{now}.bak"))
+            # now = datetime.now().strftime("%Y%m%d_%H%M%S")
+            # shutil.copy(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt"), opj(self.file_path, "data", f"Libsystem_Data_Publisher-{now}.bak"))
             return (False, message)
 
         with open(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt"), "r",encoding='utf-8') as f:
@@ -300,8 +300,8 @@ class DataManager(object):
         passed, message = self.check_data_isbn_files(self.file_path)
         
         if not passed:
-            now = datetime.now().strftime("%Y%m%d_%H%M%S")
-            shutil.copy(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt"), opj(self.file_path, "data", f"Libsystem_Data_Isbn-{now}.bak"))
+            # now = datetime.now().strftime("%Y%m%d_%H%M%S")
+            # shutil.copy(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt"), opj(self.file_path, "data", f"Libsystem_Data_Isbn-{now}.bak"))
             return (False, message)
 
         with open(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt"), "r",encoding='utf-8') as f:
@@ -329,8 +329,8 @@ class DataManager(object):
         passed, message = self.check_data_book_files(self.file_path)
         
         if not passed:
-            now = datetime.now().strftime("%Y%m%d_%H%M%S")
-            shutil.copy(opj(self.file_path, "data", "Libsystem_Data_Book.txt"), opj(self.file_path, "data", f"Libsystem_Data_Book-{now}.bak"))
+            # now = datetime.now().strftime("%Y%m%d_%H%M%S")
+            # shutil.copy(opj(self.file_path, "data", "Libsystem_Data_Book.txt"), opj(self.file_path, "data", f"Libsystem_Data_Book-{now}.bak"))
             return (False, message)
 
         with open(opj(self.file_path, "data", "Libsystem_Data_Book.txt"), "r",encoding='utf-8') as f:
@@ -358,8 +358,8 @@ class DataManager(object):
         passed, message = self.check_data_book_edit_log_files(self.file_path)
         
         if not passed:
-            now = datetime.now().strftime("%Y%m%d_%H%M%S")
-            shutil.copy(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), opj(self.file_path, "data", f"Libsystem_Data_BookEditLog-{now}.bak"))
+            # now = datetime.now().strftime("%Y%m%d_%H%M%S")
+            # shutil.copy(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), opj(self.file_path, "data", f"Libsystem_Data_BookEditLog-{now}.bak"))
             return (False, message)
 
         with open(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), "r",encoding='utf-8') as f:
@@ -382,8 +382,8 @@ class DataManager(object):
         passed, message = self.check_data_author_files(self.file_path)
         
         if not passed:
-            now = datetime.now().strftime("%Y%m%d_%H%M%S")
-            shutil.copy(opj(self.file_path, "data", "Libsystem_Data_Author.txt"), opj(self.file_path, "data", f"Libsystem_Data_Author-{now}.bak"))
+            # now = datetime.now().strftime("%Y%m%d_%H%M%S")
+            # shutil.copy(opj(self.file_path, "data", "Libsystem_Data_Author.txt"), opj(self.file_path, "data", f"Libsystem_Data_Author-{now}.bak"))
             return (False, message)
             
         with open(opj(self.file_path, "data", "Libsystem_Data_Author.txt"), "r",encoding='utf-8') as f:
@@ -405,8 +405,8 @@ class DataManager(object):
         passed, message = self.check_data_isbn_author_files(self.file_path)
         
         if not passed:
-            now = datetime.now().strftime("%Y%m%d_%H%M%S")
-            shutil.copy(opj(self.file_path, "data", "Libsystem_Data_IsbnAuthor.txt"), opj(self.file_path, "data", f"Libsystem_Data_IsbnAuthor-{now}.bak"))
+            # now = datetime.now().strftime("%Y%m%d_%H%M%S")
+            # shutil.copy(opj(self.file_path, "data", "Libsystem_Data_IsbnAuthor.txt"), opj(self.file_path, "data", f"Libsystem_Data_IsbnAuthor-{now}.bak"))
             return (False, message)
 
         with open(opj(self.file_path, "data", "Libsystem_Data_IsbnAuthor.txt"), "r",encoding='utf-8') as f:
@@ -428,8 +428,8 @@ class DataManager(object):
         passed, message = self.check_data_user_files(self.file_path)
         
         if not passed:
-            now = datetime.now().strftime("%Y%m%d_%H%M%S")
-            shutil.copy(opj(self.file_path, "data", "Libsystem_Data_User.txt"), opj(self.file_path, "data", f"Libsystem_Data_User-{now}.bak"))
+            # now = datetime.now().strftime("%Y%m%d_%H%M%S")
+            # shutil.copy(opj(self.file_path, "data", "Libsystem_Data_User.txt"), opj(self.file_path, "data", f"Libsystem_Data_User-{now}.bak"))
             return (False, message)
 
         with open(opj(self.file_path, "data", "Libsystem_Data_User.txt"), "r",encoding='utf-8') as f:
@@ -451,8 +451,8 @@ class DataManager(object):
         passed, message = self.check_data_borrow_files(self.file_path)
         
         if not passed:
-            now = datetime.now().strftime("%Y%m%d_%H%M%S")
-            shutil.copy(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), opj(self.file_path, "data", f"Libsystem_Data_Borrow-{now}.bak"))
+            # now = datetime.now().strftime("%Y%m%d_%H%M%S")
+            # shutil.copy(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), opj(self.file_path, "data", f"Libsystem_Data_Borrow-{now}.bak"))
             return (False, message)
 
         with open(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), "r",encoding='utf-8') as f:
@@ -474,8 +474,8 @@ class DataManager(object):
         passed, message = self.check_data_overdue_penalty_files(self.file_path)
         
         if not passed:
-            now = datetime.now().strftime("%Y%m%d_%H%M%S")
-            shutil.copy(opj(self.file_path, "data", "Libsystem_Data_OverduePenalty.txt"), opj(self.file_path, "data", f"Libsystem_Data_OverduePenalty-{now}.bak"))
+            # now = datetime.now().strftime("%Y%m%d_%H%M%S")
+            # shutil.copy(opj(self.file_path, "data", "Libsystem_Data_OverduePenalty.txt"), opj(self.file_path, "data", f"Libsystem_Data_OverduePenalty-{now}.bak"))
             return (False, message)
 
         with open(opj(self.file_path, "data", "Libsystem_Data_OverduePenalty.txt"), "r",encoding='utf-8') as f:
@@ -550,7 +550,9 @@ class DataManager(object):
         # 오류 발생한 줄과 오류 메세지 파일의 마지막 줄에 추가
         line_num = 1
         def add_error(line_num, error_message):
-            with open(opj(file_path, "data", "Libsystem_Data_Book.txt"), "a", encoding='utf-8') as f:
+            now = datetime.now().strftime("%Y%m%d_%H%M%S")
+            shutil.copy(opj(self.file_path, "data", "Libsystem_Data_Book.txt"), opj(self.file_path, "data", f"Libsystem_Data_Book-{now}.bak"))
+            with open(opj(file_path, "data", f"Libsystem_Data_Book-{now}.bak"), "a", encoding='utf-8') as f:
                 f.write(f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - {error_message}\n")
 
         with open(opj(file_path, "data", "Libsystem_Data_Book.txt"), "r", encoding='utf-8') as f:
@@ -645,7 +647,9 @@ class DataManager(object):
     def check_data_isbn_files(self,file_path: str) -> tuple[bool, str]:
         # 오류 발생한 줄과 오류 메세지 파일의 마지막 줄에 추가
         def add_error(line_num, error_message):
-            with open(opj(file_path, "data", "Libsystem_Data_Isbn.txt"), "a", encoding='utf-8') as f:
+            now = datetime.now().strftime("%Y%m%d_%H%M%S")
+            shutil.copy(opj(self.file_path, "data", "Libsystem_Data_Isbn.txt"), opj(self.file_path, "data", f"Libsystem_Data_Isbn-{now}.bak"))
+            with open(opj(file_path, "data", f"Libsystem_Data_Isbn-{now}.bak"), "a", encoding='utf-8') as f:
                 f.write(f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - {error_message}\n")
 
         with open(opj(file_path, "data", "Libsystem_Data_Isbn.txt"), "r", encoding='utf-8') as f:
@@ -741,7 +745,9 @@ class DataManager(object):
     def check_data_author_files(self,file_path: str) -> tuple[bool, str]:
         # 오류 발생한 줄과 오류 메세지 파일의 마지막 줄에 추가
         def add_error(line_num, error_message):
-            with open(opj(file_path, "data", "Libsystem_Data_Author.txt"), "a",encoding='utf-8') as f:
+            now = datetime.now().strftime("%Y%m%d_%H%M%S")
+            shutil.copy(opj(self.file_path, "data", "Libsystem_Data_Author.txt"), opj(self.file_path, "data", f"Libsystem_Data_Author-{now}.bak"))
+            with open(opj(file_path, "data", f"Libsystem_Data_Author-{now}.bak"), "a",encoding='utf-8') as f:
                 f.write(f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - {error_message}\n")
 
         with open(opj(file_path, "data", "Libsystem_Data_Author.txt"), "r", encoding='utf-8') as f:
@@ -805,7 +811,9 @@ class DataManager(object):
     def check_data_isbn_author_files(self,file_path: str) -> tuple[bool, str]:
         # 오류 발생한 줄과 오류 메세지 파일의 마지막 줄에 추가
         def add_error(line_num, error_message):
-            with open(opj(file_path, "data", "Libsystem_Data_IsbnAuthor.txt"), "a", encoding='utf-8') as f:
+            now = datetime.now().strftime("%Y%m%d_%H%M%S")
+            shutil.copy(opj(self.file_path, "data", "Libsystem_Data_IsbnAuthor.txt"), opj(self.file_path, "data", f"Libsystem_Data_IsbnAuthor-{now}.bak"))
+            with open(opj(file_path, "data", f"Libsystem_Data_IsbnAuthor-{now}.bak"), "a", encoding='utf-8') as f:
                 f.write(f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - {error_message}\n")
 
         with open(opj(file_path, "data", "Libsystem_Data_IsbnAuthor.txt"), "r", encoding='utf-8') as f:
@@ -892,7 +900,9 @@ class DataManager(object):
     def check_data_book_edit_log_files(self,file_path: str) -> tuple[bool, str]:
         # 오류 발생한 줄과 오류 메세지 파일의 마지막 줄에 추가
         def add_error(line_num, error_message):
-            with open(opj(file_path, "data", "Libsystem_Data_BookEditLog.txt"), "a", encoding='utf-8') as f:
+            now = datetime.now().strftime("%Y%m%d_%H%M%S")
+            shutil.copy(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), opj(self.file_path, "data", f"Libsystem_Data_BookEditLog-{now}.bak"))
+            with open(opj(file_path, "data", f"Libsystem_Data_BookEditLog-{now}.bak"), "a", encoding='utf-8') as f:
                 f.write(f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - {error_message}\n")
 
         with open(opj(file_path, "data", "Libsystem_Data_BookEditLog.txt"), "r", encoding='utf-8') as f:
@@ -972,7 +982,9 @@ class DataManager(object):
     def check_data_borrow_files(self,file_path: str) -> tuple[bool, str]:
         # 오류 발생한 줄과 오류 메세지 파일의 마지막 줄에 추가
         def add_error(line_num, error_message):
-            with open(opj(file_path, "data", "Libsystem_Data_Borrow.txt"), "a", encoding='utf-8') as f:
+            now = datetime.now().strftime("%Y%m%d_%H%M%S")
+            shutil.copy(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), opj(self.file_path, "data", f"Libsystem_Data_Borrow-{now}.bak"))
+            with open(opj(file_path, "data", f"Libsystem_Data_Borrow-{now}.bak"), "a", encoding='utf-8') as f:
                 f.write(f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - {error_message}\n")
 
         with open(opj(file_path, "data", "Libsystem_Data_Borrow.txt"), "r", encoding='utf-8') as f:
@@ -1102,7 +1114,9 @@ class DataManager(object):
     def check_data_user_files(self,file_path: str) -> tuple[bool, str]:
         # 오류 발생한 줄과 오류 메세지 파일의 마지막 줄에 추가
         def add_error(line_num, error_message):
-            with open(opj(file_path, "data", "Libsystem_Data_User.txt"), "a", encoding='utf-8') as f:
+            now = datetime.now().strftime("%Y%m%d_%H%M%S")
+            shutil.copy(opj(self.file_path, "data", "Libsystem_Data_User.txt"), opj(self.file_path, "data", f"Libsystem_Data_User-{now}.bak"))
+            with open(opj(file_path, "data", f"Libsystem_Data_User-{now}.bak"), "a", encoding='utf-8') as f:
                 f.write(f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - {error_message}\n")
 
         with open(opj(file_path, "data", "Libsystem_Data_User.txt"), "r", encoding='utf-8') as f:
@@ -1171,7 +1185,9 @@ class DataManager(object):
     def check_data_publisher_files(self,file_path: str) -> tuple[bool, str]:
         # 오류 발생한 줄과 오류 메세지 파일의 마지막 줄에 추가
         def add_error(line_num, error_message):
-            with open(opj(file_path, "data", "Libsystem_Data_Publisher.txt"), "a", encoding='utf-8') as f:
+            now = datetime.now().strftime("%Y%m%d_%H%M%S")
+            shutil.copy(opj(self.file_path, "data", "Libsystem_Data_Publisher.txt"), opj(self.file_path, "data", f"Libsystem_Data_Publisher-{now}.bak"))
+            with open(opj(file_path, "data", f"Libsystem_Data_Publisher-{now}.bak"), "a", encoding='utf-8') as f:
                 f.write(f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - {error_message}\n")
 
         with open(opj(file_path, "data", "Libsystem_Data_Publisher.txt"), "r", encoding='utf-8') as f:
@@ -1235,7 +1251,9 @@ class DataManager(object):
     def check_data_overdue_penalty_files(self,file_path: str) -> tuple[bool, str]:
         # 오류 발생한 줄과 오류 메세지 파일의 마지막 줄에 추가
         def add_error(line_num, error_message):
-            with open(opj(file_path, "data", "Libsystem_Data_OverduePenalty.txt"), "a", encoding='utf-8') as f:
+            now = datetime.now().strftime("%Y%m%d_%H%M%S")
+            shutil.copy(opj(self.file_path, "data", "Libsystem_Data_OverduePenalty.txt"), opj(self.file_path, "data", f"Libsystem_Data_OverduePenalty-{now}.bak"))
+            with open(opj(file_path, "data", f"Libsystem_Data_OverduePenalty-{now}.bak"), "a", encoding='utf-8') as f:
                 f.write(f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - {error_message}\n")
 
         with open(opj(file_path, "data", "Libsystem_Data_OverduePenalty.txt"), "r", encoding='utf-8') as f:
