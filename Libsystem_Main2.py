@@ -1371,7 +1371,7 @@ class DataManager(object):
         # find borrow info
         borrow_data = None
         if include_borrow:
-            for borrow in self.borrow_table:
+            for borrow in self.borrow_table and borrow.actual_return_date is None: # 반납이 완료된 대출 정보는 제외
                 if borrow.book_id == book_id:
                     borrow_data = borrow
                     break
