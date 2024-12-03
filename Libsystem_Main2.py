@@ -2841,6 +2841,17 @@ class DataManager(object):
         
     
     # ========== 8. 연혁(로그) 조회 ========== #
+    def add_to_history(self, log_type: str, isbn: int, book_id: int, borrow_id: int, log_date: MyDate) -> bool:
+        assert log_type in ["BOOK_REGISTER", "ISBN_EDIT", "BOOK_BORROW", "BOOK_RETURN", "BOOK_DELETE"]
+        assert isbn is not None, "ISBN은 None일 수 없습니다."
+        assert log_date is not None, "로그 날짜는 None일 수 없습니다."
+
+        new_log = LogRecord(len(self.log_table), isbn, book_id, borrow_id, log_date, log_type)
+        self.log_table.append(new_log)
+        self.fetch_data_file()
+        
+        return True
+    
     def history(self):
         history_book_id = self.input_book_id("연혁(로그) 조회를 할 책의 고유번호를 입력해주세요: ", 1)
 
@@ -2872,52 +2883,52 @@ class DataManager(object):
         history_publisher = self.search_publisher_by_id(history_isbn.publisher_id)
         print(f"{history_book_id} / {book_history.isbn} / {history_isbn.title} / {author_name} / {history_publisher.name} / {history_isbn.published_year} / {book_history.register_date}")
 
-        log_list=[]
-        log_list.append((history_isbn.isbn_register_date,1))
-        log_list.append((book_history.register_date,2))
-        if book_history.delete_date:
-            log_list.append((book_history.delete_date,5))
+        # ISBN 등록 먼저 출력
+        isbn_record = self.search_isbn_data(book_history.isbn)
+        print(f"{isbn_record.isbn_register_date} ISBN 등록")
 
-        borrow_loglist=self.search_borrow_dates_by_book_id(history_book_id)
-        for borrow_ll in borrow_loglist:
-            log_list.append((borrow_ll[0],3,borrow_ll[1],borrow_ll[2])) # 대출날짜, 대출, user_id, 반납날짜
-
-        return_loglist=self.search_return_dates_by_book_id(history_book_id)
-        for return_ll in return_loglist:
-            log_list.append((return_ll[0],4,return_ll[1]))  # 실제반납날짜, 반납, 연체날짜
-
-        edit_loglist=self.search_edit_dates_by_isbn(history_isbn.isbn)
-        for edit_ll in edit_loglist:
-            log_list.append((edit_ll,6))
-
-        log_list.sort(key=lambda x: x[0]) 
-
-        for ll in log_list:
-            print(ll[0], end=" ")
-            if ll[1]==1 :
-                print("ISBN 등록")
-
-            elif ll[1]==2 :
-                print("입고")
-
-            elif ll[1]==3 :
-                for user in self.user_table:
-                    if user.user_id == ll[2]:
-                        user_data = user
-                        break
-                print("대출:",user_data.phone_number,user_data.name,"/",ll[3])
-
-            elif ll[1]==4 :
-                print("반납",end=" ")
-                if ll[2]>0:
-                    print(f"({ll[2]}일 연체)",end="")
-                print()
-
-            elif ll[1]==5 :
-                print("삭제")
-            
-            elif ll[1]==6 :
-                print("ISBN 수정")
+        for log in self.log_table:
+            if history_isbn.isbn == log.isbn:
+                # 1) ISBN_EDIT
+                if log.log_type == "ISBN_EDIT":
+                    print(f"{log.log_date} ISBN 수정")
+                    continue
+                
+                # 2) BOOK_REGISTER
+                if log.log_type == "BOOK_REGISTER" and log.book_id == history_book_id:
+                    print(f"{log.log_date} 입고")
+                    continue
+                
+                # 3) BOOK_BORROW
+                if log.log_type == "BOOK_BORROW" and log.book_id == history_book_id:
+                    # 대출 데이터 검색
+                    borrow_data = self.search_borrow_by_id(log.borrow_id)
+                    # 대출자 정보 검색
+                    borrower_data = self.search_user_by_id(borrow_data.user_id)
+                    
+                    print(f"{log.log_date} 대출: {borrower_data.phone_number} {borrower_data.name} / {borrow_data.return_date}")
+                    continue
+                
+                # 4) BOOK_RETURN
+                if log.log_type == "BOOK_RETURN" and log.book_id == history_book_id:
+                    # 대출 데이터 검색
+                    borrow_data = self.search_borrow_by_id(log.borrow_id)
+                    # 대출자 정보 검색
+                    borrower_data = self.search_user_by_id(borrow_data.user_id)
+                    
+                    # 연체인 경우
+                    assert borrow_data.actual_return_date is not None, "반납일이 None일 수 없습니다."
+                    if borrow_data.actual_return_date > borrow_data.return_date:
+                        print(f"{log.log_date} 반납 ({borrow_data.actual_return_date - borrow_data.return_date}일 연체)")
+                    else:
+                        print(f"{log.log_date} 반납")
+                
+                # 5) BOOK_DELETE
+                if log.log_type == "BOOK_DELETE" and log.book_id == history_book_id:
+                    assert log.log_date == book_history.delete_date, "삭제일과 로그 날짜가 일치하지 않습니다"
+                    print(f"{log.log_date} 삭제")
+                    continue
+        
         print("메인 프롬프트로 돌아갑니다.")
     
     # ========= 기타 Utility 함수 ========= #
