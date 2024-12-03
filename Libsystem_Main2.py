@@ -1978,29 +1978,6 @@ class DataManager(object):
         
         return book_ids
     
-    def search_borrow_dates_by_book_id(self, book_id):
-        book_dates = []
-        for borrow in self.borrow_table:
-            if borrow.book_id == book_id: # (대출일, user_id, 반납일) 튜플 반환
-                book_dates.append((borrow.borrow_date,borrow.user_id,borrow.return_date))
-        
-        return book_dates
-    
-    def search_return_dates_by_book_id(self, book_id):
-        book_dates=[]
-        for borrow in self.borrow_table:
-            if borrow.book_id == book_id and borrow.actual_return_date is not None: # (반납일, 연체일) 튜플 반환
-                book_dates.append((borrow.actual_return_date,borrow.actual_return_date - borrow.return_date))
-        
-        return book_dates
-    
-    def search_edit_dates_by_isbn(self, isbn):
-        book_dates=[]
-        for edit in self.book_edit_log_table:
-            if edit.isbn == isbn:
-                book_dates.append(edit.edit_date)
-        
-        return book_dates
         
     # 해당 책을 대출한 유저 ID 반환
     def search_borrower_id_by_book_id(self, book_id) -> int:
