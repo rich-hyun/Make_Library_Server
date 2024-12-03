@@ -1794,6 +1794,17 @@ class DataManager(object):
             if borrow.book_id == book_id and borrow.return_date is not None:
                 return True
         return False        
+    
+    # 저자 식별번호로 이름 #식별번호 형태로 반환
+    def convert_author_ids_to_name_id(self, author_ids: list[int]) -> str:
+        names = []
+        
+        for author_id in author_ids:
+            author = self.search_author_by_id(author_id)
+            if author:
+                names.append(f"{author.name} #{author.author_id}")
+                
+        return " & ".join(names)
 
     # ========== 검색 함수 ========== #
     # 고유번호로 검색
@@ -2648,11 +2659,10 @@ class DataManager(object):
         rtn_isbn = self.search_isbn_data(book_to_return.isbn)
         author_ids = self.search_author_ids_by_isbn(rtn_isbn.isbn)
         
-        # TODO: 임시로 저자 1명만 해두었습니다 수정 바람
         if len(author_ids) == 0:
             author_name = ""
         else:
-            author_name = self.search_author_by_id(author_ids[0]).name
+            author_name = self.convert_author_ids_to_name_id(author_ids)
         
         rtn_publisher = self.search_publisher_by_id(rtn_isbn.publisher_id)
         print(f"{rtn_book_id} / {book_to_return.isbn} / {rtn_isbn.title} / {author_name} / {rtn_publisher.name} / {rtn_isbn.published_year} / {book_to_return.register_date}")
@@ -2799,11 +2809,10 @@ class DataManager(object):
         history_isbn = self.search_isbn_data(book_history.isbn)
         author_ids = self.search_author_ids_by_isbn(history_isbn.isbn)
         
-        # TODO: 임시로 저자 1명만 해두었습니다 수정 바람
         if len(author_ids) == 0:
             author_name = ""
         else:
-            author_name = self.search_author_by_id(author_ids[0]).name
+            author_name = self.convert_author_ids_to_name_id(author_ids)
         
         history_publisher = self.search_publisher_by_id(history_isbn.publisher_id)
         print(f"{history_book_id} / {book_history.isbn} / {history_isbn.title} / {author_name} / {history_publisher.name} / {history_isbn.published_year} / {book_history.register_date}")
