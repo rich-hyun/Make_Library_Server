@@ -574,7 +574,7 @@ class DataManager(object):
             # 5. Log Data
             with open(opj(self.file_path, "data", "Libsystem_Data_Log.txt"), "w", encoding='utf-8') as f:
                 for log in self.log_table:
-                    f.write(f"{log.log_id}/{str(log.isbn).zfill(2)}/{log.book_id}/{log.borrow_id}/{str(log.log_date)}/{log.log_type}\n")
+                    f.write(f"{log.log_id}/{str(log.isbn).zfill(2)}/{"" if log.book_id is None else log.book_id}/{"" if log.borrow_id is None else log.borrow_id}/{str(log.log_date)}/{log.log_type}\n")
                     
             # 6. Borrow Data
             with open(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), "w", encoding='utf-8') as f:
@@ -2181,6 +2181,9 @@ class DataManager(object):
                 self.isbn_table.append(new_isbn)
                 self.book_table.append(new_book)    
                 
+                # 책 등록 로그 추가
+                self.add_to_log(log_type="BOOK_REGISTER", isbn=new_isbn.isbn, book_id=new_book.book_id, borrow_id=None, log_date=self.today)
+                
                 self.fetch_data_file()
                 return True
             else:
@@ -2217,6 +2220,10 @@ class DataManager(object):
             if self.input_response("해당 책을 추가하시겠습니까?(Y/N): "):
                 new_book = BookRecord(len(self.book_table), isbn, self.today, None, False)
                 self.book_table.append(new_book)
+                
+                # 책 등록 로그 추가
+                self.add_to_log(log_type="BOOK_REGISTER", isbn=isbn, book_id=new_book.book_id, borrow_id=None, log_date=self.today)
+                
                 self.fetch_data_file()
                 return True
             else:
@@ -2260,6 +2267,10 @@ class DataManager(object):
                 if self.book_table[i].book_id == del_book_id:
                     self.book_table[i].deleted = True
                     self.book_table[i].delete_date = self.today
+                    
+                    # 책 삭제 로그 추가
+                    self.add_to_log(log_type="BOOK_DELETE", isbn=self.book_table[i].isbn, book_id=self.book_table[i].book_id, borrow_id=None, log_date=self.today)
+                    
                     break
             
             print("삭제가 완료되었습니다. 메인프롬프트로 돌아갑니다.")
@@ -2419,9 +2430,9 @@ class DataManager(object):
         # 출판사가 새로 추가된 경우에 테이블에 추가
         if new_publisher_data is not None:
             self.publisher_table.append(new_publisher_data)
-
-        new_log_id=len(self.book_edit_log_table)+1
-        self.book_edit_log_table.append(BookEditLogRecord(new_log_id,isbn, self.today))
+            
+        # 책 수정 로그 추가
+        self.add_to_log(log_type="ISBN_EDIT", isbn=isbn, book_id=None, borrow_id=None, log_date=self.today)
 
         # 저자 수정
         # 기존 저자-ISBN 관계 삭제
@@ -2676,6 +2687,9 @@ class DataManager(object):
             borrow = BorrowRecord(len(self.borrow_table), book_id, borrower_id, borrow_date, due_date, None, False)
             self.borrow_table.append(borrow)
             
+            # 책 대출 로그 추가
+            self.add_to_log(log_type="BOOK_BORROW", isbn=book.isbn, book_id=book_id, borrow_id=borrow.borrow_id, log_date=self.today)
+            
             print(f"대출이 완료되었습니다. 반납 예정일은 {due_date} 입니다.")
             self.fetch_data_file()
             return True
@@ -2780,6 +2794,10 @@ class DataManager(object):
                     )
                 )
                 print(f"[새로운 페널티 부여] 페널티 시작: {penalty_start_date}, 종료: {penalty_end_date}")
+                
+        # 책 반납 로그 추가
+        self.add_to_log(log_type="BOOK_RETURN", isbn=rtn_isbn.isbn, book_id=borrow_info.book_id, borrow_id=borrow_info.borrow_id, log_date=self.today)
+                
         print("반납이 완료되었습니다. 메인 프롬프트로 돌아갑니다.")
         self.fetch_data_file()
         return True
@@ -2841,7 +2859,7 @@ class DataManager(object):
         
     
     # ========== 8. 연혁(로그) 조회 ========== #
-    def add_to_history(self, log_type: str, isbn: int, book_id: int, borrow_id: int, log_date: MyDate) -> bool:
+    def add_to_log(self, log_type: str, isbn: int, book_id: int, borrow_id: int, log_date: MyDate) -> bool:
         assert log_type in ["BOOK_REGISTER", "ISBN_EDIT", "BOOK_BORROW", "BOOK_RETURN", "BOOK_DELETE"]
         assert isbn is not None, "ISBN은 None일 수 없습니다."
         assert log_date is not None, "로그 날짜는 None일 수 없습니다."
