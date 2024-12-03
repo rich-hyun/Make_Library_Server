@@ -156,6 +156,9 @@ class BookRecord(object):
         self.register_date = register_date
         self.deleted = deleted
         self.delete_date = delete_date
+        
+    def __str__(self):
+        return f"{self.book_id}/{str(self.isbn).zfill(2)}/{self.register_date}/{self.deleted}/{'' if self.delete_date is None else self.delete_date}"
 
 # ISBN
 class ISBNRecord(object):
@@ -165,6 +168,9 @@ class ISBNRecord(object):
         self.publisher_id = publisher_id
         self.published_year = published_year
         self.isbn_register_date = isbn_register_date
+        
+    def __str__(self):
+        return f"{str(self.isbn).zfill(2)}/{self.title}/{self.publisher_id}/{self.published_year}/{self.isbn_register_date}"
         
 # Author
 class AuthorRecord(object):
@@ -182,12 +188,8 @@ class IsbnAuthorRecord(object):
         self.isbn = isbn
         self.author_id = author_id
         
-# Book Edit Log
-class BookEditLogRecord(object):
-    def __init__(self, log_id: int, isbn: int, edit_date: MyDate):
-        self.log_id = log_id
-        self.isbn = isbn
-        self.edit_date = edit_date
+    def __str__(self):
+        return f"{str(self.isbn).zfill(2)}/{self.author_id}"
         
 # Borrow
 class BorrowRecord(object):
@@ -199,6 +201,9 @@ class BorrowRecord(object):
         self.return_date = return_date
         self.actual_return_date = actual_return_date
         self.deleted = deleted
+        
+    def __str__(self):
+        return f"{self.borrow_id}/{self.book_id}/{self.user_id}/{self.borrow_date}/{self.return_date}/{'' if self.actual_return_date is None else self.actual_return_date}/{self.deleted}"
 
 # User
 class UserRecord(object):
@@ -208,12 +213,18 @@ class UserRecord(object):
         self.name = name
         self.deleted = deleted
         
+    def __str__(self):
+        return f"{self.user_id}/{self.phone_number}/{self.name}/{self.deleted}"
+        
 # Publisher
 class PublisherRecord(object):
     def __init__(self, publisher_id: int, name: str, deleted: bool=False):
         self.publisher_id = publisher_id
         self.name = name
         self.deleted = deleted
+        
+    def __str__(self):
+        return f"{self.publisher_id}/{self.name}/{self.deleted}"
     
 # Overdue Penalty
 class OverduePenaltyRecord(object):
@@ -222,31 +233,38 @@ class OverduePenaltyRecord(object):
         self.user_id = user_id
         self.penalty_start_date = penalty_start_date
         self.penalty_end_date = penalty_end_date
+        
+    def __str__(self):
+        return f"{self.penalty_id}/{self.user_id}/{self.penalty_start_date}/{self.penalty_end_date}"
+        
+class LogRecord(object):
+    def __init__(self, log_id: int, isbn: int, book_id: int, borrow_id: int, log_date: MyDate, log_type: str):
+        self.log_id: int = log_id
+        self.isbn: int = isbn
+        self.book_id: int = book_id
+        self.borrow_id: int = borrow_id
+        self.log_date: MyDate = log_date
+        self.log_type: str = log_type
+        
+    def __str__(self):
+        return f"{self.log_id}/{str(self.isbn).zfill(2)}/{self.book_id}/{self.borrow_id}/{self.log_date}/{self.log_type}"
 
 """ ========== 도서 관리 클래스 구현 ========== """
 class DataManager(object):
     def __init__(self, file_path: str):
         self.file_path = file_path
-        self.book_table = []
-        self.isbn_table = []
-        self.author_table = []
-        self.isbn_author_table = []
-        self.book_edit_log_table = []
-        self.borrow_table = []
-        self.user_table = []
-        self.publisher_table = []
-        self.overdue_penalty_table = []
+        self.book_table: list[BookRecord] = []
+        self.isbn_table: list[ISBNRecord] = []
+        self.author_table: list[AuthorRecord] = []
+        self.isbn_author_table: list[IsbnAuthorRecord] = []
+        self.borrow_table: list[BorrowRecord] = []
+        self.user_table: list[UserRecord] = []
+        self.publisher_table: list[PublisherRecord] = []
+        self.overdue_penalty_table: list[OverduePenaltyRecord] = []
+        self.log_table: list[LogRecord] = []
         self.today = None
         self.config = dict()
         self.static_id = 0  # default is 0
-
-        # auto increment id
-        self.static_author_id = 0
-        self.static_book_edit_log_id = 0
-        self.static_borrow_id = 0
-        self.static_user_id = 0
-        self.static_publisher_id = 0
-        self.static_overdue_penalty_id = 0
 
         # Load configuration and ensure "cancel" key exists
         self.load_configuration()
@@ -256,8 +274,6 @@ class DataManager(object):
             print("ERROR: 'cancel' 키가 설정에 없습니다. 기본값 'X'를 추가합니다.")
             self.config["cancel"] = "X"
 
-
-    
     # 오늘 날짜 설정
     def set_today(self, today: MyDate):
         self.today = today
@@ -350,29 +366,6 @@ class DataManager(object):
         if verbose:      
             print(f"{len(self.book_table)} Book Data Loaded")
             print(f"max_book_id: {self.static_id}")
-        
-        # ---------- 4. Book Edit Log Data ----------
-        # 파일이 존재하지 않으면 생성
-        if not os.path.exists(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt")):
-            with open(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), "w", encoding='utf-8') as f:
-                pass
-            
-        
-        # 무결성 검사(데이터가 올바르지 않을경우 파일명 변경(Libsystem_Data_{테이블명}-yyyyMMdd_hhmmss.bak) 후 새 Libsystem_Data_BookEditLog.txt 파일 생성)
-        # yyyyMMdd-hhmmss는 컴퓨터 운영체제 시스템 시간을 기준으로 함
-        passed, message = self.check_data_book_edit_log_files(self.file_path)
-        
-        if not passed:
-            # now = datetime.now().strftime("%Y%m%d_%H%M%S")
-            # shutil.copy(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), opj(self.file_path, "data", f"Libsystem_Data_BookEditLog-{now}.bak"))
-            return (False, message)
-
-        with open(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), "r",encoding='utf-8') as f:
-            for line in f:
-                log_id, isbn, edit_date = line.strip().split(sep)
-                self.book_edit_log_table.append(BookEditLogRecord(int(log_id), int(isbn), MyDate.from_str(edit_date)))
-                
-        if verbose: print(f"{len(self.book_edit_log_table)} Book Edit Log Data Loaded") 
         
         # ---------- 5. Author Data ----------
 
@@ -489,6 +482,28 @@ class DataManager(object):
                 self.overdue_penalty_table.append(OverduePenaltyRecord(int(penalty_id), int(user_id), MyDate.from_str(penalty_start_date), MyDate.from_str(penalty_end_date)))
 
         if verbose: print(f"{len(self.overdue_penalty_table)} Overdue Penalty Data Loaded")
+        
+        # ---------- 10. Log Data ----------
+        # 파일이 존재하지 않으면 생성
+        if not os.path.exists(opj(self.file_path, "data", "Libsystem_Data_Log.txt")):
+            with open(opj(self.file_path, "data", "Libsystem_Data_Log.txt"), "w", encoding='utf-8') as f:
+                pass
+            
+        # 무결성 검사(데이터가 올바르지 않을경우 파일명 변경(Libsystem_Data_{테이블명}-yyyyMMdd_hhmmss.bak) 후 새 Libsystem_Data_Log.txt 파일 생성)
+        # yyyyMMdd-hhmmss는 컴퓨터 운영체제 시스템 시간을 기준으로 함
+        passed, message = self.check_data_log_files(self.file_path)
+        
+        if not passed:
+            # now = datetime.now().strftime("%Y%m%d_%H%M%S")
+            # shutil.copy(opj(self.file_path, "data", "Libsystem_Data_Log.txt"), opj(self.file_path, "data", f"Libsystem_Data_Log-{now}.bak"))
+            return (False, message)
+        
+        with open(opj(self.file_path, "data", "Libsystem_Data_Log.txt"), "r",encoding='utf-8') as f:
+            for line in f:
+                log_id, isbn, book_id, borrow_id, log_date, log_type = line.strip().split(sep)
+                self.log_table.append(LogRecord(int(log_id), int(isbn), None if book_id == "" else int(book_id), None if borrow_id == "" else int(borrow_id), MyDate.from_str(log_date), log_type))
+                
+        if verbose: print(f"{len(self.log_table)} Log Data Loaded")
         if verbose: print("="*10, "End Reading Data Files", "="*10)
             
         return (True, "")
@@ -518,9 +533,14 @@ class DataManager(object):
                     f.write(f"{str(isbn_author.isbn).zfill(2)}/{isbn_author.author_id}\n")
                     
             # 5. Book Edit Log Data
-            with open(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), "w", encoding='utf-8') as f:
-                for log in self.book_edit_log_table:
-                    f.write(f"{log.log_id}/{str(log.isbn).zfill(2)}/{str(log.edit_date)}\n")
+            # with open(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), "w", encoding='utf-8') as f:
+            #     for log in self.book_edit_log_table:
+            #         f.write(f"{log.log_id}/{str(log.isbn).zfill(2)}/{str(log.edit_date)}\n")
+            
+            # 5. Log Data
+            with open(opj(self.file_path, "data", "Libsystem_Data_Log.txt"), "w", encoding='utf-8') as f:
+                for log in self.log_table:
+                    f.write(f"{log.log_id}/{str(log.isbn).zfill(2)}/{"" if log.book_id is None else log.book_id}/{"" if log.borrow_id is None else log.borrow_id}/{str(log.log_date)}/{log.log_type}\n")
                     
             # 6. Borrow Data
             with open(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), "w", encoding='utf-8') as f:
@@ -1269,6 +1289,136 @@ class DataManager(object):
             
         return (True, "")
     
+    def check_data_log_files(self, file_path: str) -> tuple[bool, str]:
+        # 오류 발생한 줄과 오류 메세지 파일의 마지막 줄에 추가
+        def add_error(line_num, error_message):
+            now = datetime.now().strftime("%Y%m%d_%H%M%S")
+            shutil.copy(opj(self.file_path, "data", "Libsystem_Data_Log.txt"), opj(self.file_path, "data", f"Libsystem_Data_Log-{now}.bak"))
+            with open(opj(file_path, "data", f"Libsystem_Data_Log-{now}.bak"), "a", encoding='utf-8') as f:
+                f.write(f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - {error_message}\n")
+
+        with open(opj(file_path, "data", "Libsystem_Data_Log.txt"), "r", encoding='utf-8') as f:
+            lines = f.readlines()
+            
+        line_num = 0
+        last_log_date = None
+        
+        # log_id / isbn / book_id / borrow_id / log_date / log_type
+        for line in lines:
+            line_num += 1
+            line = line.strip()
+            
+            # 구분자가 5개인지 확인
+            if len(line.split("/")) != 6:
+                add_error(line_num, "구분자가 5개가 아닙니다")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 구분자가 5개가 아닙니다")
+        
+            # log_id, isbn, log_date, log_type은 빈 값일 수 없음
+            log_id, isbn, book_id, borrow_id, log_date, log_type = line.split("/")
+            if log_id == "" or isbn == "" or log_date == "" or log_type == "":
+                add_error(line_num, "필수항목 중 비어있는 항목이 있습니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 필수항목 중 비어있는 항목이 있습니다.")
+            
+            # 자료형 검사
+            if not log_id.isdigit():
+                add_error(line_num, "로그 고유번호가 0 이상의 숫자가 아닙니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 로그 고유번호가 0 이상의 숫자가 아닙니다.")
+            
+            if not isbn.isdigit() or int(isbn) > 99 or len(isbn) != 2:
+                add_error(line_num, "ISBN이 00 이상, 99 이하의 숫자가 아닙니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - ISBN이 00 이상, 99 이하의 숫자가 아닙니다")
+            
+            # book_id, borrow_id는 정수
+            if book_id != "" and not book_id.isdigit():
+                add_error(line_num, "책 고유번호가 0 이상의 숫자가 아닙니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 책 고유번호가 0 이상의 숫자가 아닙니다.")
+            
+            if borrow_id != "" and not borrow_id.isdigit():
+                add_error(line_num, "대출 고유번호가 0 이상의 숫자가 아닙니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 대출 고유번호가 0 이상의 숫자가 아닙니다.")
+            
+            # 고유번호 순서대로 존재해야 함
+            if int(log_id) != line_num - 1:
+                add_error(line_num, "고유번호가 누락되었거나 순서가 올바르지 않습니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 고유번호가 누락되었거나 순서가 올바르지 않습니다.")
+            
+            # 참조하는 ISBN, Book ID, Borrow ID가 존재하는지 확인
+            isbn_found = False
+            for isbn_record in self.isbn_table:
+                if isbn_record.isbn == int(isbn):
+                    isbn_found = True
+                    break
+                
+            if not isbn_found:
+                add_error(line_num, "참조하는 ISBN이 ISBN 데이터에 없습니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 참조하는 ISBN이 ISBN 데이터에 없습니다.")
+            
+            if book_id != "":
+                book_id_found = False
+                for book_record in self.book_table:
+                    if book_record.book_id == int(book_id):
+                        book_id_found = True
+                        break
+                    
+                if not book_id_found:
+                    add_error(line_num, "참조하는 책 고유번호가 책 데이터에 없습니다.")
+                    return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 참조하는 책 고유번호가 책 데이터에 없습니다.")
+                
+            if borrow_id != "":
+                borrow_id_found = False
+                for borrow_record in self.borrow_table:
+                    if borrow_record.borrow_id == int(borrow_id):
+                        borrow_id_found = True
+                        break
+                    
+                if not borrow_id_found:
+                    add_error(line_num, "참조하는 대출 고유번호가 대출 데이터에 없습니다.")
+                    return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 참조하는 대출 고유번호가 대출 데이터에 없습니다.")
+                
+            # log type 검사
+            if log_type not in ["BOOK_REGISTER", "ISBN_EDIT", "BOOK_BORROW", "BOOK_RETURN", "BOOK_DELETE"]:
+                add_error(line_num, "로그 타입이 올바른 값이 아닙니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 로그 타입이 올바른 값이 아닙니다.")
+            
+            # log date 검사
+            if not MyDate.from_str(log_date):
+                add_error(line_num, "로그 날짜가 날짜 형식이 아닙니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 로그 날짜가 날짜 형식이 아닙니다.")
+            
+            # 고유번호는 날짜 오름차순으로 존재해야 함 (이전 날짜보다 크거나 같음)
+            log_date = MyDate.from_str(log_date)
+            if last_log_date is not None and log_date < last_log_date:
+                add_error(line_num, "로그 날짜는 오름차순으로 정렬되어야 합니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 로그 날짜는 오름차순으로 정렬되어야 합니다.")
+            
+            last_log_date = log_date
+            
+            # book id와 ISBN 관계 검사
+            if book_id != "":
+                book_record = None
+                for book in self.book_table:
+                    if book.book_id == int(book_id):
+                        book_record = book
+                        break
+                
+                if book_record is None or book_record.isbn != int(isbn):
+                    add_error(line_num, "책 고유번호에 대한 ISBN이 올바르지 않습니다.")
+                    return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 책 고유번호에 대한 ISBN이 올바르지 않습니다.")
+                
+            # borrow id와 book id 관계 검사
+            if borrow_id != "":
+                borrow_record = None
+                for borrow in self.borrow_table:
+                    if borrow.borrow_id == int(borrow_id):
+                        borrow_record = borrow
+                        break
+                
+                if borrow_record is None or borrow_record.book_id != int(book_id):
+                    add_error(line_num, "대출 고유번호에 대한 책 고유번호가 올바르지 않습니다.")
+                    return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 대출 고유번호에 대한 책 고유번호가 올바르지 않습니다.")
+                
+        return (True, "")
+    
     # =========== 책 레코드를 문자열로 반환 ========== #
     def print_book(self, book_id: int, include_borrow: bool=False):        
         # find book
@@ -1884,6 +2034,16 @@ class DataManager(object):
             
         return None
     
+    def search_borrow_by_id(self, borrow_id) -> BorrowRecord:
+        """_summary_
+        대출 ID로 대출 인스턴스 반환
+        """
+        for borrow in self.borrow_table:
+            if borrow.borrow_id == borrow_id:
+                return borrow
+            
+        return None
+    
     # 출판사 이름으로 검색
     def search_publisher_by_name(self, name) -> PublisherRecord:
         """_summary_
@@ -1987,6 +2147,9 @@ class DataManager(object):
                 self.isbn_table.append(new_isbn)
                 self.book_table.append(new_book)    
                 
+                # 책 등록 로그 추가
+                self.add_to_log(log_type="BOOK_REGISTER", isbn=new_isbn.isbn, book_id=new_book.book_id, borrow_id=None, log_date=self.today)
+                
                 self.fetch_data_file()
                 return True
             else:
@@ -2023,6 +2186,10 @@ class DataManager(object):
             if self.input_response("해당 책을 추가하시겠습니까?(Y/N): "):
                 new_book = BookRecord(len(self.book_table), isbn, self.today, None, False)
                 self.book_table.append(new_book)
+                
+                # 책 등록 로그 추가
+                self.add_to_log(log_type="BOOK_REGISTER", isbn=isbn, book_id=new_book.book_id, borrow_id=None, log_date=self.today)
+                
                 self.fetch_data_file()
                 return True
             else:
@@ -2066,6 +2233,10 @@ class DataManager(object):
                 if self.book_table[i].book_id == del_book_id:
                     self.book_table[i].deleted = True
                     self.book_table[i].delete_date = self.today
+                    
+                    # 책 삭제 로그 추가
+                    self.add_to_log(log_type="BOOK_DELETE", isbn=self.book_table[i].isbn, book_id=self.book_table[i].book_id, borrow_id=None, log_date=self.today)
+                    
                     break
             
             print("삭제가 완료되었습니다. 메인프롬프트로 돌아갑니다.")
@@ -2225,9 +2396,9 @@ class DataManager(object):
         # 출판사가 새로 추가된 경우에 테이블에 추가
         if new_publisher_data is not None:
             self.publisher_table.append(new_publisher_data)
-
-        new_log_id=len(self.book_edit_log_table)+1
-        self.book_edit_log_table.append(BookEditLogRecord(new_log_id,isbn, self.today))
+            
+        # 책 수정 로그 추가
+        self.add_to_log(log_type="ISBN_EDIT", isbn=isbn, book_id=None, borrow_id=None, log_date=self.today)
 
         # 저자 수정
         # 기존 저자-ISBN 관계 삭제
@@ -2482,6 +2653,9 @@ class DataManager(object):
             borrow = BorrowRecord(len(self.borrow_table), book_id, borrower_id, borrow_date, due_date, None, False)
             self.borrow_table.append(borrow)
             
+            # 책 대출 로그 추가
+            self.add_to_log(log_type="BOOK_BORROW", isbn=book.isbn, book_id=book_id, borrow_id=borrow.borrow_id, log_date=self.today)
+            
             print(f"대출이 완료되었습니다. 반납 예정일은 {due_date} 입니다.")
             self.fetch_data_file()
             return True
@@ -2586,6 +2760,10 @@ class DataManager(object):
                     )
                 )
                 print(f"[새로운 페널티 부여] 페널티 시작: {penalty_start_date}, 종료: {penalty_end_date}")
+                
+        # 책 반납 로그 추가
+        self.add_to_log(log_type="BOOK_RETURN", isbn=rtn_isbn.isbn, book_id=borrow_info.book_id, borrow_id=borrow_info.borrow_id, log_date=self.today)
+                
         print("반납이 완료되었습니다. 메인 프롬프트로 돌아갑니다.")
         self.fetch_data_file()
         return True
@@ -2647,6 +2825,17 @@ class DataManager(object):
         
     
     # ========== 8. 연혁(로그) 조회 ========== #
+    def add_to_log(self, log_type: str, isbn: int, book_id: int, borrow_id: int, log_date: MyDate) -> bool:
+        assert log_type in ["BOOK_REGISTER", "ISBN_EDIT", "BOOK_BORROW", "BOOK_RETURN", "BOOK_DELETE"]
+        assert isbn is not None, "ISBN은 None일 수 없습니다."
+        assert log_date is not None, "로그 날짜는 None일 수 없습니다."
+
+        new_log = LogRecord(len(self.log_table), isbn, book_id, borrow_id, log_date, log_type)
+        self.log_table.append(new_log)
+        self.fetch_data_file()
+        
+        return True
+    
     def history(self):
         history_book_id = self.input_book_id("연혁(로그) 조회를 할 책의 고유번호를 입력해주세요: ", 1)
 
@@ -2678,52 +2867,52 @@ class DataManager(object):
         history_publisher = self.search_publisher_by_id(history_isbn.publisher_id)
         print(f"{history_book_id} / {book_history.isbn} / {history_isbn.title} / {author_name} / {history_publisher.name} / {history_isbn.published_year} / {book_history.register_date}")
 
-        log_list=[]
-        log_list.append((history_isbn.isbn_register_date,1))
-        log_list.append((book_history.register_date,2))
-        if book_history.delete_date:
-            log_list.append((book_history.delete_date,5))
+        # ISBN 등록 먼저 출력
+        isbn_record = self.search_isbn_data(book_history.isbn)
+        print(f"{isbn_record.isbn_register_date} ISBN 등록")
 
-        borrow_loglist=self.search_borrow_dates_by_book_id(history_book_id)
-        for borrow_ll in borrow_loglist:
-            log_list.append((borrow_ll[0],3,borrow_ll[1],borrow_ll[2])) # 대출날짜, 대출, user_id, 반납날짜
-
-        return_loglist=self.search_return_dates_by_book_id(history_book_id)
-        for return_ll in return_loglist:
-            log_list.append((return_ll[0],4,return_ll[1]))  # 실제반납날짜, 반납, 연체날짜
-
-        edit_loglist=self.search_edit_dates_by_isbn(history_isbn.isbn)
-        for edit_ll in edit_loglist:
-            log_list.append((edit_ll,6))
-
-        log_list.sort(key=lambda x: x[0]) 
-
-        for ll in log_list:
-            print(ll[0], end=" ")
-            if ll[1]==1 :
-                print("ISBN 등록")
-
-            elif ll[1]==2 :
-                print("입고")
-
-            elif ll[1]==3 :
-                for user in self.user_table:
-                    if user.user_id == ll[2]:
-                        user_data = user
-                        break
-                print("대출:",user_data.phone_number,user_data.name,"/",ll[3])
-
-            elif ll[1]==4 :
-                print("반납",end=" ")
-                if ll[2]>0:
-                    print(f"({ll[2]}일 연체)",end="")
-                print()
-
-            elif ll[1]==5 :
-                print("삭제")
-            
-            elif ll[1]==6 :
-                print("ISBN 수정")
+        for log in self.log_table:
+            if history_isbn.isbn == log.isbn:
+                # 1) ISBN_EDIT
+                if log.log_type == "ISBN_EDIT":
+                    print(f"{log.log_date} ISBN 수정")
+                    continue
+                
+                # 2) BOOK_REGISTER
+                if log.log_type == "BOOK_REGISTER" and log.book_id == history_book_id:
+                    print(f"{log.log_date} 입고")
+                    continue
+                
+                # 3) BOOK_BORROW
+                if log.log_type == "BOOK_BORROW" and log.book_id == history_book_id:
+                    # 대출 데이터 검색
+                    borrow_data = self.search_borrow_by_id(log.borrow_id)
+                    # 대출자 정보 검색
+                    borrower_data = self.search_user_by_id(borrow_data.user_id)
+                    
+                    print(f"{log.log_date} 대출: {borrower_data.phone_number} {borrower_data.name} / {borrow_data.return_date}")
+                    continue
+                
+                # 4) BOOK_RETURN
+                if log.log_type == "BOOK_RETURN" and log.book_id == history_book_id:
+                    # 대출 데이터 검색
+                    borrow_data = self.search_borrow_by_id(log.borrow_id)
+                    # 대출자 정보 검색
+                    borrower_data = self.search_user_by_id(borrow_data.user_id)
+                    
+                    # 연체인 경우
+                    assert borrow_data.actual_return_date is not None, "반납일이 None일 수 없습니다."
+                    if borrow_data.actual_return_date > borrow_data.return_date:
+                        print(f"{log.log_date} 반납 ({borrow_data.actual_return_date - borrow_data.return_date}일 연체)")
+                    else:
+                        print(f"{log.log_date} 반납")
+                
+                # 5) BOOK_DELETE
+                if log.log_type == "BOOK_DELETE" and log.book_id == history_book_id:
+                    assert log.log_date == book_history.delete_date, "삭제일과 로그 날짜가 일치하지 않습니다"
+                    print(f"{log.log_date} 삭제")
+                    continue
+        
         print("메인 프롬프트로 돌아갑니다.")
     
     # ========= 기타 Utility 함수 ========= #
