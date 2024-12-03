@@ -1476,8 +1476,9 @@ class DataManager(object):
     # =========== 전체 책 출력 ========== #
     def print_book_all(self):
         print(DataManager.get_header())
-        for book in self.book_table:
-            print(self.print_book(book.book_id, include_borrow=True))
+        for book in self.book_table: # 삭제가 안되었거나 삭제되었지만 삭제 날짜가 오늘 이후인 경우 출력
+            if not book.deleted or (book.deleted and book.delete_date > self.today):
+                print(self.print_book(book.book_id, include_borrow=True))
 
     def load_configuration(self) -> None:
         config_dict = dict()
@@ -1802,7 +1803,7 @@ class DataManager(object):
         책 고유번호로 책 인스턴스 반환
         """
         for book in self.book_table:
-            if book.book_id == book_id:
+            if book.book_id == book_id and (not book.deleted or (book.deleted and book.delete_date > self.today)):
                 return book
     
     # isbn 정보 검색 (제목, 저자, 출판사 등)
@@ -2475,20 +2476,20 @@ class DataManager(object):
             # 만약 #로 search_book이 시작하면 해당 작가 식별 번호 가진 책 검색
             if search_book.startswith("#"):
                 # 제목에 포함되는지 확인 (첫 글자 # 포함)
-                if search_book in isbn_data.title:
+                if search_book in isbn_data.title and (not book.deleted or (book.deleted and book.delete_date > self.today)):
                     search_results.append(book)
                 else:
                     # # 문자 제외한 나머지 부분을 저자 식별번호와 완전 일치 비교
                     author_id_str = search_book[1:].strip()
-                    if author_id_str == str(author_data.author_id):
+                    if author_id_str == str(author_data.author_id) and (not book.deleted or (book.deleted and book.delete_date > self.today)):
                         search_results.append(book)
 
             else:
                 # 제목에 포함되는지 확인
-                if search_book in isbn_data.title:
+                if search_book in isbn_data.title and (not book.deleted or (book.deleted and book.delete_date > self.today)):
                     search_results.append(book)
                 # 저자 이름에 포함되는지 확인 (중간에 #이 있어도 이름으로 비교)
-                elif search_book in author_data.name:
+                elif search_book in author_data.name and (not book.deleted or (book.deleted and book.delete_date > self.today)):
                     search_results.append(book)
             
         if not search_results:
