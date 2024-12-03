@@ -2441,7 +2441,7 @@ class DataManager(object):
         borrowed_count = len(borrowed_books)
         if borrowed_count >= self.config["max_borrow_count"]:
             print(f"대출 중인 책이 {borrowed_count}권 있으며 더 이상 대출이 불가능합니다.")
-            print(BookRecord.get_header(contain_borrow_info=True))
+            print(self.get_header(contain_borrow_info=True))
             print()
             for book_id in borrowed_books:
                 print(self.print_book(book_id, include_borrow=True))  
