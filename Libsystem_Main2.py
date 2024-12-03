@@ -629,6 +629,11 @@ class DataManager(object):
                 add_error(line_num, "고유번호가 중복됩니다.")
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 고유번호가 중복됩니다.")
             
+            # 고유번호는 0부터 1씩 증가해야 함
+            if int(book_id) != line_num - 2:
+                add_error(line_num, "책 고유번호는 0부터 1씩 증가해야 합니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 책 고유번호는 0부터 1씩 증가해야 합니다.")
+            
             # ISBN 검사(길이가 2이며, 정수로 변환 가능한지)
             if len(isbn) != 2 or not isbn.isdigit():
                 add_error(line_num, "ISBN이 2자리 숫자가 아닙니다.")
@@ -799,13 +804,16 @@ class DataManager(object):
                 add_error(line_num, "저자 ID가 1 이상의 숫자가 아닙니다.")
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 저자 ID가 1 이상의 숫자가 아닙니다.")
             
-            
-            
             # 저자 ID 중복 검사
             author_ids = [line.strip().split("/")[0] for line in lines]
             if author_ids.count(author_id) > 1:
                 add_error(line_num, "저자 ID가 중복됩니다.")
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 저자 ID가 중복됩니다.")
+            
+            # 고유번호는 0부터 1씩 증가해야 함
+            if int(author_id) != line_num:
+                add_error(line_num, "저자 식별번호는 1부터 1씩 증가해야 합니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 저자 식별번호는 1부터 1씩 증가해야 합니다.")
             
             # 저자 이름에 '/'나 '\'가 포함되어 있는지 확인
             if "/" in name or "\\" in name:
@@ -1046,6 +1054,11 @@ class DataManager(object):
                 add_error(line_num, "대출 ID가 중복됩니다.")
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 대출 ID가 중복됩니다.")
              
+            # 고유번호는 0부터 1씩 증가해야 함
+            if int(borrow_id) != line_num - 1:
+                add_error(line_num, "대출 고유번호는 0부터 1씩 증가해야 합니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 대출 고유번호는 0부터 1씩 증가해야 합니다.")
+             
             # 책 ID가 숫자인지 확인
             if not book_id.isdigit():
                 add_error(line_num, "책 ID가 0 이상의 숫자가 아닙니다.")
@@ -1144,6 +1157,11 @@ class DataManager(object):
                 add_error(line_num, "사용자 ID가 중복됩니다.")
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 사용자 ID가 중복됩니다.")
             
+            # 고유번호는 0부터 1씩 증가해야 함
+            if int(user_id) != line_num - 1:
+                add_error(line_num, "사용자 고유번호는 0부터 1씩 증가해야 합니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 사용자 고유번호는 0부터 1씩 증가해야 합니다.")
+            
             # 전화번호 검사(010-1234-5678 형식)
             if not re.match(r"01[0-9]-[0-9]{4}-[0-9]{4}", phone_number):
                 add_error(line_num, "전화번호 형식이 잘못되었습니다.")
@@ -1213,6 +1231,11 @@ class DataManager(object):
                 add_error(line_num, "출판사 ID가 중복됩니다.")
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 출판사 ID가 중복됩니다.")
             
+            # 고유번호는 0부터 1씩 증가해야 함
+            if int(publisher_id) != line_num - 1:
+                add_error(line_num, "출판사 고유번호는 0부터 1씩 증가해야 합니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 출판사 고유번호는 0부터 1씩 증가해야 합니다.")
+            
             # 이름에 '/'나 '\'가 포함되어 있는지 확인
             if "/" in name or "\\" in name:
                 add_error(line_num, "출판사 이름에 '/'나 '\\'가 포함되어 있습니다.")
@@ -1264,6 +1287,11 @@ class DataManager(object):
             if panalty_ids.count(panalty_id) > 1:
                 add_error(line_num, "패널티 ID가 중복됩니다.")
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 패널티 ID가 중복됩니다.")
+            
+            # 고유번호는 0부터 1씩 증가해야 함
+            if int(panalty_id) != line_num - 1:
+                add_error(line_num, "연체 패널티 고유번호는 0부터 1씩 증가해야 합니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 연체 패널티 고유번호는 0부터 1씩 증가해야 합니다.")
             
             # 사용자 ID가 숫자인지 확인
             if not user_id.isdigit():
@@ -1346,10 +1374,10 @@ class DataManager(object):
                 add_error(line_num, "대출 고유번호가 0 이상의 숫자가 아닙니다.")
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 대출 고유번호가 0 이상의 숫자가 아닙니다.")
             
-            # 고유번호 순서대로 존재해야 함
+            # 고유번호는 0부터 1씩 증가해야 함
             if int(log_id) != line_num - 1:
-                add_error(line_num, "고유번호가 누락되었거나 순서가 올바르지 않습니다.")
-                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 고유번호가 누락되었거나 순서가 올바르지 않습니다.")
+                add_error(line_num, "로그 고유번호는 0부터 1씩 증가해야 합니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 로그 고유번호는 0부터 1씩 증가해야 합니다.")
             
             # 참조하는 ISBN, Book ID, Borrow ID가 존재하는지 확인
             isbn_found = False
