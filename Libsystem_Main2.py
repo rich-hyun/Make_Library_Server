@@ -538,9 +538,9 @@ class DataManager(object):
             #         f.write(f"{log.log_id}/{str(log.isbn).zfill(2)}/{str(log.edit_date)}\n")
             
             # 5. Log Data
-            with open(opj(self.file_path, "data", "Libsystem_Data_Log.txt"), "w", encoding='utf-8') as f:
-                for log in self.log_table:
-                    f.write(f"{log.log_id}/{str(log.isbn).zfill(2)}/{"" if log.book_id is None else log.book_id}/{"" if log.borrow_id is None else log.borrow_id}/{str(log.log_date)}/{log.log_type}\n")
+            # with open(opj(self.file_path, "data", "Libsystem_Data_Log.txt"), "w", encoding='utf-8') as f:
+            #     for log in self.log_table:
+            #         f.write(f"{log.log_id}/{str(log.isbn).zfill(2)}/{"" if log.book_id is None else log.book_id}/{"" if log.borrow_id is None else log.borrow_id}/{str(log.log_date)}/{log.log_type}\n")
                     
             # 6. Borrow Data
             with open(opj(self.file_path, "data", "Libsystem_Data_Borrow.txt"), "w", encoding='utf-8') as f:
@@ -843,28 +843,6 @@ class DataManager(object):
             if len(line.strip().split("/")) != 2:
                 add_error(line_num, "구분자가 1개가 아닙니다")
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 구분자가 1개가 아닙니다")
-
-            # ISBN 참조 무결성 검사
-            isbn_found = False
-            for isbn_record in self.isbn_table:
-                if isbn_record.isbn == int(line.strip().split("/")[0]):
-                    isbn_found = True
-                    break
-                
-            if not isbn_found:
-                add_error(line_num, "참조하는 ISBN이 ISBN 데이터에 없습니다.")
-                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 참조하는 ISBN이 ISBN 데이터에 없습니다.")
-            
-            # 저자 ID 참조 무결성 검사
-            author_id_found = False
-            for author_record in self.author_table:
-                if author_record.author_id == int(line.strip().split("/")[1]):
-                    author_id_found = True
-                    break
-            
-            if not author_id_found:
-                add_error(line_num, "참조하는 저자 식별번호가 저자 데이터에 없습니다.")
-                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 참조하는 저자 식별번호가 저자 데이터에 없습니다.")
             
         line_num = 0
 
@@ -892,6 +870,36 @@ class DataManager(object):
                 add_error(line_num, "저자 ID가 1 이상의 숫자가 아닙니다.")
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 저자 ID가 1 이상의 숫자가 아닙니다.")
             
+            # ISBN-저자 ID 중복 검사
+            isbn_author_ids = [line.strip().split("/") for line in lines]
+            if isbn_author_ids.count([isbn, author_id]) > 1:
+                add_error(line_num, "중복된 ISBN-저자 관계가 발견되었습니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 중복된 ISBN-저자 관계가 발견되었습니다.")
+            
+            
+            # ISBN 참조 무결성 검사
+            isbn_found = False
+            for isbn_record in self.isbn_table:
+                if isbn_record.isbn == int(line.strip().split("/")[0]):
+                    isbn_found = True
+                    break
+                
+            if not isbn_found:
+                add_error(line_num, "참조하는 ISBN이 ISBN 데이터에 없습니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 참조하는 ISBN이 ISBN 데이터에 없습니다.")
+            
+            # 저자 ID 참조 무결성 검사
+            author_id_found = False
+            for author_record in self.author_table:
+                if author_record.author_id == int(line.strip().split("/")[1]):
+                    author_id_found = True
+                    break
+            
+            if not author_id_found:
+                add_error(line_num, "참조하는 저자 식별번호가 저자 데이터에 없습니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 참조하는 저자 식별번호가 저자 데이터에 없습니다.")
+        
+        
         return (True, "")
 
     def check_data_book_edit_log_files(self,file_path: str) -> tuple[bool, str]:
@@ -1136,10 +1144,11 @@ class DataManager(object):
                 add_error(line_num, "사용자 ID가 중복됩니다.")
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 사용자 ID가 중복됩니다.")
             
-            # 전화번호 검사
-            if not self.check_phone_number_validate(phone_number):
-                add_error(line_num, "전화번호가 숫자가 아닙니다.")
-                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 전화번호가 숫자가 아닙니다.")
+            # 전화번호 검사(010-1234-5678 형식)
+            if not re.match(r"01[0-9]-[0-9]{4}-[0-9]{4}", phone_number):
+                add_error(line_num, "전화번호 형식이 잘못되었습니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 전화번호 형식이 잘못되었습니다.")
+            
             
             # 이름에 '/'나 '\'가 포함되어 있는지 확인
             if "/" in name or "\\" in name:
