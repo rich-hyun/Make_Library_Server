@@ -1580,7 +1580,7 @@ class DataManager(object):
 
 
     # ========== 검사 함수 ========== #
-    def check_book_id_validate(self, book_id, flag): # flag == 0 -> 있으면 False 없으면 True, flag == 1 -> 없으면 False 있으면 True
+    def check_book_id_validate(self, book_id, flag, include_deleted=False): # flag == 0 -> 있으면 False 없으면 True, flag == 1 -> 없으면 False 있으면 True
         if book_id == self.config["cancel"]:
             return True, ""
 
@@ -1605,10 +1605,10 @@ class DataManager(object):
         if book_id_int < 0 or book_id_int > self.config['max_static_id']:
             return False, f"고유번호는 0에서 {self.config['max_static_id']} 사이여야 합니다."
         
-        if flag == 0 and self.search_book_by_id(book_id_int):
+        if flag == 0 and self.search_book_by_id(book_id_int, include_deleted=include_deleted):
             return False, "중복된 고유번호가 존재합니다."
         
-        if flag == 1 and self.search_book_by_id(book_id_int) is None:
+        if flag == 1 and self.search_book_by_id(book_id_int, include_deleted=include_deleted) is None:
             return False, "해당 고유번호를 가진 책이 존재하지 않습니다."
         
         return True, ""
@@ -1819,13 +1819,21 @@ class DataManager(object):
 
     # ========== 검색 함수 ========== #
     # 고유번호로 검색
-    def search_book_by_id(self, book_id) -> BookRecord:
+    def search_book_by_id(self, book_id, include_deleted: bool=False) -> BookRecord:
         """_summary_ 
         책 고유번호로 책 인스턴스 반환
         """
-        for book in self.book_table:
-            if book.book_id == book_id and (not book.deleted or (book.deleted and book.delete_date > self.today)):
-                return book
+        if include_deleted:
+            for book in self.book_table:
+                if book.book_id == book_id:
+                    return book
+                
+        else:
+            for book in self.book_table:
+                if book.book_id == book_id and (not book.deleted or (book.deleted and book.delete_date > self.today)):
+                    return book
+
+        return None
     
     # isbn 정보 검색 (제목, 저자, 출판사 등)
     def search_isbn_data(self, isbn) -> ISBNRecord:
@@ -2797,7 +2805,7 @@ class DataManager(object):
         return True
     
     def history(self):
-        history_book_id = self.input_book_id("연혁(로그) 조회를 할 책의 고유번호를 입력해주세요: ", 1)
+        history_book_id = self.input_book_id("연혁(로그) 조회를 할 책의 고유번호를 입력해주세요: ", 1, include_deleted=True)
 
         if (history_book_id==None):
             return False  # 입력 실패 시 반환
@@ -2809,7 +2817,7 @@ class DataManager(object):
         history_book_id = int(history_book_id)
         
         # 고유번호에 해당하는 책 존재 여부 확인
-        book_history = self.search_book_by_id(history_book_id)
+        book_history = self.search_book_by_id(history_book_id, include_deleted=True)
         
         if not book_history:
             print("ERROR: 해당 고유번호의 책이 존재하지 않습니다.")
@@ -3033,7 +3041,7 @@ class DataManager(object):
             print(f"ERROR: {error_message}")
             return None
 
-    def input_book_id(self, input_message: str, flag: int) -> int: # flag == 0 -> 중복되면 False, flag == 1 -> 중복되어도 True
+    def input_book_id(self, input_message: str, flag: int, include_deleted=False) -> int: # flag == 0 -> 중복되면 False, flag == 1 -> 중복되어도 True
         book_id = input(input_message)
         
         if book_id.strip() == self.config["cancel"]:
@@ -3049,7 +3057,7 @@ class DataManager(object):
             print("ERROR: 책의 고유번호는 공백일 수 없습니다.")
             return None
 
-        is_valid, error_message = self.check_book_id_validate(book_id, flag)
+        is_valid, error_message = self.check_book_id_validate(book_id, flag, include_deleted=include_deleted)
         if is_valid:
             return int(book_id)
         else:
