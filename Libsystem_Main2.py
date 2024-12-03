@@ -3092,7 +3092,7 @@ def main() -> None:
     bookData.load_configuration()
     
     # 데이터 파일 읽기
-    done, message = bookData.read_data_files(verbose=False)
+    done, message = bookData.read_data_files(verbose=True)
     
     if not done:
         print("ERROR:", message)
