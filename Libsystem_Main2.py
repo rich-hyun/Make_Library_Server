@@ -2065,7 +2065,7 @@ class DataManager(object):
             for i in range(len(self.book_table)):
                 if self.book_table[i].book_id == del_book_id:
                     self.book_table[i].deleted = True
-                    self.book_table[i].deleted_date = self.today
+                    self.book_table[i].delete_date = self.today
                     break
             
             print("삭제가 완료되었습니다. 메인프롬프트로 돌아갑니다.")
