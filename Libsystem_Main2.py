@@ -2648,13 +2648,13 @@ class DataManager(object):
     
     # ========== 8. 연혁(로그) 조회 ========== #
     def history(self):
-        history_book_id = self.input_book_id("연혁(조회)를 할 책의 고유번호를 입력해주세요: ", 1)
+        history_book_id = self.input_book_id("연혁(로그) 조회를 할 책의 고유번호를 입력해주세요: ", 1)
 
         if (history_book_id==None):
             return False  # 입력 실패 시 반환
 
         if history_book_id == self.config["cancel"]:
-            print("연혁(조회)를 취소했습니다. 메인 프롬프트로 돌아갑니다.")
+            print("연혁(로그) 조회를 취소했습니다. 메인 프롬프트로 돌아갑니다.")
             return False
         
         history_book_id = int(history_book_id)
