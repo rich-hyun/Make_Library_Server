@@ -1675,9 +1675,9 @@ class DataManager(object):
     #             return True
     #     return False
 
-    def check_overdue_delete(self, book_id):
+    def check_borrow_delete(self, book_id):
         for borrow in self.borrow_table:
-            if borrow.book_id == book_id and borrow.return_date < self.today:
+            if borrow.book_id == book_id and borrow.return_date is not None:
                 return True
         return False        
 
