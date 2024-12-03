@@ -810,7 +810,7 @@ class DataManager(object):
                 add_error(line_num, "저자 ID가 중복됩니다.")
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 저자 ID가 중복됩니다.")
             
-            # 고유번호는 0부터 1씩 증가해야 함
+            # 저자 식별번호는 1부터 1씩 증가해야 함
             if int(author_id) != line_num:
                 add_error(line_num, "저자 식별번호는 1부터 1씩 증가해야 합니다.")
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 저자 식별번호는 1부터 1씩 증가해야 합니다.")
