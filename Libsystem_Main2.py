@@ -1440,7 +1440,13 @@ class DataManager(object):
         return_str = f"{book_id}/"
         return_str += str(isbn_data.isbn).zfill(2) + "/"
         return_str += f"{isbn_data.title}/"
-        return_str += f"{' & '.join(list(map(lambda x: f'{x.name} #{x.author_id}', author_data)))}/"
+        
+        # 저자 없는 경우 
+        if len(author_data) == 0:
+            return_str += "-"
+        else:
+            return_str += f"{' & '.join(list(map(lambda x: f'{x.name} #{x.author_id}', author_data)))}/"
+        
         return_str += f"{publisher_data.name}/"
         return_str += f"{isbn_data.published_year}/"
         return_str += str(book_data.register_date)
@@ -1799,6 +1805,10 @@ class DataManager(object):
     # 저자 식별번호로 이름 #식별번호 형태로 반환
     def convert_author_ids_to_name_id(self, author_ids: list[int]) -> str:
         names = []
+        
+        # 저자 없는 경우 "-" 반환
+        if len(author_ids) == 0:
+            return "-"
         
         for author_id in author_ids:
             author = self.search_author_by_id(author_id)
@@ -2660,10 +2670,7 @@ class DataManager(object):
         rtn_isbn = self.search_isbn_data(book_to_return.isbn)
         author_ids = self.search_author_ids_by_isbn(rtn_isbn.isbn)
         
-        if len(author_ids) == 0:
-            author_name = ""
-        else:
-            author_name = self.convert_author_ids_to_name_id(author_ids)
+        author_name = self.convert_author_ids_to_name_id(author_ids)
         
         rtn_publisher = self.search_publisher_by_id(rtn_isbn.publisher_id)
         print(f"{rtn_book_id} / {book_to_return.isbn} / {rtn_isbn.title} / {author_name} / {rtn_publisher.name} / {rtn_isbn.published_year} / {book_to_return.register_date}")
@@ -2811,10 +2818,7 @@ class DataManager(object):
         history_isbn = self.search_isbn_data(book_history.isbn)
         author_ids = self.search_author_ids_by_isbn(history_isbn.isbn)
         
-        if len(author_ids) == 0:
-            author_name = ""
-        else:
-            author_name = self.convert_author_ids_to_name_id(author_ids)
+        author_name = self.convert_author_ids_to_name_id(author_ids)
         
         history_publisher = self.search_publisher_by_id(history_isbn.publisher_id)
         print(f"{history_book_id} / {book_history.isbn} / {history_isbn.title} / {author_name} / {history_publisher.name} / {history_isbn.published_year} / {book_history.register_date}")
