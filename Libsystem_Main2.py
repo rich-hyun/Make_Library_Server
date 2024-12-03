@@ -755,8 +755,8 @@ class DataManager(object):
             if line_num ==1 and line == "":
                 return (True, "")
             if len(line.strip().split("/")) != 3:
-                add_error(line_num, "구분자가 2개가 아닙니다")
-                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 구분자가 2개가 아닙니다")
+                add_error(line_num, "구분자가 2개가 아닙니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 구분자가 2개가 아닙니다.")
             
         line_num = 0
 
@@ -790,6 +790,7 @@ class DataManager(object):
             # 저자 이름에 '/'나 '\'가 포함되어 있는지 확인
             if "/" in name or "\\" in name:
                 add_error(line_num, "저자 이름에 '/'나 '\\'가 포함되어 있습니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 저자 이름에 '/'나 '\\'가 포함되어 있습니다.")
             
             # 삭제 여부 검사
             if deleted not in ["0", "1"]:
