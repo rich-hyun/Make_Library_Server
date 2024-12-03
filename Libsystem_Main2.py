@@ -191,16 +191,6 @@ class IsbnAuthorRecord(object):
     def __str__(self):
         return f"{str(self.isbn).zfill(2)}/{self.author_id}"
         
-# # Book Edit Log
-# class BookEditLogRecord(object):
-#     def __init__(self, log_id: int, isbn: int, edit_date: MyDate):
-#         self.log_id = log_id
-#         self.isbn = isbn
-#         self.edit_date = edit_date
-        
-#     def __str__(self):
-#         return f"{self.log_id}/{str(self.isbn).zfill(2)}/{self.edit_date}"
-        
 # Borrow
 class BorrowRecord(object):
     def __init__(self, borrow_id: int, book_id: int, user_id: int, borrow_date: MyDate, return_date: MyDate, actual_return_date: MyDate=None, deleted: bool=False):
@@ -267,7 +257,6 @@ class DataManager(object):
         self.isbn_table: list[ISBNRecord] = []
         self.author_table: list[AuthorRecord] = []
         self.isbn_author_table: list[IsbnAuthorRecord] = []
-        # self.book_edit_log_table: list[BookEditLogRecord] = []
         self.borrow_table: list[BorrowRecord] = []
         self.user_table: list[UserRecord] = []
         self.publisher_table: list[PublisherRecord] = []
@@ -377,29 +366,6 @@ class DataManager(object):
         if verbose:      
             print(f"{len(self.book_table)} Book Data Loaded")
             print(f"max_book_id: {self.static_id}")
-        
-        # ---------- 4. Book Edit Log Data ----------
-        # 파일이 존재하지 않으면 생성
-        # if not os.path.exists(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt")):
-        #     with open(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), "w", encoding='utf-8') as f:
-        #         pass
-            
-        
-        # # 무결성 검사(데이터가 올바르지 않을경우 파일명 변경(Libsystem_Data_{테이블명}-yyyyMMdd_hhmmss.bak) 후 새 Libsystem_Data_BookEditLog.txt 파일 생성)
-        # # yyyyMMdd-hhmmss는 컴퓨터 운영체제 시스템 시간을 기준으로 함
-        # passed, message = self.check_data_book_edit_log_files(self.file_path)
-        
-        # if not passed:
-        #     # now = datetime.now().strftime("%Y%m%d_%H%M%S")
-        #     # shutil.copy(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), opj(self.file_path, "data", f"Libsystem_Data_BookEditLog-{now}.bak"))
-        #     return (False, message)
-
-        # with open(opj(self.file_path, "data", "Libsystem_Data_BookEditLog.txt"), "r",encoding='utf-8') as f:
-        #     for line in f:
-        #         log_id, isbn, edit_date = line.strip().split(sep)
-        #         self.book_edit_log_table.append(BookEditLogRecord(int(log_id), int(isbn), MyDate.from_str(edit_date)))
-                
-        # if verbose: print(f"{len(self.book_edit_log_table)} Book Edit Log Data Loaded") 
         
         # ---------- 5. Author Data ----------
 
