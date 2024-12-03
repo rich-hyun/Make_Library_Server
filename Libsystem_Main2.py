@@ -629,6 +629,10 @@ class DataManager(object):
                 add_error(line_num, "삭제 날짜가 날짜 형식이 아닙니다.")
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 삭제 날짜가 날짜 형식이 아닙니다.")
             
+            if deleted == "1" and MyDate.from_str(delete_date) < MyDate.from_str(register_date):
+                add_error(line_num, "삭제 날짜가 등록 날짜보다 이전입니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - 삭제 날짜가 등록 날짜보다 이전입니다.")
+            
             # ISBN 참조 무결성 검사
             isbn_found = False
             for isbn_record in self.isbn_table:
