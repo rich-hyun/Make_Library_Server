@@ -747,6 +747,11 @@ class DataManager(object):
                 add_error(line_num, "ISBN 등록 날짜가 날짜 형식이 아닙니다.")
                 return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - ISBN 등록 날짜가 날짜 형식이 아닙니다.")
             
+            # 등록날짜의 년도가 출판년도보다 크거나 같아야 함
+            if MyDate.from_str(isbn_register_date).year < int(published_year):
+                add_error(line_num, "ISBN 등록 날짜의 년도가 출판년도보다 작습니다.")
+                return (False, f"데이터 파일 무결성 검사에 실패했습니다. 오류 발생 위치 : {line_num}번째 줄 - ISBN 등록 날짜의 년도가 출판년도보다 작습니다.")
+            
             # 참조 검사: Publisher ID가 출판사 테이블에 있는지 확인
             publisher_found = False
             for publisher in self.publisher_table:
