@@ -1813,7 +1813,11 @@ class DataManager(object):
         for author_id in author_ids:
             author = self.search_author_by_id(author_id)
             if author:
-                names.append(f"{author.name} #{author.author_id}")
+                # 동명 이인 있는 경우 식별번호를 붙여줌
+                if len(self.search_author_by_name(author.name)) > 1:
+                    names.append(f"{author.name} #{author.author_id}")
+                else:
+                    names.append(author.name)
                 
         return " & ".join(names)
 
