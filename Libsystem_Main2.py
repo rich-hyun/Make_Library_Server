@@ -343,7 +343,12 @@ class DataManager(object):
         if os.stat(self.file_path).st_size == 0:
             with open(opj(self.file_path, "data", "Libsystem_Data_Book.txt"), "w", encoding='utf-8') as f:
                 f.write("0\n")
-            
+                
+        with open(opj(self.file_path, "data", "Libsystem_Data_Book.txt"), "r",encoding='utf-8') as rf:
+            lines = rf.read()
+            if len(lines) == 0:
+                with open(opj(self.file_path, "data", "Libsystem_Data_Book.txt"), "w", encoding='utf-8') as wf:
+                    wf.write("0\n")
         
         # 무결성 검사(데이터가 올바르지 않을경우 파일명 변경(Libsystem_Data_{테이블명}-yyyyMMdd_hhmmss.bak) 후 새 Libsystem_Data_Book.txt 파일 생성)
         # yyyyMMdd-hhmmss는 컴퓨터 운영체제 시스템 시간을 기준으로 함
