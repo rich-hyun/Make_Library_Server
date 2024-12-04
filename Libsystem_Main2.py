@@ -2439,7 +2439,10 @@ class DataManager(object):
                     else:
                         print(f"이미 등록되어 있는 저자가 {len(matching_authors)}명이 있습니다.")
                         for idx, match in enumerate(matching_authors):
-                            print(f"{idx + 1}. {match.name} #{match.author_id}")
+                             if len(matching_authors) > 1:
+                                print(f"{idx + 1}. {match.name} #{match.author_id}")
+                            else:
+                                print(f"{idx + 1}. {match.name}")  # 동명이인이 없으면 번호 출력하지 않음
                         print("0. (새 동명이인 추가)")
 
                         try:
