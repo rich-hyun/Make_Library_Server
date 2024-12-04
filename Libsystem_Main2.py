@@ -1661,28 +1661,28 @@ class DataManager(object):
         return True, ""
 
     @classmethod
-    def check_date_validate(self, date_str):
-        date_pattern = r'^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$'
+    # def check_date_validate(self, date_str):
+    #     date_pattern = r'^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$'
         
-        try:
-            assert type(date_str) == str, "문자열이 아님"
+    #     try:
+    #         assert type(date_str) == str, "문자열이 아님"
             
-            if not re.match(date_pattern, date_str):
-                raise ValueError
+    #         if not re.match(date_pattern, date_str):
+    #             raise ValueError
             
-            year, month, day = map(int, date_str.split("-"))
+    #         year, month, day = map(int, date_str.split("-"))
             
-            # 연도가 1583 이상 9999 이하인지 확인
-            if not (1583 <= year <= 9999):
-                return False, "날짜는 1583년부터 9999년 사이여야 합니다."
+    #         # 연도가 1583 이상 9999 이하인지 확인
+    #         if not (1583 <= year <= 9999):
+    #             return False, "날짜는 1583년부터 9999년 사이여야 합니다."
             
-            if not MyDate.validate_day(year, month, day):
-                raise ValueError
+    #         if not MyDate.validate_day(year, month, day):
+    #             raise ValueError
             
-            return True, ""
+    #         return True, ""
         
-        except:
-            return False, "날짜 형식이 올바르지 않습니다. (예: YYYY-MM-DD)"
+    #     except:
+    #         return False, "날짜 형식이 올바르지 않습니다. (예: YYYY-MM-DD)"
 
     def check_isbn_validate(self, isbn):
         cancel_value = self.config.get("cancel", "X")  # 기본값 "X" 설정
@@ -1724,19 +1724,6 @@ class DataManager(object):
         # 4. 저자의 식별번호가 1 이상인지 확인
         if int(author_id) < 1:
             return False, "저자의 식별번호는 1 이상이어야 합니다."
-        
-        return True, ""
-
-    def check_return_day_validate(self, return_day):
-        if return_day == self.config["cancel"]:
-            return True, ""
-        # 입력값이 있는지 확인
-        if len(return_day) == 0:
-            return False, "1글자 이상 입력해주세요."
-            
-        # 값이 0보다 작은지 확인
-        if int(return_day) < 0:
-            return False, "0 이상의 올바른 정수를 입력해주세요."
         
         return True, ""
 
@@ -2289,18 +2276,6 @@ class DataManager(object):
             return True, None
         else:
             return False, total_error_message
-        
-    
-    
-    def validate_publisher(self, publisher_name: str) -> int:
-        """
-        입력받은 출판사를 검증하고, 유효한 출판사의 ID를 반환합니다.
-        """
-        publisher = self.search_publisher_by_name(publisher_name.strip())
-        if not publisher:
-            print(f"[ERROR] 출판사 '{publisher_name}'가 존재하지 않습니다.")
-            return None
-        return publisher.publisher_id
 
     # ========== 3. 수정 ========== #
     def update_book(self):
@@ -2439,7 +2414,7 @@ class DataManager(object):
                     else:
                         print(f"이미 등록되어 있는 저자가 {len(matching_authors)}명이 있습니다.")
                         for idx, match in enumerate(matching_authors):
-                             if len(matching_authors) > 1:
+                            if len(matching_authors) > 1:
                                 print(f"{idx + 1}. {match.name} #{match.author_id}")
                             else:
                                 print(f"{idx + 1}. {match.name}")  # 동명이인이 없으면 번호 출력하지 않음
