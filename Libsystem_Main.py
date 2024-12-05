@@ -1660,30 +1660,6 @@ class DataManager(object):
         
         return True, ""
 
-    @classmethod
-    # def check_date_validate(self, date_str):
-    #     date_pattern = r'^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$'
-        
-    #     try:
-    #         assert type(date_str) == str, "문자열이 아님"
-            
-    #         if not re.match(date_pattern, date_str):
-    #             raise ValueError
-            
-    #         year, month, day = map(int, date_str.split("-"))
-            
-    #         # 연도가 1583 이상 9999 이하인지 확인
-    #         if not (1583 <= year <= 9999):
-    #             return False, "날짜는 1583년부터 9999년 사이여야 합니다."
-            
-    #         if not MyDate.validate_day(year, month, day):
-    #             raise ValueError
-            
-    #         return True, ""
-        
-    #     except:
-    #         return False, "날짜 형식이 올바르지 않습니다. (예: YYYY-MM-DD)"
-
     def check_isbn_validate(self, isbn):
         cancel_value = self.config.get("cancel", "X")  # 기본값 "X" 설정
         if isbn == cancel_value:
@@ -1733,63 +1709,6 @@ class DataManager(object):
                 if borrow.book_id == book_id and borrow.actual_return_date is None:
                     return True
         return False
-
-    # def check_record_validate(self, book: BookRecord) -> tuple[bool, str]:
-    #     # ISBN, 책 제목, 저자, 출판사, 출판년도, 등록 날짜 유효성 검사
-    #     is_valid, error_message = self.check_isbn_validate(str(book.isbn))
-    #     if not is_valid:
-    #         return False, f"ISBN 에러: {error_message}"
-        
-    #     is_valid, error_message = self.check_string_validate("제목", book.title)
-    #     if not is_valid:
-    #         return False, f"제목 에러: {error_message}"
-        
-    #     is_valid, error_message = self.check_string_validate("저자", book.author)
-    #     if not is_valid:
-    #         return False, f"저자 에러: {error_message}"
-        
-    #     is_valid, error_message = self.check_string_validate("출판사", book.publisher)
-    #     if not is_valid:
-    #         return False, f"출판사 에러: {error_message}"
-        
-    #     is_valid, error_message = self.check_year_validate(str(book.published_year))
-    #     if not is_valid:
-    #         return False, f"출판년도 에러: {error_message}"
-        
-    #     is_valid, error_message = self.check_date_validate(str(book.register_date))
-    #     if not is_valid:
-    #         return False, f"등록 날짜 에러: {error_message}"
-
-    #      # 대출 중인 경우 대출자 이름, 대출자 전화번호, 대출 날짜, 반납 예정일에 대한 추가 유효성 검사
-    #     if book.is_borrowing:
-
-    #         is_valid, error_message = self.check_string_validate("대출자", book.borrower_name)
-    #         if not is_valid:
-    #             return False, f"대출자 에러: {error_message}"
-        
-    #         is_valid, error_message = self.check_phone_number_validate(book.borrower_phone_number)
-    #         if not is_valid:
-    #             return False, f"전화번호 에러: {error_message}"
-        
-    #         is_valid, error_message = self.check_date_validate(str(book.borrow_date))
-    #         if not is_valid:
-    #             return False, f"대출 날짜 에러: {error_message}"
-        
-    #         is_valid, error_message = self.check_date_validate(str(book.return_date))
-    #         if not is_valid:
-    #             return False, f"반납 예정일 에러: {error_message}"
-    #     else:
-    #         # 대출자 정보가 없는 경우 대출 관련 필드가 비어있는지 확인
-    #         if book.borrower_name or book.borrower_phone_number or book.borrow_date or book.return_date:
-    #             return False, "대출 중이 아닌 도서에 대출 정보가 있습니다."
-
-    #     return True, ""
-
-    # def check_overdue_delete(self, book_id):
-    #     for book in self.book_data:
-    #         if book.book_id == book_id and book.return_date:
-    #             return True
-    #     return False
 
     def check_borrow_delete(self, book_id):
         for borrow in self.borrow_table:
