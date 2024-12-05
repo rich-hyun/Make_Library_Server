@@ -1988,8 +1988,8 @@ class DataManager(object):
             
             if not publisher:
                 publisher_flag = False
-                publisher_id = len(self.publisher_table) + 1
-                publisher = PublisherRecord(len(self.publisher_table) + 1, book_info[2], False)
+                publisher_id = len(self.publisher_table)
+                publisher = PublisherRecord(publisher_id, book_info[2], False)
             else:
                 publisher_flag = True
                 publisher_id = publisher.publisher_id
@@ -2028,7 +2028,7 @@ class DataManager(object):
                 
                 for author in book_info[1]:
                     if not isinstance(author, AuthorRecord):
-                        self.author_table.append(AuthorRecord(len(self.author_table) + 1, author, False))
+                        self.author_table.append(AuthorRecord(len(self.author_table), author, False))
                         self.isbn_author_table.append(IsbnAuthorRecord(isbn, self.author_table[-1].author_id))
                     else:
                         self.isbn_author_table.append(IsbnAuthorRecord(isbn, author.author_id))
