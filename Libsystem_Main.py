@@ -3138,19 +3138,18 @@ def get_user_home_path() -> str:
 
 """ ========== main ========== """
 def main() -> None:
-    # try:
-    #     dir_path = get_user_home_path()
+    try:
+        dir_path = get_user_home_path()
         
-    #     if dir_path is None or len(dir_path) == 0:
-    #         raise ValueError 
+        if dir_path is None or len(dir_path) == 0:
+            raise ValueError 
         
-    # except Exception as e:
-    #     # print(e)
-    #     # print("[DEBUG] HOME 경로를 찾을 수 없어 현재 경로로 지정")
-    #     dir_path = "./"
-    
-    # 임시로 이 레포지토리의 경로로 설정
-    dir_path = "./"
+    except Exception as e:
+        # print(e)
+        # print("[DEBUG] HOME 경로를 찾을 수 없어 현재 경로로 지정")
+        dir_path = "./"
+        
+    print(dir_path)
     
     # print("[DEBUG] HOME 경로:", dir_path)
     bookData = DataManager(file_path=dir_path)
