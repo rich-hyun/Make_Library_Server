@@ -2826,7 +2826,7 @@ class DataManager(object):
             if record.borrow_date is not None and record.borrow_date > today:
                 return False, f"가장 최근에 저장된 책의 등록날짜 또는 대출날짜보다 과거의 날짜입니다."
             
-            return (True, None)
+        return (True, None)
 
     # ========== 데이터 입력받는 함수 ========== #
     def input_isbn(self, input_message: str) -> str:
