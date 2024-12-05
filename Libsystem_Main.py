@@ -2028,7 +2028,7 @@ class DataManager(object):
                 
                 for author in book_info[1]:
                     if not isinstance(author, AuthorRecord):
-                        self.author_table.append(AuthorRecord(len(self.author_table), author, False))
+                        self.author_table.append(AuthorRecord(len(self.author_table) + 1, author, False))
                         self.isbn_author_table.append(IsbnAuthorRecord(isbn, self.author_table[-1].author_id))
                     else:
                         self.isbn_author_table.append(IsbnAuthorRecord(isbn, author.author_id))
