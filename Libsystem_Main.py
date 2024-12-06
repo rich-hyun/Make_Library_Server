@@ -2816,10 +2816,8 @@ class DataManager(object):
             
             
         for isbn_year in self.isbn_table:
-            # 출판년도는 현재 날짜보다 미래일 수 없음 (무결성검사에서 검사해서 오류나면 안됨)
             if isbn_year.published_year > today.year:
-                print("여기서 오류가 난다는 것은 출판년도보다 등록일이 과거라는 의미임")
-                return False, f"critical error is occured"
+                return False, f"ISBN의 출판년도보다 과거의 날짜입니다."
             
         # 대출 날짜와 비교   
         for record in self.borrow_table:
