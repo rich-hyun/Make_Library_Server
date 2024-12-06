@@ -3149,7 +3149,7 @@ def main() -> None:
         # print("[DEBUG] HOME 경로를 찾을 수 없어 현재 경로로 지정")
         dir_path = "./"
         
-    print(dir_path)
+    # print(dir_path)
     
     # print("[DEBUG] HOME 경로:", dir_path)
     bookData = DataManager(file_path=dir_path)
