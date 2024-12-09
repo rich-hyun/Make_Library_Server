@@ -2614,7 +2614,7 @@ class DataManager(object):
         if overdue_days > 0:
             penalty_days = int(overdue_days * self.config['overdue_penalty_scale'])  # 연체일에 스케일 적용
             penalty_start_date = self.today
-            penalty_end_date = self.today + penalty_days
+            penalty_end_date = self.today + penalty_days - 1
 
             # 기존 페널티 확인 및 병합
             existing_penalty = None
@@ -2626,7 +2626,7 @@ class DataManager(object):
             if existing_penalty:
                 # 기존 페널티 종료일에 새로운 페널티 일수를 추가하여 연장
                 existing_penalty.penalty_end_date = existing_penalty.penalty_end_date + penalty_days
-                print(f"[페널티 연장] 기존 페널티 종료일이 {existing_penalty.penalty_end_date}로 연장되었습니다.")
+                print(f"[페널티 연장] {penalty_start_date} ~ {existing_penalty.penalty_end_date}")
             else:
                 # 새로운 페널티 생성
                 penalty_id = len(self.overdue_penalty_table)
@@ -2635,7 +2635,7 @@ class DataManager(object):
                         penalty_id, borrower_id, penalty_start_date, penalty_end_date
                     )
                 )
-                print(f"[새로운 페널티 부여] 페널티 시작: {penalty_start_date}, 종료: {penalty_end_date}")
+                print(f"[새로운 페널티 부여] {penalty_start_date} ~ {penalty_end_date}")
                 
         # 책 반납 로그 추가
         self.add_to_log(log_type="BOOK_RETURN", isbn=rtn_isbn.isbn, book_id=borrow_info.book_id, borrow_id=borrow_info.borrow_id, log_date=self.today)
