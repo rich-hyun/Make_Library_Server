@@ -2095,11 +2095,6 @@ class DataManager(object):
         
         del_book_id = int(del_book_id)
 
-        book_to_delete = self.search_book_by_id(del_book_id)
-        if book_to_delete.deleted:
-            print("ERROR: 이미 삭제된 책이므로 삭제할 수 없습니다.")
-            return False
-
         if self.check_borrow_delete(del_book_id):
             print("ERROR: 해당 책은 대출중이므로 삭제할 수 없습니다.")
             return False
