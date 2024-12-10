@@ -1703,18 +1703,12 @@ class DataManager(object):
         
         return True, ""
 
-    def check_overdue_delete(self, book_id):
+    def check_borrow_delete(self, book_id):
         for book in self.book_table:
             for borrow in self.borrow_table:
                 if borrow.book_id == book_id and borrow.actual_return_date is None:
                     return True
-        return False
-
-    def check_borrow_delete(self, book_id):
-        for borrow in self.borrow_table:
-            if borrow.book_id == book_id and borrow.return_date is not None:
-                return True
-        return False        
+        return False    
     
     # 저자 식별번호로 이름 #식별번호 형태로 반환
     def convert_author_ids_to_name_id(self, author_ids: list[int]) -> str:
@@ -2106,7 +2100,7 @@ class DataManager(object):
             print("ERROR: 이미 삭제된 책이므로 삭제할 수 없습니다.")
             return False
 
-        if self.check_overdue_delete(del_book_id):
+        if self.check_borrow_delete(del_book_id):
             print("ERROR: 해당 책은 대출중이므로 삭제할 수 없습니다.")
             return False
         else:
