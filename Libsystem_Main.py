@@ -1451,7 +1451,7 @@ class DataManager(object):
         
         # 저자 없는 경우 
         if len(author_data) == 0:
-            return_str += "-"
+            return_str += "-/"
         else:
             return_str += f"{' & '.join(list(map(lambda x: f'{x.name} #{x.author_id}', author_data)))}/"
         
@@ -1973,7 +1973,7 @@ class DataManager(object):
             
             for message, func in messages_and_functions:
                 info = func(message)
-                if not info:
+                if info is False:
                     return False
 
                 if info == self.config["cancel"]:
