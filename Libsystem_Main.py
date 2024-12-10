@@ -1973,7 +1973,7 @@ class DataManager(object):
             
             for message, func in messages_and_functions:
                 info = func(message)
-                if info is False:
+                if info is None and func is not self.input_author:
                     return False
 
                 if info == self.config["cancel"]:
@@ -2066,8 +2066,11 @@ class DataManager(object):
             for author_id in author_ids:
                 author = self.search_author_by_id(author_id)
                 author_data.append(f"{author.name} #{author.author_id}")
-                
-            print(" & ".join(author_data), end="")
+            
+            if not author_data:
+                print("-", end="")
+            else:
+                print(" & ".join(author_data), end="")
                   
             print(f"/{publisher.name}/{isbn_data.published_year}/{self.today}")
             print()
